@@ -1,4 +1,4 @@
-import "./global.css";
+import "../styles/global.css";
 import { ReactNode } from "react";
 
 export const metadata = {
@@ -12,7 +12,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={`antialiased min-h-screen`}>{children}</body>
     </html>
   );
 }
