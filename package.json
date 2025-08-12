@@ -3,12 +3,14 @@
     "@iconify/react": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "formik": "^2.4.6",
     "motion": "^12.23.12",
     "next": "^15.3.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.5.0",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "yup": "^1.7.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.3",

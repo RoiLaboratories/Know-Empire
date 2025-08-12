@@ -3,6 +3,11 @@ module.exports = {
   content: ["./app/**/*.{js,ts,jsx,tsx}", "./components/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      boxShadow: {
+        // add: "rgba(0, 0, 0, 0.1) 0px 4px 12px",
+        menu: "rgba(0, 0, 0, 0.1) 0px 0px 5px 0px, rgba(0, 0, 0, 0.1) 0px 0px 1px 0px",
+        // card: "rgba(0, 0, 0, 0.15) 0px 2px 8px",
+      },
       keyframes: {
         fadeIn: {
           "0%": { opacity: "0" },
