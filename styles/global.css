@@ -6,7 +6,7 @@
 @config "../tailwind.config.js";
 
 body {
-  @apply leading-[normal] m-0;
+  @apply leading-[normal] m-0 text-gray;
   font-family: "Poppins", sans-serif;
   background-color: #faf6ff;
 }
@@ -14,12 +14,20 @@ body {
 /* @theme inline {
   --font-sans: var(--font-satoshi);
 } */
-
 @theme {
   --color-primary: #b400f7;
+  --color-primary-light: #f8e5ff;
   --drop-shadow-btn: 0 4px 4px #640091;
   --drop-shadow-dark: 0 3px 3px #171717;
   --color-gray: #1a1a1a;
+  --color-gray-light: #414141;
+  --color-gray-medium: #d7d7d7;
+  --color-gray-lighter: #c8c8c8;
+  --color-yellow: "#fdd835";
+  --color-background: #faf6ff;
+  --color-blue-light: #eff6ff;
+  --color-orange: #ee7435;
+  --color-brown: #bc4443;
 }
 
 @layer components {
@@ -52,4 +60,17 @@ body {
 
 .btn {
   @apply focus:outline-none cursor-pointer focus:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.no-scroll {
+  overflow: hidden;
 }

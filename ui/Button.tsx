@@ -16,7 +16,7 @@ const buttonVariants = cva(
         primary:
           "border-[1.5px] border-primary focus:ring ring-offset-1 focus:ring-primary bg-primary text-white",
         primary_gradient:
-          "border-[1.5px] border-primary focus:ring ring-offset-1 focus:ring-primary text-white bg-linear-to-r from-[#b400f7] to-[#6a0091]",
+          "border-[1.5px] border-primary focus:ring ring-offset-1 focus:ring-primary text-white font-semibold bg-linear-to-r from-[#b400f7] to-[#6a0091] ",
         secondary:
           "border-[1.5px] border-[#570DF8] focus:ring ring-offset-1 focus:ring-[#570DF8] bg-[#570DF8] text-white",
         success:

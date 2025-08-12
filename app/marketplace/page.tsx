@@ -1,17 +1,28 @@
-import Button from "../../ui/Button";
+import Category from "../../components/Category";
+import Header from "../../components/layout/Header";
+import Tab from "../../components/layout/Tab";
+import Search from "../../components/Search";
+import Products from "../../components/products";
+
+//justify-center py-3
 
 function MarketPage() {
   return (
-    <div className="flex justify-center items-center h-screen">
-      <div className="w-9/10 max-w-lg flex flex-col justify-between items-center space-y-2">
-        Market
-        <Button>Text</Button>
-        <Button variant="primary_gradient">Buy now</Button>
-        <Button variant="success">Confirmed</Button>
-        <Button variant="secondary">Raise a Dispute</Button>
-        <Button variant="warning">Raise a Dispute</Button>
-        <Button variant="tertiary">Raise a Dispute</Button>
-      </div>
+    <div className="space-y-3">
+      {/*tab */}
+      <Tab
+        name="Marketplace"
+        description="Discover and buy products securely"
+      />
+
+      {/*search */}
+      <Search />
+
+      {/*category */}
+      <Category />
+
+      {/*curated */}
+      <Products />
     </div>
   );
 }
