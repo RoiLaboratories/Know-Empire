@@ -20,7 +20,16 @@ const item = {
   show: { opacity: 1, transform: "translateY(0px)" },
 };
 
-function Step4({ handleNext }: { handleNext: () => void }) {
+interface Step4Props {
+  handleNext?: () => void;
+  onClick?: () => void;
+}
+
+function Step4({ handleNext }: Step4Props) {
+  const handleClick = () => {
+    if (handleNext) handleNext();
+  };
+
   return (
     <div className="w-9/10 max-w-lg flex flex-col justify-between ">
       <motion.div
@@ -42,8 +51,8 @@ function Step4({ handleNext }: { handleNext: () => void }) {
 
         <motion.div variants={item} className="space-y-2">
           <p className="text-4xl sm:text-5xl font-bold">
-            Trade
-            <span className="font-medium">&nbsp;Earn</span>
+            Trade,
+            <span className="font-medium">&nbsp;Earn,</span>
           </p>
           <p className="text-4xl sm:text-5xl text-primary font-bold">Repeat</p>
           <p className="text-gray">
@@ -52,16 +61,7 @@ function Step4({ handleNext }: { handleNext: () => void }) {
           </p>
         </motion.div>
 
-        <motion.button
-          variants={item}
-          initial={{ opacity: 0, x: -100 }}
-          animate={{ opacity: 1, x: 0 }}
-          onClick={handleNext}
-          className="text-white rounded bg-primary flex justify-center gap-x-1 items-center text-xs font-bold py-2 px-5 drop-shadow-dark btn"
-        >
-          Enter marketplace
-          <Icon icon={ICON.ARROW_CIRCLE_RIGHT} className="" />
-        </motion.button>
+        {/* Button moved to Onboarding component with Modal.Open wrapper */}
         {/* <Button size="xs" className="font-bold drop-shadow-dark w-fit">
           Enter marketplace
           <Icon icon={ICON.ARROW_CIRCLE_RIGHT} className="" />

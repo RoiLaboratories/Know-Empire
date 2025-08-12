@@ -34,4 +34,5 @@ export enum ICON {
   UPLOAD = "material-symbols:upload-rounded",
   CLOSE = "pajamas:close",
   CELEBRATE = "fluent-emoji:confetti-ball",
+  SPINNER = "ri:loader-4-fill",
 }
