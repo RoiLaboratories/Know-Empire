@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 
 interface ISProps {
   onCloseModal?: () => void;
+  children?: React.ReactNode;
 }
 
-function CongratsPopup({ onCloseModal }: ISProps) {
+function CongratsPopup({ onCloseModal, children }: ISProps) {
   const router = useRouter();
 
   return (
@@ -19,15 +20,15 @@ function CongratsPopup({ onCloseModal }: ISProps) {
       </p>
 
       <button
-        onClick={() => router.push("/marketplace")}
+        onClick={() => {
+          if (onCloseModal) onCloseModal();
+          router.push("/marketplace");
+        }}
         className="text-white rounded bg-primary flex justify-center gap-x-1 items-center text-xs font-bold py-2 px-5 drop-shadow-dark btn"
       >
         Enter marketplace
         <Icon icon={ICON.ARROW_CIRCLE_RIGHT} />
       </button>
-      {/* <Button className="font-medium w-24 drop-shadow-[0_4px_4px_rgb(65,65,65)]">
-        Sign in
-      </Button> */}
     </div>
   );
 }

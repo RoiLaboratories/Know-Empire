@@ -42,4 +42,5 @@ export enum ICON {
   CONFIRM = "game-icons:confirmed",
   WALLET = "solar:wallet-linear",
   PADLOCK = "uil:padlock",
+  SPINNER = "ri:loader-4-fill",
 }

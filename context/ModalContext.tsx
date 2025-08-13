@@ -17,7 +17,9 @@ interface ModalContextType {
   openName: string;
 }
 
-const ModalContext = createContext<ModalContextType | undefined>(undefined);
+export const ModalContext = createContext<ModalContextType | undefined>(
+  undefined
+);
 
 export default function Modal({ children }: { children: React.ReactNode }) {
   const [openName, setOpenName] = useState("");
@@ -63,7 +65,7 @@ function Open({ children, opens: opensWindowName }: Open) {
 }
 
 interface Window {
-  children: React.ReactElement<{ onCloseModal?: () => void }>;
+  children?: React.ReactElement<{ onCloseModal?: () => void }>;
   name: string;
   allowOutsideClick?: boolean;
   showBg?: boolean;
@@ -120,7 +122,7 @@ function Window({ children, name, allowOutsideClick, showBg = true }: Window) {
         )}
 
         <div className="p-3">
-          {cloneElement(children, { onCloseModal: close })}
+          {children && cloneElement(children, { onCloseModal: close })}
         </div>
       </div>
     </div>,

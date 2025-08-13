@@ -3,7 +3,11 @@ import { Icon } from "@iconify/react";
 import { ICON } from "../utils/icon-export";
 import { useRouter } from "next/navigation";
 
-function BackButton() {
+interface BackButtonProps {
+  className?: string;
+}
+
+function BackButton({ className = "text-gray" }: BackButtonProps) {
   const router = useRouter();
 
   return (
@@ -12,7 +16,7 @@ function BackButton() {
         icon={ICON.ARROW_BACK}
         width={25}
         height={25}
-        className="text-gray cursor-pointer"
+        className={`${className} cursor-pointer`}
         onClick={() => router.back()}
       />
     </button>
