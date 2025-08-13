@@ -17,7 +17,9 @@ interface ModalContextType {
   openName: string;
 }
 
-export const ModalContext = createContext<ModalContextType | undefined>(undefined);
+export const ModalContext = createContext<ModalContextType | undefined>(
+  undefined
+);
 
 export default function Modal({ children }: { children: React.ReactNode }) {
   const [openName, setOpenName] = useState("");
@@ -99,7 +101,7 @@ function Window({ children, name, allowOutsideClick, showBg = true }: Window) {
       {/*Modal */}
       <div
         className={`transition-all duration-300 ease-in-out transform 
-          fixed top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2  rounded-xl  ${
+          fixed top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2  rounded-t-2xl  ${
             showBg && "bg-white shadow-menu"
           } 
           ${
@@ -115,11 +117,11 @@ function Window({ children, name, allowOutsideClick, showBg = true }: Window) {
         {/*close button */}
         {showBg && (
           <Button onClick={close}>
-            <Icon icon={ICON.CLOSE} />
+            <Icon icon={ICON.CANCEL} fontSize={24} />
           </Button>
         )}
 
-        <div className="p-7">
+        <div className="p-3">
           {children && cloneElement(children, { onCloseModal: close })}
         </div>
       </div>
@@ -136,7 +138,7 @@ interface Button {
 export function Button({ children, onClick }: Button) {
   return (
     <button
-      className="absolute top-[1rem] right-[1rem] transition-all duration-200 rounded-full bg-gray-200 hover:bg-gray-300 hover:shadow p-1 cursor-pointer"
+      className="absolute top-[1rem] right-[1rem] transition-all duration-200 rounded-full hover:shadow p-1 cursor-pointer"
       onClick={onClick}
     >
       {children}

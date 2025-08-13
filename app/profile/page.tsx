@@ -5,11 +5,15 @@ import Wallet from "../../assets/icons/wallet.svg";
 import Avatar from "../../assets/images/avatar.png";
 import Verified from "../../assets/icons/verified.svg";
 import ReviewsCard from "../../components/cards/ReviewsCard";
+import BackButton from "../../ui/BackButton";
 
 function Profile() {
   return (
     <section className="flex flex-col items-center min-h-screen">
-      <div className="w-full max-w-lg flex flex-1 flex-col ">
+      <div className="w-full max-w-lg flex flex-1 flex-col relative">
+        <div className="absolute top-5 left-5 z-10">
+          <BackButton className="text-white" />
+        </div>
         <div className="bg-primary h-50 flex justify-between items-center p-5 text-white relative">
           <Image alt="wallet" src={Wallet} />
           <Icon icon={ICON.SHARE} fontSize={30} />

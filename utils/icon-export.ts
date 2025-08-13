@@ -34,5 +34,13 @@ export enum ICON {
   UPLOAD = "material-symbols:upload-rounded",
   CLOSE = "pajamas:close",
   CELEBRATE = "fluent-emoji:confetti-ball",
+  CANCEL = "material-symbols:cancel-outline",
+  LOCATION = "tdesign:location",
+  FILE = "bx:file",
+  VERIFIED = "icon-park-outline:protect",
+  INFO = "material-symbols:info",
+  CONFIRM = "game-icons:confirmed",
+  WALLET = "solar:wallet-linear",
+  PADLOCK = "uil:padlock",
   SPINNER = "ri:loader-4-fill",
 }

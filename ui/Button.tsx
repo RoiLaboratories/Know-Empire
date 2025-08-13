@@ -9,7 +9,7 @@ interface ButtonProps
 }
 
 const buttonVariants = cva(
-  " transition-all duration-300 ease-in-out flex justify-center gap-x-2 items-center whitespace-nowrap btn w-full hover:opacity-80 disabled:opacity-50",
+  " transition-all duration-300 ease-in-out flex justify-center gap-x-2 items-center whitespace-nowrap btn w-full hover:opacity-80 disabled:opacity-50 ",
   {
     variants: {
       variant: {
@@ -28,6 +28,7 @@ const buttonVariants = cva(
         danger: "border border-red-500 bg-red-500 text-white",
         danger_outline:
           "hover:bg-red-400 focus:ring ring-offset-1 focus:ring-red-500 bg-red-50 hover:text-white border-red-500 border text-red-500",
+        back: "border-[1.5px] border-[#989898] focus:ring ring-offset-1 focus:ring-[#989898] hover:bg-[#f3f3f3] text-[#989898]",
         //   outline: "",
       },
       size: {
