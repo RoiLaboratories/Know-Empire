@@ -5,7 +5,8 @@ import Phone from "../../assets/images/prod1.png";
 import Pc from "../../assets/images/prod2.png";
 import OrdersCard from "../../components/cards/OrdersCard";
 import Modal from "../../context/ModalContext";
-import CongratsPopus from "../../components/popups/congrats-popup";
+
+import PurchasePopup from "../../components/popups/purchase-popup";
 
 const orders = [
   {
@@ -38,7 +39,7 @@ function OrderManagement() {
                 <p className="text-xl font-bold">Order Management</p>
               </Modal.Open>
               <Modal.Window name="test" allowOutsideClick showBg={false}>
-                <CongratsPopus />
+                <PurchasePopup />
               </Modal.Window>
             </Modal>
           </div>
