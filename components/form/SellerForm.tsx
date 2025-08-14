@@ -1,16 +1,40 @@
 "use client";
 
 import { useFormik } from "formik";
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { SELLER_SCHEMA } from "../../schema/seller.schema";
 import FormInput from "./FormInput";
 import InputField from "./InputField";
 import Button from "../../ui/Button";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
+import Modal, { ModalContext } from "../../context/ModalContext";
+import LoadingCard from "../popups/loading-card";
+import SellerCongratsPopup from "../popups/seller-congrats-popup";
 
 function SellerForm() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const modalContext = useContext(ModalContext);
+
+  const handleCreateAccount = () => {
+    if (!modalContext) {
+      console.log("No modal context available");
+      return;
+    }
+
+    console.log("Opening loading modal");
+    // Open loading modal immediately
+    modalContext.open("loading-modal");
+    
+    // After 5 seconds, show congrats
+    setTimeout(() => {
+      console.log("Transitioning to congrats");
+      modalContext.close(); // Close form modal
+      modalContext.close(); // Close loading modal
+      console.log("Opening congrats modal");
+      modalContext.open("congrats-modal");
+    }, 5000);
+  };
 
   const formik = useFormik<SellerInput>({
     validationSchema: SELLER_SCHEMA,
@@ -21,18 +45,23 @@ function SellerForm() {
       location: "",
       description: "",
     },
-    onSubmit: (values) => {
-      console.log(values);
+    onSubmit: () => {
+      console.log("Form submitted");
+      handleCreateAccount();
     },
   });
 
   return (
-    <FormInput
-      config={{
-        onSubmit: formik.handleSubmit,
-      }}
-    >
-      <div className="w-full">
+    <Modal>
+      <FormInput
+        config={{
+          onSubmit: (e) => {
+            e.preventDefault();
+            handleCreateAccount();
+          },
+        }}
+      >
+        <div className="w-full">
         <InputField
           config={{
             placeholder: "@yourhandle",
@@ -120,17 +149,38 @@ function SellerForm() {
           </p>
         </span>
 
-        <Button
-          type="submit"
-          variant="primary_gradient"
-          size="xs"
-          className="text-gray-medium mt-2 disabled:bg-[#989898]"
-          disabled={!formik.isValid || !formik.dirty || !acceptedTerms}
-        >
-          Create seller account
-        </Button>
+        <Modal.Open opens="loading-modal">
+          <Button
+            type="button"
+            variant="primary_gradient"
+            size="xs"
+            className="text-gray-medium mt-2 disabled:bg-[#989898]"
+            disabled={!formik.isValid || !formik.dirty || !acceptedTerms}
+          >
+            Create seller account
+          </Button>
+        </Modal.Open>
       </div>
     </FormInput>
+
+      {/* Modal Windows */}
+      <Modal.Window name="loading-modal" showBg={false}>
+        <LoadingCard 
+          message="Creating account..."
+        />
+      </Modal.Window>
+      
+      <Modal.Window name="congrats-modal" showBg={false}>
+        <SellerCongratsPopup 
+          onCloseModal={() => {
+            console.log("Closing congrats modal");
+            modalContext?.close();
+          }}
+          onMount={() => console.log("Congrats modal mounted")}
+          onUnmount={() => console.log("Congrats modal unmounted")}
+        />
+      </Modal.Window>
+    </Modal>
   );
 }
 
