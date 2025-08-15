@@ -4,13 +4,17 @@ import { LIST_SCHEMA } from "../../schema/seller.schema";
 import FormInput from "./FormInput";
 import InputField from "./InputField";
 import Button from "../../ui/Button";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useContext, useState } from "react";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import Image from "next/image";
+import Modal, { ModalContext } from "../../context/ModalContext";
+import GenericPopup from "../popups/generic-popup";
 
 function ListingForm() {
   const [previews, setPreviews] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const modalContext = useContext(ModalContext);
 
   const formik = useFormik<ListingInput>({
     validationSchema: LIST_SCHEMA,
@@ -22,8 +26,12 @@ function ListingForm() {
       photos: [],
       country: "",
     },
-    onSubmit: (values) => {
+    onSubmit: async (values) => {
+      setIsLoading(true);
       console.log(values);
+      await new Promise((res) => setTimeout(res, 2000));
+      setIsLoading(false);
+      modalContext?.open("successful-listing-modal");
     },
   });
 
@@ -207,10 +215,34 @@ function ListingForm() {
           variant="primary_gradient"
           size="xs"
           className="text-gray-medium mt-2 disabled:bg-[#989898]"
-          disabled={!formik.isValid || !formik.dirty}
+          disabled={!formik.isValid || !formik.dirty || isLoading}
         >
-          Publish Listing
+          {!isLoading ? (
+            "Publish Listing"
+          ) : (
+            <>
+              <Icon
+                icon={ICON.SPINNER}
+                fontSize={15}
+                className="animate-spin"
+              />
+              Publishing...
+            </>
+          )}
         </Button>
+
+        {/*successful listing modal */}
+        <Modal.Window
+          name="successful-listing-modal"
+          allowOutsideClick
+          showBg={false}
+        >
+          <GenericPopup
+            iconStyle="text-green-600"
+            icon={ICON.CHECK_CIRCLE}
+            text="Your product has been successfully listed"
+          />
+        </Modal.Window>
       </div>
     </FormInput>
   );

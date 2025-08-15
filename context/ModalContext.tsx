@@ -13,8 +13,9 @@ import { ICON } from "../utils/icon-export";
 
 interface ModalContextType {
   open: (name: string) => void;
-  close: () => void;
-  openName: string;
+  close: (name?: string) => void;
+  // openName: string;
+  openNames: string[];
 }
 
 export const ModalContext = createContext<ModalContextType | undefined>(
@@ -22,26 +23,39 @@ export const ModalContext = createContext<ModalContextType | undefined>(
 );
 
 export default function Modal({ children }: { children: React.ReactNode }) {
-  const [openName, setOpenName] = useState("");
+  // const [openName, setOpenName] = useState("");
+  const [openNames, setOpenNames] = useState<string[]>([]);
 
-  const close = () => setOpenName("");
-  const open = setOpenName;
+  // const close = () => setOpenName("");
+  // const open = setOpenName;
+
+  const close = (name?: string) => {
+    if (!name) {
+      setOpenNames([]);
+    } else {
+      setOpenNames((prev) => prev.filter((n) => n !== name));
+    }
+  };
+
+  const open = (name: string) => {
+    setOpenNames((prev) => [...prev, name]);
+  };
 
   useEffect(() => {
-    if (openName !== "") {
+    //   if (openName !== "") {
+    if (openNames.length > 0) {
       document.body.classList.add("no-scroll");
     } else {
       document.body.classList.remove("no-scroll");
     }
 
-    // Cleanup on unmount
     return () => {
       document.body.classList.remove("no-scroll");
     };
-  }, [openName]);
+  }, [openNames]);
 
   return (
-    <ModalContext.Provider value={{ open, close, openName }}>
+    <ModalContext.Provider value={{ open, close, openNames }}>
       {children}
     </ModalContext.Provider>
   );
@@ -81,19 +95,19 @@ function Window({ children, name, allowOutsideClick, showBg = true }: Window) {
     );
   }
 
-  const { openName, close } = context;
+  const { openNames, close } = context;
   const ref = useOutsideClick<HTMLDivElement>(close);
 
   useEffect(() => {
-    if (name === openName) {
-      // Trigger fade-in on mount when the window becomes visible
-      setTimeout(() => setIsVisible(true), 0); // Use setTimeout to ensure it runs after the initial render
+    if (openNames.includes(name)) {
+      setTimeout(() => setIsVisible(true), 0);
     } else {
-      setIsVisible(false); // Reset visibility when the window is closed
+      setIsVisible(false);
     }
-  }, [name, openName]);
+  }, [name, openNames]);
 
-  if (name !== openName) return null;
+  // if (name !== openName) return null;
+  if (!openNames.includes(name)) return null;
 
   return createPortal(
     //Overlay
@@ -122,7 +136,8 @@ function Window({ children, name, allowOutsideClick, showBg = true }: Window) {
         )}
 
         <div className="p-3">
-          {children && cloneElement(children, { onCloseModal: close })}
+          {children &&
+            cloneElement(children, { onCloseModal: () => close(name) })}
         </div>
       </div>
     </div>,

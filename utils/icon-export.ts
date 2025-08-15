@@ -43,4 +43,6 @@ export enum ICON {
   WALLET = "solar:wallet-linear",
   PADLOCK = "uil:padlock",
   SPINNER = "ri:loader-4-fill",
+  CHECK_CIRCLE = "material-symbols:check-circle-unread",
+  SECURITY = "material-symbols:security-rounded",
 }

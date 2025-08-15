@@ -1,8 +1,11 @@
+"use client";
 import Image, { StaticImageData } from "next/image";
 import Map from "../../assets/icons/map.svg";
 import Button from "../../ui/Button";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
+import PurchasePopup from "../popups/purchase-popup";
+import Modal from "../../context/ModalContext";
 
 interface PProps {
   img: StaticImageData;
@@ -37,15 +40,26 @@ function ProductCard({ product }: { product: PProps }) {
           </span>
         </p>
 
-        <Button
-          variant="primary_gradient"
-          size="xs"
-          className="text-gray-medium w-8/10 mx-auto"
-        >
-          <Icon icon={ICON.BUY2} fontSize={16} />
-          Buy now
-        </Button>
+        <Modal.Open opens="purchase-product-popup">
+          <Button
+            variant="primary_gradient"
+            size="xs"
+            className="text-gray-medium w-8/10 mx-auto"
+          >
+            <Icon icon={ICON.BUY2} fontSize={16} />
+            Buy now
+          </Button>
+        </Modal.Open>
       </div>
+
+      {/*all purchase modals */}
+      <Modal.Window
+        name="purchase-product-popup"
+        // allowOutsideClick
+        showBg={false}
+      >
+        <PurchasePopup />
+      </Modal.Window>
     </li>
   );
 }
