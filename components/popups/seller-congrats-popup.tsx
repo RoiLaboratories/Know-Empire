@@ -30,7 +30,7 @@ function SellerCongratsPopup({ onCloseModal, onMount, onUnmount }: ISProps) {
       <button
         onClick={() => {
           if (onCloseModal) onCloseModal();
-          router.push("/marketplace/sell");
+          router.push("/list_product");
         }}
         className="text-white rounded bg-primary flex justify-center gap-x-1 items-center text-xs font-bold py-2 px-5 drop-shadow-dark btn"
       >

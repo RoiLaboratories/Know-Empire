@@ -16,3 +16,6 @@ export const getStatusColor = (status: string) => {
       return "text-black";
   }
 };
+
+export const sleep = (time: number) =>
+  new Promise((res) => setTimeout(res, time));

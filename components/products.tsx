@@ -2,6 +2,7 @@ import ProductCard from "./cards/ProductCard";
 import Session from "./Session";
 import Phone from "../assets/images/prod1.png";
 import Pc from "../assets/images/prod2.png";
+import Modal from "../context/ModalContext";
 
 const products = [
   {
@@ -22,13 +23,15 @@ const products = [
 
 function Products() {
   return (
-    <Session title="Curated for you" link="See more">
-      <ul className="grid grid-cols-2 gap-2">
-        {products.map((product, i) => (
-          <ProductCard product={product} key={i} />
-        ))}
-      </ul>
-    </Session>
+    <Modal>
+      <Session title="Curated for you" link="See more">
+        <ul className="grid grid-cols-2 gap-2">
+          {products.map((product, i) => (
+            <ProductCard product={product} key={i} />
+          ))}
+        </ul>
+      </Session>
+    </Modal>
   );
 }
 

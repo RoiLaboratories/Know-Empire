@@ -1,5 +1,6 @@
 import BackButton from "../../ui/BackButton";
 import ListingForm from "../../components/form/ListingForm";
+import Modal from "../../context/ModalContext";
 
 function ListProduct() {
   return (
@@ -12,7 +13,9 @@ function ListProduct() {
           </div>
         </div>
 
-        <ListingForm />
+        <Modal>
+          <ListingForm />
+        </Modal>
       </div>
     </section>
   );
