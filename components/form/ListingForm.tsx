@@ -3,18 +3,52 @@ import { useFormik } from "formik";
 import { LIST_SCHEMA } from "../../schema/seller.schema";
 import FormInput from "./FormInput";
 import InputField from "./InputField";
+import { uploadMultipleProductImages } from "../../utils/supabase-storage";
 import Button from "../../ui/Button";
-import { ChangeEvent, useContext, useState } from "react";
+import { ChangeEvent, useContext, useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import Image from "next/image";
 import Modal, { ModalContext } from "../../context/ModalContext";
 import GenericPopup from "../popups/generic-popup";
+import { supabase } from "../../utils/supabase";
+import { useRouter } from "next/navigation";
 
 function ListingForm() {
   const [previews, setPreviews] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const modalContext = useContext(ModalContext);
+  const router = useRouter();
+
+  // Check if user is authenticated and is a seller
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          router.push('/onboarding'); // Redirect to sign in
+          return;
+        }
+
+        // Check if user is a seller
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select('is_seller')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error || !userData?.is_seller) {
+          router.push('/marketplace/sell'); // Redirect to seller registration
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        setError('Authentication check failed');
+      }
+    };
+
+    checkAuth();
+  }, [router]);
 
   const formik = useFormik<ListingInput>({
     validationSchema: LIST_SCHEMA,
@@ -25,13 +59,66 @@ function ListingForm() {
       delivery: "",
       photos: [],
       country: "",
+      category: "",
     },
     onSubmit: async (values) => {
-      setIsLoading(true);
-      console.log(values);
-      await new Promise((res) => setTimeout(res, 2000));
-      setIsLoading(false);
-      modalContext?.open("successful-listing-modal");
+      setError(null);
+      try {
+        setIsLoading(true);
+
+        // Check session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('Please sign in to create a listing');
+        }
+
+        // Upload images first
+        const imageUrls = await uploadMultipleProductImages(values.photos);
+        
+        // Submit the form data with image URLs to your API
+        const productData = {
+          ...values,
+          photos: imageUrls  // Replace File objects with URLs
+        };
+        
+        const response = await fetch('/api/products', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify(productData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create listing');
+        }
+
+        // Show success modal
+        modalContext?.open("successful-listing-modal");
+        
+        // Reset form
+        formik.resetForm();
+        setPreviews([]);
+        
+        // Redirect to product page or marketplace
+        router.push('/marketplace');
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to create product');
+        }
+
+        await response.json();
+        modalContext?.open("successful-listing-modal");
+      } catch (error) {
+        console.error('Error submitting form:', error);
+        // TODO: Add proper error handling UI here
+        alert('Failed to create product. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
     },
   });
 
@@ -67,6 +154,26 @@ function ListingForm() {
     const newPreviews = previews.filter((_, index) => index !== indexToRemove);
     setPreviews(newPreviews);
   };
+
+  // Error Modal
+  const ErrorModal = () => (
+    <Modal.Window name="error-modal">
+      <div className="p-6 bg-white rounded-lg">
+        <h3 className="text-red-600 font-semibold mb-2">Error</h3>
+        <p>{error}</p>
+        <Button
+          onClick={() => modalContext?.close()}
+          className="mt-4"
+        >
+          Close
+        </Button>
+      </div>
+    </Modal.Window>
+  );
+
+  if (error) {
+    return <ErrorModal />;
+  }
 
   return (
     <FormInput
@@ -142,6 +249,19 @@ function ListingForm() {
         {/* )} */}
         <InputField
           config={{
+            placeholder: "Select product category",
+            type: "text",
+            name: "category",
+            value: formik.values.category,
+            onChange: formik.handleChange,
+            onBlur: formik.handleBlur,
+          }}
+          label="Category"
+          error={Boolean(formik.errors.category && formik.touched.category)}
+          errorMessage={formik.errors.category}
+        />
+        <InputField
+          config={{
             placeholder: "Iphone 15 Pro Max - Like New",
             type: "text",
             name: "title",
@@ -184,7 +304,7 @@ function ListingForm() {
         />
         <InputField
           config={{
-            placeholder: "Unites states",
+            placeholder: "United states",
             type: "text",
             name: "country",
             value: formik.values.country,
