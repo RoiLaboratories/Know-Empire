@@ -26,18 +26,24 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
     }
 
     try {
-      modalContext.open("loading-modal");
+      // First trigger Farcaster sign-in
+      const success = await signIn();
       
-      // Trigger Farcaster sign-in
-      signIn();
-      
-      // Note: The success and user state will be handled by the onSuccess callback in useFarcasterAuth
-      // The isAuthenticated flag will update automatically when auth is successful
-      
+      if (success) {
+        // Only show loading modal after auth is initiated
+        modalContext.open("loading-modal");
+        
+        // Wait for 5 seconds as specified
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        
+        modalContext.close("loading-modal");
+        modalContext.open("congrats-modal");
+        onSignIn();
+      }
     } catch (error) {
       console.error('Failed to sign in:', error);
       alert('Failed to sign in. Please try again.');
-      modalContext.close(); // Close loading modal
+      modalContext.close("loading-modal");
     }
   };
 

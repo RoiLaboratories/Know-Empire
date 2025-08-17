@@ -33,10 +33,24 @@ export function useFarcasterAuth() {
     }
   });
 
-  const signIn = useCallback(async () => {
+  const signIn = useCallback(async (): Promise<boolean> => {
     try {
-      initiateSignIn();
-      return true;
+      return new Promise<boolean>((resolve) => {
+        initiateSignIn();
+        // Resolve once we get successful auth
+        const checkAuth = setInterval(() => {
+          if (data && data.fid) {
+            clearInterval(checkAuth);
+            resolve(true);
+          }
+        }, 500); // Check every 500ms
+        
+        // Timeout after 30 seconds
+        setTimeout(() => {
+          clearInterval(checkAuth);
+          resolve(false);
+        }, 30000);
+      });
     } catch (error) {
       console.error('Farcaster authentication error:', error);
       return false;
