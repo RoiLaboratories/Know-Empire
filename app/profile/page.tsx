@@ -1,13 +1,34 @@
+'use client';
+
 import Image from "next/image";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import Wallet from "../../assets/icons/wallet.svg";
-import Avatar from "../../assets/images/avatar.png";
 import Verified from "../../assets/icons/verified.svg";
 import ReviewsCard from "../../components/cards/ReviewsCard";
 import BackButton from "../../ui/BackButton";
+import { useFarcasterAuth } from '@/hooks/useFarcasterAuth';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 function Profile() {
+  const { user, loading, signOut } = useFarcasterAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/');
+    }
+  }, [loading, user, router]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <section className="flex flex-col items-center min-h-screen">
       <div className="w-full max-w-lg flex flex-1 flex-col relative">
@@ -20,9 +41,10 @@ function Profile() {
 
           <div className="absolute rounded-full size-24 border-3 border-white bottom-0 translate-y-1/2">
             <Image
-              alt="user"
-              src={Avatar}
-              placeholder="blur"
+              alt={user.displayName || "User profile"}
+              src={user.pfp}
+              width={96}
+              height={96}
               className="w-full h-full object-cover rounded-full"
             />
           </div>
@@ -31,11 +53,11 @@ function Profile() {
         {/*user details */}
         <div className="px-5 py-12 bg-white space-y-3">
           <div className="space-y-1">
-            <p className="font-bold text-2xl">Kaspa Thompson</p>
+            <p className="font-bold text-2xl">{user.displayName}</p>
 
             <div className="text-sm text-[#5a5a5a] font-medium space-y-1">
-              <p>@Id0care</p>
-              <p>120 followers</p>
+              <p>@{user.username}</p>
+              <p>{user.fid} FID</p>
             </div>
           </div>
 
