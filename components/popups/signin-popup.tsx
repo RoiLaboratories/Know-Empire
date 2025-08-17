@@ -2,11 +2,12 @@ import Image from "next/image";
 import Farcaster from "../../assets/images/farcaster.png";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import Modal, { ModalContext } from "../../context/ModalContext";
 import LoadingCard from "./loading-card";
 import CongratsPopup from "./congrats-popup";
 import Button from "../../ui/Button";
+import { signInWithFarcaster } from "../../utils/auth";
 
 interface SigninPopupProps {
   onCloseModal?: () => void;
@@ -16,20 +17,45 @@ interface SigninPopupProps {
 function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
   const modalContext = useContext(ModalContext);
 
+  useEffect(() => {
+    const autoSignIn = async () => {
+      // Get frame message data
+      try {
+        // Get the frame data from the URL
+        const frameMessage = window.parent.location.search;
+        if (!frameMessage) return;
+
+        const frameData = JSON.parse(decodeURIComponent(frameMessage.split('?message=')[1]));
+        if (!frameData.untrustedData) return;
+
+        modalContext?.open("loading-modal");
+        
+        const { user } = await signInWithFarcaster(frameData);
+        if (user) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          modalContext?.close("loading-modal");
+          modalContext?.open("congrats-modal");
+          onSignIn();
+        }
+      } catch (error) {
+        console.error('Failed to auto sign-in:', error);
+        modalContext?.close("loading-modal");
+      }
+    };
+
+    autoSignIn();
+  }, [modalContext, onSignIn]);
+
   const handleSuccess = async () => {
-    console.log("Sign in successful");
+    console.log("Manual sign in initiated");
     if (!modalContext) {
       console.log("No modal context available");
       return;
     }
 
     try {
-      // Show loading modal
       modalContext.open("loading-modal");
-      
-      // Wait for 5 seconds as specified
       await new Promise(resolve => setTimeout(resolve, 5000));
-      
       modalContext.close("loading-modal");
       modalContext.open("congrats-modal");
       onSignIn();
