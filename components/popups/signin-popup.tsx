@@ -5,6 +5,7 @@ import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import { useContext } from "react";
 import Modal, { ModalContext } from "../../context/ModalContext";
+import { signInWithFarcaster } from "../../utils/auth";
 import LoadingCard from "./loading-card";
 import CongratsPopup from "./congrats-popup";
 
@@ -16,22 +17,37 @@ interface SigninPopupProps {
 function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
   const modalContext = useContext(ModalContext);
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
     console.log("Sign in button clicked");
     if (!modalContext) {
       console.log("No modal context available");
       return;
     }
 
-    // Open loading modal immediately
-    modalContext.open("loading-modal");
-    
-    // After 5 seconds, show congrats
-    setTimeout(() => {
-      modalContext.close(); // Close signin modal
+    try {
+      modalContext.open("loading-modal");
+
+      // Get frame data from window.frame or use mock data for development
+      const frameData = (window as any).frame?.untrustedData || {
+        // Mock data for development
+        fid: 1,
+        username: "test_user",
+        displayName: "Test User",
+        pfp: {
+          url: "https://avatars.githubusercontent.com/u/1?v=4"
+        }
+      };
+
+      await signInWithFarcaster({ untrustedData: frameData });
+      
       modalContext.close(); // Close loading modal
       modalContext.open("congrats-modal");
-    }, 5000);
+      onSignIn(); // Call the onSignIn callback
+    } catch (error) {
+      console.error('Failed to sign in:', error);
+      alert('Failed to sign in. Please try again.');
+      modalContext.close(); // Close loading modal
+    }
   };
 
   return (

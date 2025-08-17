@@ -3,6 +3,7 @@ import { useFormik } from "formik";
 import { useContext, useEffect, useState } from "react";
 import { SELLER_SCHEMA } from "../../schema/seller.schema";
 import FormInput from "./FormInput";
+import { supabase } from "../../utils/supabase";
 import InputField from "./InputField";
 import Button from "../../ui/Button";
 import { Icon } from "@iconify/react";
@@ -46,8 +47,41 @@ function SellerForm() {
       location: "",
       description: "",
     },
-    onSubmit: () => {
-      console.log("Form submitted");
+    onSubmit: async (values) => {
+      try {
+        modalContext?.open("loading-modal");
+
+        // Get the current session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('Please sign in first');
+        }
+
+        const response = await fetch('/api/seller', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify(values),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to create seller account');
+        }
+
+        await response.json();
+        
+        // Close loading modal and show congrats
+        modalContext?.close();
+        modalContext?.open("congrats-modal");
+      } catch (error) {
+        console.error('Error creating seller account:', error);
+        modalContext?.close();
+        // TODO: Show error message to user
+        alert('Failed to create seller account. Please try again.');
+      }
       handleCreateAccount();
     },
   });
