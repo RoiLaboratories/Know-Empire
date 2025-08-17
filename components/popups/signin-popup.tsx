@@ -7,7 +7,7 @@ import Modal, { ModalContext } from "../../context/ModalContext";
 import LoadingCard from "./loading-card";
 import CongratsPopup from "./congrats-popup";
 import Button from "../../ui/Button";
-import { signInWithFarcaster } from "../../utils/auth";
+import { useMiniKit, useAuthenticate } from '@coinbase/onchainkit/minikit';
 
 interface SigninPopupProps {
   onCloseModal?: () => void;
@@ -16,35 +16,34 @@ interface SigninPopupProps {
 
 function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
   const modalContext = useContext(ModalContext);
+  const { setFrameReady } = useMiniKit();
+  const { signIn } = useAuthenticate();
 
   useEffect(() => {
-    const autoSignIn = async () => {
-      // Get frame message data
+    setFrameReady();
+    
+    // Attempt automatic sign in
+    const attemptSignIn = async () => {
       try {
-        // Get the frame data from the URL
-        const frameMessage = window.parent.location.search;
-        if (!frameMessage) return;
-
-        const frameData = JSON.parse(decodeURIComponent(frameMessage.split('?message=')[1]));
-        if (!frameData.untrustedData) return;
-
         modalContext?.open("loading-modal");
+        const result = await signIn();
         
-        const { user } = await signInWithFarcaster(frameData);
-        if (user) {
+        if (result) {
           await new Promise(resolve => setTimeout(resolve, 2000));
           modalContext?.close("loading-modal");
           modalContext?.open("congrats-modal");
           onSignIn();
+        } else {
+          modalContext?.close("loading-modal");
         }
       } catch (error) {
-        console.error('Failed to auto sign-in:', error);
+        console.error('Failed to complete sign in:', error);
         modalContext?.close("loading-modal");
       }
     };
-
-    autoSignIn();
-  }, [modalContext, onSignIn]);
+    
+    attemptSignIn();
+  }, [modalContext, onSignIn, signIn]);
 
   const handleSuccess = async () => {
     console.log("Manual sign in initiated");
@@ -55,10 +54,19 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
 
     try {
       modalContext.open("loading-modal");
-      await new Promise(resolve => setTimeout(resolve, 5000));
-      modalContext.close("loading-modal");
-      modalContext.open("congrats-modal");
-      onSignIn();
+      
+      // Trigger SIWF authentication
+      const result = await signIn();
+      
+      if (result) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        modalContext.close("loading-modal");
+        modalContext.open("congrats-modal");
+        onSignIn();
+      } else {
+        console.error('Authentication failed');
+        modalContext.close("loading-modal");
+      }
     } catch (error) {
       console.error('Failed to complete sign in flow:', error);
       modalContext.close("loading-modal");
