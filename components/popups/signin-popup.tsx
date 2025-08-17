@@ -1,13 +1,12 @@
 import Image from "next/image";
 import Farcaster from "../../assets/images/farcaster.png";
-import Button from "../../ui/Button";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import { useContext } from "react";
 import Modal, { ModalContext } from "../../context/ModalContext";
 import LoadingCard from "./loading-card";
 import CongratsPopup from "./congrats-popup";
-import { SignInButton } from '@farcaster/auth-kit';
+import Button from "../../ui/Button";
 
 interface SigninPopupProps {
   onCloseModal?: () => void;
@@ -61,13 +60,19 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
         <Icon icon={ICON.CLOSE} />
       </button>
 
-      <SignInButton
-        onSuccess={handleSuccess}
-        onError={(error) => {
-          console.error('Failed to sign in:', error);
-          alert('Failed to sign in. Please try again.');
-        }}
-      />
+      <Button 
+        className="font-medium w-[200px] drop-shadow-[0_4px_4px_rgb(65,65,65)] flex items-center justify-center gap-2"
+        onClick={handleSuccess}
+      >
+        <Image
+          alt="farcaster-icon"
+          className="w-5 h-5"
+          width={20}
+          height={20}
+          src={Farcaster}
+        />
+        Sign in
+      </Button>
     </div>
   );
 }
