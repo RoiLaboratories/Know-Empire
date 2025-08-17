@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSignIn } from '@farcaster/auth-kit';
-import type { UseSignInData } from '@farcaster/auth-kit';
 
 export interface FarcasterUser {
   fid: number;
@@ -15,13 +14,13 @@ export function useFarcasterAuth() {
   const [loading, setLoading] = useState(true);
 
   const { signIn: initiateSignIn, isSuccess, data } = useSignIn({
-    onSuccess: (signInData: UseSignInData) => {
-      if (signInData.fid && signInData.username && signInData.displayName && signInData.pfpUrl) {
+    onSuccess: (data) => {
+      if (data.fid && data.username && data.displayName && data.pfpUrl) {
         const userData: FarcasterUser = {
-          fid: signInData.fid,
-          username: signInData.username,
-          displayName: signInData.displayName,
-          pfp: signInData.pfpUrl,
+          fid: data.fid,
+          username: data.username,
+          displayName: data.displayName,
+          pfp: data.pfpUrl,
           isAuthenticated: true
         };
         setUser(userData);

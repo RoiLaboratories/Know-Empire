@@ -27,15 +27,13 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
 
     try {
       modalContext.open("loading-modal");
-      const success = await signIn();
       
-      if (success && isAuthenticated) {
-        modalContext.close("loading-modal");
-        modalContext.open("congrats-modal");
-        onSignIn();
-      } else {
-        modalContext.close("loading-modal");
-      }
+      // Trigger Farcaster sign-in
+      signIn();
+      
+      // Note: The success and user state will be handled by the onSuccess callback in useFarcasterAuth
+      // The isAuthenticated flag will update automatically when auth is successful
+      
     } catch (error) {
       console.error('Failed to sign in:', error);
       alert('Failed to sign in. Please try again.');
@@ -62,12 +60,25 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
         <Icon icon={ICON.CLOSE} />
       </button>
 
-      <Button 
-        className="font-medium w-24 drop-shadow-[0_4px_4px_rgb(65,65,65)]" 
-        onClick={handleSignIn}
-      >
-        Sign in
-      </Button>
+      {isAuthenticated ? (
+        <Button 
+          className="font-medium w-24 drop-shadow-[0_4px_4px_rgb(65,65,65)]"
+          onClick={() => {
+            modalContext?.close("loading-modal");
+            modalContext?.open("congrats-modal");
+            onSignIn();
+          }}
+        >
+          Continue
+        </Button>
+      ) : (
+        <Button 
+          className="font-medium w-24 drop-shadow-[0_4px_4px_rgb(65,65,65)]" 
+          onClick={handleSignIn}
+        >
+          Sign in
+        </Button>
+      )}
     </div>
   );
 }
