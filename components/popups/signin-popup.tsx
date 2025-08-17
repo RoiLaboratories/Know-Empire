@@ -7,7 +7,7 @@ import { useContext } from "react";
 import Modal, { ModalContext } from "../../context/ModalContext";
 import LoadingCard from "./loading-card";
 import CongratsPopup from "./congrats-popup";
-import { useFarcasterAuth } from "../../hooks/useFarcasterAuth";
+import { SignInButton } from '@farcaster/auth-kit';
 
 interface SigninPopupProps {
   onCloseModal?: () => void;
@@ -16,33 +16,26 @@ interface SigninPopupProps {
 
 function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
   const modalContext = useContext(ModalContext);
-  const { signIn, isAuthenticated } = useFarcasterAuth();
 
-  const handleSignIn = async () => {
-    console.log("Sign in button clicked");
+  const handleSuccess = async () => {
+    console.log("Sign in successful");
     if (!modalContext) {
       console.log("No modal context available");
       return;
     }
 
     try {
-      // First trigger Farcaster sign-in
-      const success = await signIn();
+      // Show loading modal
+      modalContext.open("loading-modal");
       
-      if (success) {
-        // Only show loading modal after auth is initiated
-        modalContext.open("loading-modal");
-        
-        // Wait for 5 seconds as specified
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        
-        modalContext.close("loading-modal");
-        modalContext.open("congrats-modal");
-        onSignIn();
-      }
+      // Wait for 5 seconds as specified
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      
+      modalContext.close("loading-modal");
+      modalContext.open("congrats-modal");
+      onSignIn();
     } catch (error) {
-      console.error('Failed to sign in:', error);
-      alert('Failed to sign in. Please try again.');
+      console.error('Failed to complete sign in flow:', error);
       modalContext.close("loading-modal");
     }
   };
@@ -66,25 +59,15 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
         <Icon icon={ICON.CLOSE} />
       </button>
 
-      {isAuthenticated ? (
-        <Button 
-          className="font-medium w-24 drop-shadow-[0_4px_4px_rgb(65,65,65)]"
-          onClick={() => {
-            modalContext?.close("loading-modal");
-            modalContext?.open("congrats-modal");
-            onSignIn();
+      <div className="font-medium w-24 drop-shadow-[0_4px_4px_rgb(65,65,65)]">
+        <SignInButton
+          onSuccess={handleSuccess}
+          onError={(error) => {
+            console.error('Failed to sign in:', error);
+            alert('Failed to sign in. Please try again.');
           }}
-        >
-          Continue
-        </Button>
-      ) : (
-        <Button 
-          className="font-medium w-24 drop-shadow-[0_4px_4px_rgb(65,65,65)]" 
-          onClick={handleSignIn}
-        >
-          Sign in
-        </Button>
-      )}
+        />
+      </div>
     </div>
   );
 }
