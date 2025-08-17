@@ -14,14 +14,14 @@ export function useFarcasterAuth() {
   const [user, setUser] = useState<FarcasterUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const { signIn: initiateSignIn, data } = useSignIn({
-    onSuccess: (data: UseSignInData) => {
-      if (data.fid && data.username && data.displayName && data.pfpUrl) {
+  const { signIn: initiateSignIn, isSuccess, data } = useSignIn({
+    onSuccess: (signInData: UseSignInData) => {
+      if (signInData.fid && signInData.username && signInData.displayName && signInData.pfpUrl) {
         const userData: FarcasterUser = {
-          fid: data.fid,
-          username: data.username,
-          displayName: data.displayName,
-          pfp: data.pfpUrl,
+          fid: signInData.fid,
+          username: signInData.username,
+          displayName: signInData.displayName,
+          pfp: signInData.pfpUrl,
           isAuthenticated: true
         };
         setUser(userData);
@@ -36,7 +36,7 @@ export function useFarcasterAuth() {
 
   const signIn = useCallback(async () => {
     try {
-      await initiateSignIn();
+      initiateSignIn();
       return true;
     } catch (error) {
       console.error('Farcaster authentication error:', error);

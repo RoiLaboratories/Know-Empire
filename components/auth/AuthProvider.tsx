@@ -5,10 +5,10 @@ import { optimism } from 'viem/chains';
 
 const config = {
   relay: 'https://relay.farcaster.xyz',
-  rpcUrl: 'https://mainnet.optimism.io',
   domain: process.env.NEXT_PUBLIC_URL as string,
   siweUri: process.env.NEXT_PUBLIC_URL as string,
   version: '1',
+  timeout: 30000,
   chain: optimism,
 };
 
