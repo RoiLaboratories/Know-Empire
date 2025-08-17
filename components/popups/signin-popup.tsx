@@ -61,29 +61,13 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
         <Icon icon={ICON.CLOSE} />
       </button>
 
-      <div className="relative">
-        <Button 
-          className="font-medium w-[200px] drop-shadow-[0_4px_4px_rgb(65,65,65)] flex items-center justify-center gap-2"
-        >
-          <Image
-            alt="farcaster-icon"
-            className="w-5 h-5"
-            width={20}
-            height={20}
-            src={Farcaster}
-          />
-          Sign in with Farcaster
-        </Button>
-        <div className="absolute inset-0">
-          <SignInButton
-            onSuccess={handleSuccess}
-            onError={(error) => {
-              console.error('Failed to sign in:', error);
-              alert('Failed to sign in. Please try again.');
-            }}
-          />
-        </div>
-      </div>
+      <SignInButton
+        onSuccess={handleSuccess}
+        onError={(error) => {
+          console.error('Failed to sign in:', error);
+          alert('Failed to sign in. Please try again.');
+        }}
+      />
     </div>
   );
 }
