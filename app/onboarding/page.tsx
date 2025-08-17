@@ -3,10 +3,10 @@ import React from 'react';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Onboarding from "../../components/onboarding/Onboarding";
-import { useAuth } from '@/context/AuthContext';
+import { useFarcasterContext } from '../../context/FarcasterAuthContext';
 
 function OnboardingLayout(): React.ReactElement {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useFarcasterContext();
   const router = useRouter();
 
   useEffect(() => {
