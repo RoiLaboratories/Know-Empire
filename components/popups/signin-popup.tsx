@@ -86,33 +86,37 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
         <Icon icon={ICON.CLOSE} />
       </button>
 
-      <div className="relative">
-        {/* Our styled button (visual only) */}
-        <div className="pointer-events-none">
-          <Button 
-            className="font-medium w-[200px] drop-shadow-[0_4px_4px_rgb(65,65,65)] flex items-center justify-center gap-2"
-          >
-            <Image
-              alt="farcaster-icon"
-              className="w-5 h-5"
-              width={20}
-              height={20}
-              src={Farcaster}
-            />
-            Sign in
-          </Button>
-        </div>
-        {/* The actual Farcaster SignInButton that handles the auth */}
-        <div className="absolute inset-0 opacity-0">
-          <SignInButton
-            onSuccess={(data) => {
-              console.log("Farcaster auth success:", data);
-            }}
-            onError={(error) => {
-              console.error("Farcaster auth error:", error);
-              modalContext?.close("loading-modal");
-            }}
+      <div className="relative inline-block">
+        {/* Custom styled button (visual only) */}
+        <Button 
+          variant="primary_gradient"
+          size="lg"
+          className="font-medium w-[200px] drop-shadow-[0_4px_4px_rgb(65,65,65)] flex items-center justify-center gap-2 pointer-events-none"
+        >
+          <Image
+            alt="farcaster-icon"
+            className="w-5 h-5"
+            width={20}
+            height={20}
+            src={Farcaster}
           />
+          Sign in with Farcaster
+        </Button>
+        
+        {/* The actual Farcaster SignInButton that handles the auth */}
+        <div className="absolute inset-0 w-full h-full cursor-pointer">
+          <div className="w-full h-full">
+            <SignInButton
+              onSuccess={(data) => {
+                console.log("Farcaster auth success:", data);
+                modalContext?.open("loading-modal");
+              }}
+              onError={(error) => {
+                console.error("Farcaster auth error:", error);
+                modalContext?.close("loading-modal");
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>
