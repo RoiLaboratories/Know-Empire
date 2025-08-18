@@ -1,7 +1,6 @@
 'use client';
 
 import { AuthKitProvider } from '@farcaster/auth-kit';
-import { createPublicClient, http } from 'viem';
 import { optimism } from 'viem/chains';
 
 // Configure the chain with an RPC URL
@@ -29,7 +28,8 @@ const config = {
   frameConfig: {
     version: 'vNext',
     projectId: process.env.NEXT_PUBLIC_PROJECT_ID
-  }
+  },
+  disableAnalytics: true // Disable Farcaster analytics
 };
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
