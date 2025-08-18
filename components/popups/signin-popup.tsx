@@ -21,51 +21,45 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
 
   useEffect(() => {
     setFrameReady();
-    
-    // Attempt automatic sign in
-    const attemptSignIn = async () => {
-      try {
-        modalContext?.open("loading-modal");
-        const result = await signIn();
-        
-        if (result) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          modalContext?.close("loading-modal");
-          modalContext?.open("congrats-modal");
-          onSignIn();
-        } else {
-          modalContext?.close("loading-modal");
-        }
-      } catch (error) {
-        console.error('Failed to complete sign in:', error);
-        modalContext?.close("loading-modal");
-      }
-    };
-    
-    attemptSignIn();
-  }, [modalContext, onSignIn, signIn]);
+  }, [setFrameReady]);
 
   const handleSuccess = async () => {
-    console.log("Manual sign in initiated");
+    console.log("Sign in initiated");
     if (!modalContext) {
       console.log("No modal context available");
       return;
     }
 
     try {
+      // Close any existing modals first
+      modalContext.close();
       modalContext.open("loading-modal");
-      
-      // Trigger SIWF authentication
-      const result = await signIn();
-      
-      if (result) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Set a timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        console.log("Sign in timed out");
         modalContext.close("loading-modal");
-        modalContext.open("congrats-modal");
-        onSignIn();
-      } else {
-        console.error('Authentication failed');
-        modalContext.close("loading-modal");
+      }, 30000); // 30 second timeout
+
+      try {
+        // Trigger SIWF authentication
+        const result = await signIn();
+
+        clearTimeout(timeoutId);
+
+        if (result) {
+          // Short delay to ensure the auth flow is complete
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          modalContext.close("loading-modal");
+          modalContext.open("congrats-modal");
+          onSignIn();
+        } else {
+          console.error('Authentication failed');
+          modalContext.close("loading-modal");
+        }
+      } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
       }
     } catch (error) {
       console.error('Failed to complete sign in flow:', error);
