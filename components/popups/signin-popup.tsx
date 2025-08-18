@@ -2,12 +2,13 @@ import Image from "next/image";
 import Farcaster from "../../assets/images/farcaster.png";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import Modal, { ModalContext } from "../../context/ModalContext";
 import LoadingCard from "./loading-card";
 import CongratsPopup from "./congrats-popup";
 import Button from "../../ui/Button";
-import { useMiniKit, useAuthenticate } from '@coinbase/onchainkit/minikit';
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
+import { SignInButton, useSignInMessage } from '@farcaster/auth-kit';
 
 interface SigninPopupProps {
   onCloseModal?: () => void;
@@ -17,55 +18,52 @@ interface SigninPopupProps {
 function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
   const modalContext = useContext(ModalContext);
   const { setFrameReady } = useMiniKit();
-  const { signIn } = useAuthenticate();
+  const { message, signature } = useSignInMessage();
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   useEffect(() => {
     setFrameReady();
   }, [setFrameReady]);
 
-  const handleSuccess = async () => {
-    console.log("Sign in initiated");
-    if (!modalContext) {
-      console.log("No modal context available");
-      return;
-    }
+  // This effect runs when we get a signature from Farcaster
+  useEffect(() => {
+    if (message && signature && !isAuthenticating) {
+      const verifySignature = async () => {
+        try {
+          setIsAuthenticating(true);
+          modalContext?.open("loading-modal");
 
-    try {
-      // Close any existing modals first
-      modalContext.close();
-      modalContext.open("loading-modal");
+          // Verify the signature with your backend
+          const response = await fetch('/api/auth/verify', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message,
+              signature,
+            }),
+          });
 
-      // Set a timeout to prevent infinite loading
-      const timeoutId = setTimeout(() => {
-        console.log("Sign in timed out");
-        modalContext.close("loading-modal");
-      }, 30000); // 30 second timeout
-
-      try {
-        // Trigger SIWF authentication
-        const result = await signIn();
-
-        clearTimeout(timeoutId);
-
-        if (result) {
-          // Short delay to ensure the auth flow is complete
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          modalContext.close("loading-modal");
-          modalContext.open("congrats-modal");
-          onSignIn();
-        } else {
-          console.error('Authentication failed');
-          modalContext.close("loading-modal");
+          if (response.ok) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            modalContext?.close("loading-modal");
+            modalContext?.open("congrats-modal");
+            onSignIn();
+          } else {
+            throw new Error('Failed to verify signature');
+          }
+        } catch (error) {
+          console.error('Failed to verify signature:', error);
+          modalContext?.close("loading-modal");
+        } finally {
+          setIsAuthenticating(false);
         }
-      } catch (error) {
-        clearTimeout(timeoutId);
-        throw error;
-      }
-    } catch (error) {
-      console.error('Failed to complete sign in flow:', error);
-      modalContext.close("loading-modal");
+      };
+
+      verifySignature();
     }
-  };
+  }, [message, signature, isAuthenticating, modalContext, onSignIn]);
 
   return (
     <div className="p-8 flex flex-col gap-4 justify-between bg-black text-white w-[300px] md:w-[355px] items-center rounded-2xl relative drop-shadow-[0_3px_3px_rgba(180,0,247,1)]">
@@ -88,19 +86,35 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
         <Icon icon={ICON.CLOSE} />
       </button>
 
-      <Button 
-        className="font-medium w-[200px] drop-shadow-[0_4px_4px_rgb(65,65,65)] flex items-center justify-center gap-2"
-        onClick={handleSuccess}
-      >
-        <Image
-          alt="farcaster-icon"
-          className="w-5 h-5"
-          width={20}
-          height={20}
-          src={Farcaster}
-        />
-        Sign in
-      </Button>
+      <div className="relative">
+        {/* Our styled button (visual only) */}
+        <div className="pointer-events-none">
+          <Button 
+            className="font-medium w-[200px] drop-shadow-[0_4px_4px_rgb(65,65,65)] flex items-center justify-center gap-2"
+          >
+            <Image
+              alt="farcaster-icon"
+              className="w-5 h-5"
+              width={20}
+              height={20}
+              src={Farcaster}
+            />
+            Sign in
+          </Button>
+        </div>
+        {/* The actual Farcaster SignInButton that handles the auth */}
+        <div className="absolute inset-0 opacity-0">
+          <SignInButton
+            onSuccess={(data) => {
+              console.log("Farcaster auth success:", data);
+            }}
+            onError={(error) => {
+              console.error("Farcaster auth error:", error);
+              modalContext?.close("loading-modal");
+            }}
+          />
+        </div>
+      </div>
     </div>
   );
 }
