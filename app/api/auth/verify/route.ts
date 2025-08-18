@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       
       if (!verification.success) {
         return NextResponse.json(
-          { error: 'Invalid signature' },
+          { error: 'Invalid Farcaster signature' },
           { status: 401 }
         );
       }
