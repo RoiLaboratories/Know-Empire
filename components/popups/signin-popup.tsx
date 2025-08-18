@@ -8,7 +8,7 @@ import LoadingCard from "./loading-card";
 import CongratsPopup from "./congrats-popup";
 import Button from "../../ui/Button";
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
-import { SignInButton, type StatusAPIResponse } from '@farcaster/auth-kit';
+import { sdk } from '@farcaster/miniapp-sdk';
 
 interface SigninPopupProps {
   onCloseModal?: () => void;
@@ -45,63 +45,60 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
         <Icon icon={ICON.CLOSE} />
       </button>
 
-      <div className="relative">
-        {/* Our styled button (visual only) */}
-        <div className="pointer-events-none">
-          <Button 
-            className="font-medium w-[200px] drop-shadow-[0_4px_4px_rgb(65,65,65)] flex items-center justify-center gap-2"
-          >
-            <Image
-              alt="farcaster-icon"
-              className="w-5 h-5"
-              width={20}
-              height={20}
-              src={Farcaster}
-            />
-            Sign in
-          </Button>
-        </div>
-        {/* The actual Farcaster SignInButton that handles the auth */}
-        <div className="absolute inset-0 opacity-0">
-          <SignInButton
-            onSuccess={async (data: StatusAPIResponse) => {
-              console.log("Farcaster auth success:", data);
-              // Show loading state
-              modalContext?.open("loading-modal");
-              
-              try {
-                // Verify the auth with your backend
-                const response = await fetch('/api/auth/verify', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    message: data.message,
-                    signature: data.signature,
-                    nonce: data.nonce,
-                  }),
-                });
+      <Button 
+        className="font-medium w-[200px] drop-shadow-[0_4px_4px_rgb(65,65,65)] flex items-center justify-center gap-2"
+        onClick={async () => {
+          try {
+            modalContext?.open("loading-modal");
+            
+            // Generate a nonce
+            const nonce = crypto.randomUUID();
+            
+            // Trigger Farcaster sign in
+            const authData = await sdk.actions.signIn({ 
+              nonce,
+              acceptAuthAddress: true
+            });
 
-                if (response.ok) {
-                  modalContext?.close("loading-modal");
-                  modalContext?.open("congrats-modal");
-                  onSignIn();
-                } else {
-                  throw new Error('Verification failed');
-                }
-              } catch (error) {
-                console.error('Auth verification error:', error);
-                modalContext?.close("loading-modal");
-              }
-            }}
-            onError={(error) => {
-              console.error("Farcaster auth error:", error);
+            if (!authData) {
+              throw new Error('No auth data received');
+            }
+
+            // Verify with our backend
+            const response = await fetch('/api/auth/verify', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                message: authData.message,
+                signature: authData.signature,
+                nonce: nonce,
+              }),
+            });
+
+            if (response.ok) {
               modalContext?.close("loading-modal");
-            }}
-          />
-        </div>
-      </div>
+              modalContext?.open("congrats-modal");
+              onSignIn();
+            } else {
+              throw new Error('Verification failed');
+            }
+          } catch (error) {
+            console.error('Auth error:', error);
+            modalContext?.close("loading-modal");
+          }
+        }}
+      >
+        <Image
+          alt="farcaster-icon"
+          className="w-5 h-5"
+          width={20}
+          height={20}
+          src={Farcaster}
+        />
+        Sign in
+      </Button>
     </div>
   );
 }
