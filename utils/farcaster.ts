@@ -1,5 +1,9 @@
 import { sdk } from '@farcaster/miniapp-sdk';
 
-// The Farcaster miniapp SDK automatically initializes itself
-// and uses the current window location for the domain
-export const farcasterClient = sdk;
+// Export the sdk for use in components
+export { sdk };
+
+// Helper function to generate nonce
+export function generateNonce(): string {
+  return crypto.randomUUID();
+}

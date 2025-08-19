@@ -8,7 +8,7 @@ import LoadingCard from "./loading-card";
 import CongratsPopup from "./congrats-popup";
 import Button from "../../ui/Button";
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
-import { sdk } from '@farcaster/miniapp-sdk';
+import { sdk, generateNonce } from '@/utils/farcaster';
 
 interface SigninPopupProps {
   onCloseModal?: () => void;
@@ -52,8 +52,8 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
             setIsAuthenticating(true);
             modalContext?.open("loading-modal");
             
-            // Generate a nonce
-            const nonce = crypto.randomUUID();
+            // Generate a new nonce for this sign-in attempt
+            const nonce = generateNonce();
             
             // Trigger Farcaster sign in using miniapp SDK
             const result = await sdk.actions.signIn({
