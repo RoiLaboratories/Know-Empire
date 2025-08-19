@@ -2,7 +2,7 @@
 
 import { ReactNode } from 'react';
 
-// This provider is no longer needed as we're using @farcaster/miniapp-sdk directly
+// Simple pass-through provider since we're using Farcaster SDK directly
 export function MiniKitContextProvider({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
