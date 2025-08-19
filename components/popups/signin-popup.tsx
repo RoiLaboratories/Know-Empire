@@ -56,36 +56,38 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
             const nonce = crypto.randomUUID();
             
             // Trigger Farcaster sign in using miniapp SDK
-            const result = await sdk.actions.signIn({ 
+            const result = await sdk.actions.signIn({
               nonce,
               acceptAuthAddress: true,
             });
 
             if (!result) {
-              throw new Error('Authentication failed');
+              throw new Error('Sign in failed');
             }
 
-            // Verify with our backend
-            const verifyResponse = await fetch('/api/auth/verify', {
+            const { signature, message } = result;
+            
+            // Send to your backend for verification
+            const response = await fetch('/api/auth/verify', {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                message: result.message,
-                signature: result.signature,
-                nonce: nonce,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                signature,
+                message,
+                nonce,
               }),
             });
 
-            if (!verifyResponse.ok) {
-              throw new Error('Verification failed');
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Failed to verify signature');
             }
 
+            // Success! Close loading modal and show congrats
             modalContext?.close("loading-modal");
             modalContext?.open("congrats-modal");
             onSignIn();
-          } catch (error) {
+          } catch (error: any) {
             console.error('Auth error:', error);
             modalContext?.close("loading-modal");
           } finally {
