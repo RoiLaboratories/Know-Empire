@@ -56,8 +56,8 @@ function Onboarding() {
     }
   };
 
-  // Handle marketplace entry with Farcaster auth
-  const handleMarketplaceEnter = async () => {
+  // Start Farcaster authentication process
+  const startAuthentication = async () => {
     try {
       if (modalContext) {
         modalContext.open("loading-modal");
@@ -105,15 +105,30 @@ function Onboarding() {
         throw new Error(errorData.error || 'Failed to verify signature');
       }
 
-      // Success! Navigate to marketplace
-      router.push("/marketplace");
-
     } catch (error) {
       console.error('Auth error:', error);
       if (modalContext) {
         modalContext.close("loading-modal");
       }
+      throw error;
     }
+  };
+
+  // Handle the Enter Marketplace button click
+  const handleMarketplaceEnter = async () => {
+    try {
+      await startAuthentication();
+    } catch (error) {
+      console.error('Marketplace entry error:', error);
+    }
+  };
+
+  // Handle final marketplace entry after congrats
+  const handleFinalEntry = () => {
+    if (modalContext) {
+      modalContext.close("congrats-modal");
+    }
+    router.push("/marketplace");
   };
 
   if (isLoading) {
@@ -192,7 +207,7 @@ function Onboarding() {
       </Modal.Window>
 
       <Modal.Window name="congrats-modal" showBg={false}>
-        <CongratsPopup onEnterMarketplace={handleMarketplaceEnter} />
+        <CongratsPopup onEnterMarketplace={handleFinalEntry} />
       </Modal.Window>
     </Modal>
   );
