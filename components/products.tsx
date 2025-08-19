@@ -4,20 +4,29 @@ import Phone from "../assets/images/prod1.png";
 import Pc from "../assets/images/prod2.png";
 import Modal from "../context/ModalContext";
 
+// name: string;
+// productId: string;
+// img: string;
+// quantity: number;
+// unitPrice: number;
+// totalPrice: number;
+
 const products = [
   {
     name: "Iphone 15 Pro max Black | 1TB",
-    price: "999",
+    unitPrice: 999,
     img: Phone,
     location: "United States",
     seller: "TechSeller",
+    productId: 1,
   },
   {
     name: "Asus Geoforce- RX 4080",
-    price: "1,299",
+    unitPrice: 1299,
     img: Pc,
     location: "United States",
     seller: "TechSeller",
+    productId: 2,
   },
 ];
 

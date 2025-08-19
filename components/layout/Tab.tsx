@@ -7,6 +7,7 @@ import Link from "next/link";
 interface ITab {
   name: string;
   description: string;
+  showRoutes?: boolean;
 }
 
 const tabs = [
@@ -15,7 +16,7 @@ const tabs = [
   { title: "Top", icon: ICON.ORGANISATION, link: "/leaderboard" },
 ];
 
-function Tab({ name, description }: ITab) {
+function Tab({ name, description, showRoutes = true }: ITab) {
   const pathname = usePathname();
 
   const excludeRoutes = ["/marketplace/sell"];
@@ -28,7 +29,11 @@ function Tab({ name, description }: ITab) {
       </div>
       {/*routes */}
       {!excludeRoutes.includes(pathname) && (
-        <div className="flex justify-between items-center gap-x-2 text-sm mx-auto">
+        <div
+          className={`flex justify-between items-center gap-x-2 text-sm mx-auto ${
+            showRoutes ? "block" : "hidden"
+          }`}
+        >
           {tabs.map(({ title, icon, link }, i) => (
             <Link
               key={i}

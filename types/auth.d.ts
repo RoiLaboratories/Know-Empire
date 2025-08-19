@@ -14,3 +14,9 @@ declare interface ListingInput {
   delivery: string;
   photos: [];
 }
+
+declare interface DisputeInput {
+  reason: string;
+  details: string;
+  photos: [];
+}

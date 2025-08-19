@@ -1,3 +1,4 @@
+import { CartProvider } from "../providers/cart";
 import "../styles/global.css";
 import { ReactNode } from "react";
 
@@ -12,7 +13,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`antialiased min-h-screen `}>{children}</body>
+      <body className={`antialiased min-h-screen `}>
+        <CartProvider>{children}</CartProvider>
+      </body>
     </html>
   );
 }

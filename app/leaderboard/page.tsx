@@ -65,7 +65,7 @@ const leaders = [
 
 function LeaderBoard() {
   return (
-    <section className="flex flex-col items-center justify-center min-h-screen pb-3">
+    <section className="flex flex-col items-center  min-h-screen pb-3">
       <div className="w-9/10 max-w-lg flex flex-col gap-y-1">
         <div className="sticky top-0 space-y-3 bg-background py-3">
           <BackButton />

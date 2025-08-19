@@ -10,6 +10,7 @@ import { ICON } from "../../utils/icon-export";
 import Image from "next/image";
 import Modal, { ModalContext } from "../../context/ModalContext";
 import GenericPopup from "../popups/generic-popup";
+import InputTextArea from "./InputTextArea";
 
 function ListingForm() {
   const [previews, setPreviews] = useState<string[]>([]);
@@ -153,11 +154,10 @@ function ListingForm() {
           error={Boolean(formik.errors.title && formik.touched.title)}
           errorMessage={formik.errors.title}
         />
-        <InputField
+        <InputTextArea
           config={{
             placeholder:
               "Detailed description of your product, condition, specification...",
-            type: "text",
             name: "description",
             value: formik.values.description,
             onChange: formik.handleChange,
@@ -195,11 +195,11 @@ function ListingForm() {
           error={Boolean(formik.errors.country && formik.touched.country)}
           errorMessage={formik.errors.country}
         />
-        <InputField
+
+        <InputTextArea
           config={{
             placeholder:
               "Shipping method, estimated delivery time, special instructions...",
-            type: "text",
             name: "delivery",
             value: formik.values.delivery,
             onChange: formik.handleChange,

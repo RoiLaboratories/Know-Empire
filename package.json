@@ -26,7 +26,7 @@
   "name": "know_empire",
   "private": true,
   "scripts": {
-    "build": "next build",
+    "build": "next dev --turbopack",
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start"

@@ -75,7 +75,17 @@ function Open({ children, opens: opensWindowName }: Open) {
   }
   const { open } = context;
 
-  return cloneElement(children, { onClick: () => open(opensWindowName) });
+  // return cloneElement(children, { onClick: () => open(opensWindowName) });
+  const childElement = children as React.ReactElement<any>;
+
+  return cloneElement(childElement, {
+    onClick: (e: React.MouseEvent) => {
+      if (childElement.props?.onClick) {
+        childElement.props.onClick(e);
+      }
+      open(opensWindowName);
+    },
+  });
 }
 
 interface Window {
