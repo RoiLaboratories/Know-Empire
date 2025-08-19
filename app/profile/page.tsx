@@ -8,21 +8,106 @@ import Verified from "../../assets/icons/verified.svg";
 import ReviewsCard from "../../components/cards/ReviewsCard";
 import BackButton from "../../ui/BackButton";
 import { useFarcasterAuth } from "@/hooks/useFarcasterAuth";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import Modal from "../../context/ModalContext";
 import GenericPopup from "../../components/popups/generic-popup";
 import ReferralPopup from "../../components/popups/referral-link-popup";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { supabase } from "@/utils/supabase";
+
+interface User {
+  id: string;
+  fid: string;
+  username: string;
+  display_name: string;
+  avatar_url: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Aliases for UI display to match Farcaster naming
+const mapUserForDisplay = (user: User) => ({
+  ...user,
+  displayName: user.display_name,
+  pfp: user.avatar_url,
+});
 
 function Profile() {
-  const { user, loading, signOut } = useFarcasterAuth();
   const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push("/");
     }
   }, [loading, user, router]);
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        // Get user data from Farcaster Frame context
+        const frameContext = window.parent.location.search;
+        const params = new URLSearchParams(frameContext);
+        const fid = params.get("fid");
+
+        if (!fid) {
+          console.error("No FID found in Frame context");
+          router.push("/");
+          return;
+        }
+
+        // Fetch user data from Supabase
+        const { data: dbUser, error } = await supabase
+          .from("users")
+          .select("*")
+          .eq("fid", fid)
+          .single();
+
+        if (error && error.code !== "PGRST116") {
+          console.error("Error fetching user data:", error);
+          // If user doesn't exist in DB yet, we'll create them
+          const response = await fetch("/api/auth/farcaster/user", {
+            method: "GET",
+            headers: {
+              fid: fid,
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error("Failed to fetch Farcaster user data");
+          }
+
+          const farcasterUser = await response.json();
+
+          // Create user in Supabase
+          const { data: newUser, error: createError } = await supabase
+            .from("users")
+            .insert({
+              fid: fid,
+              username: farcasterUser.username,
+              display_name: farcasterUser.displayName,
+              avatar_url: farcasterUser.pfp,
+            })
+            .select()
+            .single();
+
+          if (createError) throw createError;
+          setUser(newUser);
+        } else {
+          setUser(dbUser);
+        }
+
+        setLoading(false);
+      } catch (error) {
+        console.error("Error loading user data:", error);
+        setLoading(false);
+        router.push("/");
+      }
+    };
+
+    loadUserData();
+  }, [router]);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -63,8 +148,8 @@ function Profile() {
 
           <div className="absolute rounded-full size-24 border-3 border-white bottom-0 translate-y-1/2">
             <Image
-              alt={user.displayName || "User profile"}
-              src={user.pfp}
+              alt={mapUserForDisplay(user).displayName || "User profile"}
+              src={mapUserForDisplay(user).pfp}
               width={96}
               height={96}
               className="w-full h-full object-cover rounded-full"
@@ -75,7 +160,9 @@ function Profile() {
         {/*user details */}
         <div className="px-5 py-12 bg-white space-y-3">
           <div className="space-y-1">
-            <p className="font-bold text-2xl">{user.displayName}</p>
+            <p className="font-bold text-2xl">
+              {mapUserForDisplay(user).displayName}
+            </p>
 
             <div className="text-sm text-[#5a5a5a] font-medium space-y-1">
               <p>@{user.username}</p>

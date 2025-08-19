@@ -9,12 +9,12 @@ import Modal from "../../context/ModalContext";
 import { useCart } from "../../providers/cart";
 
 interface PProps {
-  img: StaticImageData;
+  img: string | StaticImageData;
   location: string;
   name: string;
   seller: string;
   unitPrice: number;
-  productId: number;
+  productId: string;
   photos?: string[]; // Array of image URLs from Supabase
 }
 

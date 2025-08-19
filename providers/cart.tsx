@@ -11,8 +11,8 @@ import {
 
 interface CartItem {
   name: string;
-  productId: number;
-  img: StaticImageData;
+  productId: string;
+  img: string |  StaticImageData;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -25,9 +25,9 @@ interface CartContextType {
     total: number;
   };
   addToCart: (item: CartItem) => void;
-  removeFromCart: (productId: number) => void;
-  incQuantity: (productId: number) => void;
-  decQuantity: (productId: number) => void;
+  removeFromCart: (productId: string) => void;
+  incQuantity: (productId: string) => void;
+  decQuantity: (productId: string) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -75,7 +75,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   };
 
   //remove item from cart
-  const removeFromCart = (productId: number) => {
+  const removeFromCart = (productId: string) => {
     setCart((prevCart) => {
       const updatedCart = prevCart.filter(
         (item) => item.productId !== productId
@@ -87,7 +87,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   };
 
   //update quantity of item in cart
-  const incQuantity = (productId: number) => {
+  const incQuantity = (productId: string) => {
     setCart((prevCart) => {
       const updatedCart = prevCart.map((item) =>
         item.productId === productId
@@ -104,7 +104,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     });
   };
 
-  const decQuantity = (productId: number) => {
+  const decQuantity = (productId: string) => {
     setCart((prevCart) => {
       const updatedCart = prevCart
         .map((item) =>

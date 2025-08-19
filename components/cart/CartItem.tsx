@@ -5,10 +5,10 @@ import UpdateQuantity from "../UpdateQuantity";
 import { formatCurrency } from "../../utils/helpers";
 
 interface CProps {
-  img: StaticImageData;
+  img: string | StaticImageData;
   name: string;
   unitPrice: number;
-  productId: number;
+  productId: string;
   quantity: number;
 }
 

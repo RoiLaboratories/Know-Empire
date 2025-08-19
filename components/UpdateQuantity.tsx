@@ -8,7 +8,7 @@ function UpdateQuantity({
   itemId,
 }: {
   quantity: number;
-  itemId: number;
+  itemId: string;
 }) {
   const { incQuantity, decQuantity } = useCart();
 

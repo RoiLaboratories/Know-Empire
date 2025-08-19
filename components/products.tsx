@@ -4,13 +4,26 @@ import ProductCard from "./cards/ProductCard";
 import Session from "./Session";
 import Phone from "../assets/images/prod1.png"; // Fallback image
 import Modal from "../context/ModalContext";
+import { StaticImageData } from "next/image";
 
-// name: string;
-// productId: string;
-// img: string;
-// quantity: number;
-// unitPrice: number;
-// totalPrice: number;
+// const products = [
+//   {
+//     name: "Iphone 15 Pro max Black | 1TB",
+//     unitPrice: 999,
+//     img: Phone,
+//     location: "United States",
+//     seller: "TechSeller",
+//     productId: 1,
+//   },
+//   {
+//     name: "Asus Geoforce- RX 4080",
+//     unitPrice: 1299,
+//     img: Pc,
+//     location: "United States",
+//     seller: "TechSeller",
+//     productId: 2,
+//   },
+// ];
 
 interface Product {
   id: string;
@@ -53,24 +66,6 @@ function useProducts() {
 
   return { products, loading, error };
 }
-const products = [
-  {
-    name: "Iphone 15 Pro max Black | 1TB",
-    unitPrice: 999,
-    img: Phone,
-    location: "United States",
-    seller: "TechSeller",
-    productId: 1,
-  },
-  {
-    name: "Asus Geoforce- RX 4080",
-    unitPrice: 1299,
-    img: Pc,
-    location: "United States",
-    seller: "TechSeller",
-    productId: 2,
-  },
-];
 
 function Products() {
   const { products, loading, error } = useProducts();
@@ -91,8 +86,9 @@ function Products() {
             <ProductCard
               key={product.id}
               product={{
+                productId: product.id,
                 name: product.title,
-                price: product.price.toString(),
+                unitPrice: product.price,
                 img: product.photos[0] || Phone,
                 location: product.country,
                 seller: product.seller.farcaster_username,
