@@ -13,6 +13,7 @@ declare interface ListingInput {
   price: number;
   delivery: string;
   photos: [];
+  category: string;
 }
 
 declare interface DisputeInput {

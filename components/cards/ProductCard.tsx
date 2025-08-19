@@ -15,6 +15,7 @@ interface PProps {
   seller: string;
   unitPrice: number;
   productId: number;
+  photos?: string[]; // Array of image URLs from Supabase
 }
 
 function ProductCard({ product }: { product: PProps }) {
@@ -37,9 +38,11 @@ function ProductCard({ product }: { product: PProps }) {
     <li className="flex flex-col p-1.5 gap-1 rounded-md border border-gray-medium">
       <div className="h-28 bg-gray-medium aspect-square rounded-md">
         <Image
-          alt="phone"
-          src={img}
-          placeholder="blur"
+          alt={product.name}
+          src={product.photos?.[0] || img}
+          width={112}
+          height={112}
+          placeholder={typeof product.img !== "string" ? "blur" : "empty"}
           className="w-full h-full object-contain"
         />
       </div>

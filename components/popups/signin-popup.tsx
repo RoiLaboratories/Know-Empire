@@ -1,12 +1,13 @@
 import Image from "next/image";
 import Farcaster from "../../assets/images/farcaster.png";
-import Button from "../../ui/Button";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
-import { useContext } from "react";
+import { useContext, useEffect, useState, useCallback } from "react";
 import Modal, { ModalContext } from "../../context/ModalContext";
 import LoadingCard from "./loading-card";
 import CongratsPopup from "./congrats-popup";
+import Button from "../../ui/Button";
+import { sdk } from '@/utils/farcaster';
 
 interface SigninPopupProps {
   onCloseModal?: () => void;
@@ -15,37 +16,22 @@ interface SigninPopupProps {
 
 function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
   const modalContext = useContext(ModalContext);
-
-  const handleSignIn = () => {
-    console.log("Sign in button clicked");
-    if (!modalContext) {
-      console.log("No modal context available");
-      return;
-    }
-
-    // Open loading modal immediately
-    modalContext.open("loading-modal");
-    
-    // After 5 seconds, show congrats
-    setTimeout(() => {
-      modalContext.close(); // Close signin modal
-      modalContext.close(); // Close loading modal
-      modalContext.open("congrats-modal");
-    }, 5000);
-  };
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   return (
     <div className="p-8 flex flex-col gap-4 justify-between bg-black text-white w-[300px] md:w-[355px] items-center rounded-2xl relative drop-shadow-[0_3px_3px_rgba(180,0,247,1)]">
-      <Image
-        alt="farcaster-logo"
-        className="object-cover"
-        width={80}
-        height={74}
-        src={Farcaster}
-      />
-      <p className="font-medium text-sm sm:text-lg md:text-xl text-center">
-        Sign in with Farcaster to continue to marketplace
-      </p>
+      <div className="flex flex-col items-center gap-6">
+        <Image
+          alt="farcaster-logo"
+          className="object-cover"
+          width={80}
+          height={74}
+          src={Farcaster}
+        />
+        <p className="font-medium text-sm sm:text-lg md:text-xl text-center">
+          Sign in with Farcaster to continue to marketplace
+        </p>
+      </div>
       <button
         className="rounded-full text-gray p-1 text-xs bg-white absolute top-5 left-5 cursor-pointer"
         onClick={onCloseModal}
@@ -54,9 +40,71 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
       </button>
 
       <Button 
-        className="font-medium w-24 drop-shadow-[0_4px_4px_rgb(65,65,65)]" 
-        onClick={handleSignIn}
+        className="font-medium w-[200px] drop-shadow-[0_4px_4px_rgb(65,65,65)] flex items-center justify-center gap-2"
+        onClick={async () => {
+          try {
+            setIsAuthenticating(true);
+            modalContext?.open("loading-modal");
+            
+            // Create an auth channel and get the sign in URL
+            const { data: channel } = await sdk.createChannel({
+              siweUri: window.location.origin + '/api/auth/verify',
+              domain: window.location.host,
+            });
+
+            // Start watching for the user's response
+            const { data: authData } = await sdk.watchStatus({
+              channelToken: channel.channelToken,
+              timeout: 300_000, // 5 minutes
+              onResponse: ({ data }) => {
+                if (data.state === 'completed') {
+                  modalContext?.close("loading-modal");
+                }
+              }
+            });
+
+            if (!authData || authData.state !== 'completed' || !authData.message || !authData.signature) {
+              throw new Error('Authentication not completed');
+            }
+
+            const { message, signature, fid } = authData;
+            
+            // Send to your backend for verification
+            const response = await fetch('/api/auth/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                signature,
+                message,
+                fid,
+              }),
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Failed to verify signature');
+            }
+
+            // Success! Show congrats
+            modalContext?.close("loading-modal");
+            modalContext?.open("congrats-modal");
+            onSignIn();
+          } catch (error: any) {
+            console.error('Auth error:', error);
+            modalContext?.close("loading-modal");
+          } finally {
+            setIsAuthenticating(false);
+          }
+        }}
+        disabled={isAuthenticating}
       >
+        <Image
+          alt="farcaster-icon"
+          className="w-5 h-5"
+          width={20}
+          height={20}
+          src={Farcaster}
+        />
         Sign in
       </Button>
     </div>

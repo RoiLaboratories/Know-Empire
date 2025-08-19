@@ -14,6 +14,7 @@ export const LIST_SCHEMA = Yup.object({
   price: Yup.number().required("price is required"),
   country: Yup.string().required("country is required"),
   delivery: Yup.string().required("delivery address is required"),
+  category: Yup.string().required("category is required"),
   photos: Yup.array()
     .of(Yup.string())
     .min(1, "At least one image is required")
