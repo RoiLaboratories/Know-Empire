@@ -5,10 +5,10 @@ import Step2 from "./steps/step2";
 import Step3 from "./steps/step3";
 import Button from "../../ui/Button";
 import Modal, { ModalContext } from "../../context/ModalContext";
-import SigninPopup from "../popups/signin-popup";
 import CongratsPopup from "../popups/congrats-popup";
 import LoadingCard from "../popups/loading-card";
 import { motion, easeOut, stagger } from "motion/react";
+import { sdk } from '@/utils/farcaster';
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import Image from "next/image";
@@ -49,34 +49,70 @@ function Onboarding() {
   const next = () => setStep((prev) => Math.min(prev + 1, stepsContent - 1));
   const isLastStep = step === stepsContent - 1;
 
-  // Called when user clicks Enter Marketplace on last step
+  // Called when user clicks next on non-final steps
   const handleNext = () => {
     if (!isLastStep) {
       next();
     }
   };
 
-  // Called when user closes signin popup
-  const handleSigninClose = () => {
-    if (modalContext) {
-      modalContext.close();
-    }
-  };
+  // Handle marketplace entry with Farcaster auth
+  const handleMarketplaceEnter = async () => {
+    try {
+      if (modalContext) {
+        modalContext.open("loading-modal");
+      }
 
-  const handleSignIn = () => {
-    if (modalContext) {
-      modalContext.open("loading-modal");
-      setTimeout(() => {
-        modalContext.close(); // Close loading modal
-        modalContext.open("congrats-modal");
-      }, 5000);
-    }
-  };
+      // Create an auth channel and get the sign in URL
+      const { data: channel } = await sdk.createChannel({
+        siweUri: window.location.origin + '/api/auth/verify',
+        domain: window.location.host,
+      });
 
-  const handleMarketplaceEnter = () => {
-    if (modalContext) {
-      modalContext.close();
+      // Start watching for the user's response
+      const { data: authData } = await sdk.watchStatus({
+        channelToken: channel.channelToken,
+        timeout: 300_000, // 5 minutes
+        onResponse: ({ data }) => {
+          if (data.state === 'completed') {
+            if (modalContext) {
+              modalContext.close("loading-modal");
+              modalContext.open("congrats-modal");
+            }
+          }
+        }
+      });
+
+      if (!authData || authData.state !== 'completed' || !authData.message || !authData.signature) {
+        throw new Error('Authentication not completed');
+      }
+
+      const { message, signature, fid } = authData;
+      
+      // Send to backend for verification
+      const response = await fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          signature,
+          message,
+          fid,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to verify signature');
+      }
+
+      // Success! Navigate to marketplace
       router.push("/marketplace");
+
+    } catch (error) {
+      console.error('Auth error:', error);
+      if (modalContext) {
+        modalContext.close("loading-modal");
+      }
     }
   };
 
@@ -121,19 +157,18 @@ function Onboarding() {
                 </p>
               </motion.div>
 
-              <Modal.Open opens="signin-modal">
-                <motion.button
-                  variants={item}
-                  initial={{ opacity: 0, x: -100 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="text-white rounded bg-primary flex justify-center gap-x-1 items-center text-xs font-bold py-2 px-5 drop-shadow-dark btn pulse-on-hover"
-                >
-                  Enter marketplace
-                  <Icon icon={ICON.ARROW_CIRCLE_RIGHT} className="" />
-                </motion.button>
-              </Modal.Open>
+              <motion.button
+                onClick={handleMarketplaceEnter}
+                variants={item}
+                initial={{ opacity: 0, x: -100 }}
+                animate={{ opacity: 1, x: 0 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="text-white rounded bg-primary flex justify-center gap-x-1 items-center text-xs font-bold py-2 px-5 drop-shadow-dark btn pulse-on-hover"
+              >
+                Enter marketplace
+                <Icon icon={ICON.ARROW_CIRCLE_RIGHT} className="" />
+              </motion.button>
             </motion.div>
 
             <motion.div
@@ -152,27 +187,12 @@ function Onboarding() {
       </div>
 
       {/* Modal Windows */}
-      <Modal.Window name="signin-modal" showBg={false}>
-        <SigninPopup 
-          onSignIn={handleSignIn}
-          onCloseModal={() => {
-            console.log("Closing signin modal");
-            if (modalContext) modalContext.close();
-          }} 
-        />
-      </Modal.Window>
-      
       <Modal.Window name="loading-modal" showBg={false}>
         <LoadingCard message="Signing you in..." />
       </Modal.Window>
-      
+
       <Modal.Window name="congrats-modal" showBg={false}>
-        <CongratsPopup onCloseModal={() => {
-          if (modalContext) {
-            modalContext.close();
-            router.push("/marketplace");
-          }
-        }} />
+        <CongratsPopup onEnterMarketplace={handleMarketplaceEnter} />
       </Modal.Window>
     </Modal>
   );
