@@ -46,20 +46,28 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
             setIsAuthenticating(true);
             modalContext?.open("loading-modal");
             
-            // Generate a new nonce for this sign-in attempt
-            const nonce = crypto.randomUUID();
-            
-            // Trigger Farcaster sign in using miniapp SDK
-            const result = await sdk.actions.signIn({
-              nonce,
-              acceptAuthAddress: true,
+            // Create an auth channel and get the sign in URL
+            const { data: channel } = await sdk.createChannel({
+              siweUri: window.location.origin + '/api/auth/verify',
+              domain: window.location.host,
             });
 
-            if (!result) {
-              throw new Error('Sign in failed');
+            // Start watching for the user's response
+            const { data: authData } = await sdk.watchStatus({
+              channelToken: channel.channelToken,
+              timeout: 300_000, // 5 minutes
+              onResponse: ({ data }) => {
+                if (data.state === 'completed') {
+                  modalContext?.close("loading-modal");
+                }
+              }
+            });
+
+            if (!authData || authData.state !== 'completed' || !authData.message || !authData.signature) {
+              throw new Error('Authentication not completed');
             }
 
-            const { signature, message } = result;
+            const { message, signature, fid } = authData;
             
             // Send to your backend for verification
             const response = await fetch('/api/auth/verify', {
@@ -68,7 +76,7 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
               body: JSON.stringify({ 
                 signature,
                 message,
-                nonce,
+                fid,
               }),
             });
 
@@ -77,7 +85,7 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
               throw new Error(errorData.error || 'Failed to verify signature');
             }
 
-            // Success! Close loading modal and show congrats
+            // Success! Show congrats
             modalContext?.close("loading-modal");
             modalContext?.open("congrats-modal");
             onSignIn();

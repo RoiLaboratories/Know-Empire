@@ -1,4 +1,7 @@
-import { sdk } from '@farcaster/miniapp-sdk';
+import { createAppClient, viemConnector } from '@farcaster/auth-client';
 
-// Export the sdk for use in components
-export { sdk };
+// Create SDK instance with options
+export const sdk = createAppClient({
+  ethereum: viemConnector(),
+  relay: 'https://relay.farcaster.xyz',
+});
