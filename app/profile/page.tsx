@@ -9,17 +9,49 @@ import ReviewsCard from "../../components/cards/ReviewsCard";
 import BackButton from "../../ui/BackButton";
 import { useFarcasterAuth } from '@/hooks/useFarcasterAuth';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/utils/supabase';
 
 function Profile() {
-  const { user, loading, signOut } = useFarcasterAuth();
+  const { user: initialUser, loading, signOut } = useFarcasterAuth();
+  const [user, setUser] = useState(initialUser);
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/');
-    }
-  }, [loading, user, router]);
+    setUser(initialUser);
+  }, [initialUser]);
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (!loading && user?.fid) {
+        try {
+          // Try to fetch any additional user data from Supabase
+          const { data: dbUser, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('fid', user.fid.toString())
+            .single();
+
+          if (error) {
+            console.error('Error fetching user data:', error);
+          } else if (dbUser) {
+            // Merge database user data with Farcaster data
+            setUser({
+              ...user,
+              id: dbUser.id,
+              // Add any additional fields from Supabase here
+            });
+          }
+        } catch (error) {
+          console.error('Error loading user data:', error);
+        }
+      } else if (!loading && !user) {
+        router.push('/');
+      }
+    };
+
+    loadUserData();
+  }, [loading, user?.fid, router]);
 
   if (loading) {
     return <div>Loading...</div>;
