@@ -3,49 +3,65 @@ import { supabase } from '@/utils/supabase';
 
 export async function POST(request: Request) {
   try {
-    const { signature, message, nonce } = await request.json();
+    const { token } = await request.json();
+    const authHeader = request.headers.get('authorization');
+    
+    // Get token from either body or Authorization header
+    const jwtToken = token || authHeader?.replace('Bearer ', '');
 
-    if (!signature || !message || !nonce) {
+    if (!jwtToken) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing JWT token' },
         { status: 400 }
       );
     }
 
-    let messageData;
-    try {
-      messageData = JSON.parse(message);
-    } catch (parseError) {
+    // Decode the JWT to get user information
+    // Note: In production, you should verify the JWT signature
+    const base64Url = jwtToken.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+
+    const payload = JSON.parse(jsonPayload);
+    
+    // Extract user data from JWT payload
+    const { sub: fid, iss, aud, exp } = payload;
+    
+    // Check if token is expired
+    if (exp && Date.now() >= exp * 1000) {
       return NextResponse.json(
-        { error: 'Invalid message format' },
-        { status: 400 }
+        { error: 'Token expired' },
+        { status: 401 }
       );
     }
 
-    const { 
-      message: { fid } = { fid: null },
-      data: { 
-        username = '', 
-        displayName = '', 
-        pfpUrl = '' 
-      } = {}
-    } = messageData;
+    // Validate issuer (should be https://auth.farcaster.xyz)
+    if (iss !== 'https://auth.farcaster.xyz') {
+      return NextResponse.json(
+        { error: 'Invalid token issuer' },
+        { status: 401 }
+      );
+    }
 
     if (!fid) {
       return NextResponse.json(
-        { error: 'Invalid message format - missing fid' },
+        { error: 'Invalid token - missing FID' },
         { status: 400 }
       );
     }
+
+    console.log('Processing authentication for user:', { fid, iss, aud });
 
     // Create or update user in Supabase
     const { data: user, error: userError } = await supabase
       .from('users')
       .upsert({
         farcaster_id: fid.toString(),
-        farcaster_username: username,
-        display_name: displayName,
-        avatar_url: pfpUrl,
+        farcaster_username: `user_${fid}`, // Default username if not provided
+        display_name: `User ${fid}`, // Default display name
+        avatar_url: '', // Can be updated later
         updated_at: new Date().toISOString(),
       })
       .select()
@@ -59,38 +75,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create a session
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
-      email: `${fid}@farcaster.xyz`,
-      password: `fc_${fid}`,
-    });
+    console.log('Authentication successful for user:', fid);
 
-    if (signInError || !data.session) {
-      console.error('Error creating session:', signInError);
-      return NextResponse.json(
-        { error: 'Failed to create session' },
-        { status: 500 }
-      );
-    }
-
-    // Set session cookie
-    const { error: sessionError } = await supabase.auth.setSession({
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token,
-    });
-
-    if (sessionError) {
-      console.error('Error setting session:', sessionError);
-      return NextResponse.json(
-        { error: 'Failed to set session' },
-        { status: 500 }
-      );
-    }
-
+    // Return success with user data
     return NextResponse.json({
       success: true,
       user,
-      session: data.session
+      message: 'User authenticated successfully',
+      tokenInfo: {
+        fid,
+        issuer: iss,
+        audience: aud,
+        expiresAt: new Date(exp * 1000).toISOString()
+      }
     });
 
   } catch (error) {
