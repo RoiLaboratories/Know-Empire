@@ -49,23 +49,24 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
         className="font-medium w-[200px] drop-shadow-[0_4px_4px_rgb(65,65,65)] flex items-center justify-center gap-2"
         onClick={async () => {
           try {
+            setIsAuthenticating(true);
             modalContext?.open("loading-modal");
             
             // Generate a nonce
             const nonce = crypto.randomUUID();
             
-            // Trigger Farcaster sign in
+            // Trigger Farcaster sign in using miniapp SDK
             const authData = await sdk.actions.signIn({ 
               nonce,
               acceptAuthAddress: true
             });
 
             if (!authData) {
-              throw new Error('No auth data received');
+              throw new Error('Authentication failed');
             }
 
             // Verify with our backend
-            const response = await fetch('/api/auth/verify', {
+            const verifyResponse = await fetch('/api/auth/verify', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -77,18 +78,21 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
               }),
             });
 
-            if (response.ok) {
-              modalContext?.close("loading-modal");
-              modalContext?.open("congrats-modal");
-              onSignIn();
-            } else {
+            if (!verifyResponse.ok) {
               throw new Error('Verification failed');
             }
+
+            modalContext?.close("loading-modal");
+            modalContext?.open("congrats-modal");
+            onSignIn();
           } catch (error) {
             console.error('Auth error:', error);
             modalContext?.close("loading-modal");
+          } finally {
+            setIsAuthenticating(false);
           }
         }}
+        disabled={isAuthenticating}
       >
         <Image
           alt="farcaster-icon"

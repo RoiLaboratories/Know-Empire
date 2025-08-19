@@ -5,7 +5,7 @@ import { createPublicClient, http } from 'viem';
 import { optimism } from 'viem/chains';
 
 // Configure the chain with an RPC URL
-const rpcUrl = process.env.NEXT_PUBLIC_OPTIMISM_RPC_URL || 'https://mainnet.optimism.io';
+const rpcUrl = process.env.NEXT_PUBLIC_OPTIMISM_RPC_URL || 'https://mainnet.base.org';
 
 // Create a Viem public client with the RPC URL
 const publicClient = createPublicClient({
@@ -19,12 +19,9 @@ const config = {
   siweUri: process.env.NEXT_PUBLIC_URL || 'http://localhost:3000',
   version: '1',
   timeout: 30000,
-  viemTransport: http(rpcUrl),
-  options: {
-    analytics: {
-      enabled: false
-    }
-  }
+  chain: optimism,
+  transport: http(rpcUrl),
+  publicClient
 };
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
