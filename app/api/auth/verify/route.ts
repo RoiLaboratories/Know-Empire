@@ -3,40 +3,16 @@ import { supabase } from '@/utils/supabase';
 
 export async function POST(request: Request) {
   try {
-    const { message, signature, nonce } = await request.json();
+    const { fid, username, displayName, pfpUrl } = await request.json();
 
-    if (!message || !signature) {
+    if (!fid) {
       return NextResponse.json(
-        { error: 'Missing message or signature' },
+        { error: 'Missing Farcaster ID' },
         { status: 400 }
       );
     }
 
     try {
-      // Parse and validate the message
-      const parsedMessage = JSON.parse(message);
-      const { userInfo, nonce: messageNonce } = parsedMessage;
-
-      // Verify the nonce matches
-      if (messageNonce !== nonce) {
-        return NextResponse.json(
-          { error: 'Invalid nonce' },
-          { status: 401 }
-        );
-      }
-
-      // The presence of userInfo indicates a successful Farcaster verification
-      const isValid = Boolean(userInfo?.fid);
-      
-      if (!isValid || !userInfo) {
-        return NextResponse.json(
-          { error: 'Invalid signature or message format' },
-          { status: 401 }
-        );
-      }
-
-      // Extract the user info
-      const { fid, username, displayName, pfpUrl } = userInfo;
 
       // Create or update user in Supabase using our existing schema
       const { data: user, error: userError } = await supabase
@@ -57,9 +33,10 @@ export async function POST(request: Request) {
       }
 
       // Create a session using Supabase custom token
+      // Create a session using Supabase
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email: `${fid}@farcaster.xyz`,
-        password: `fc_${signature.slice(0, 32)}`, // Use signature prefix as password
+        password: `fc_${fid}`, // Use fid as password since we've already verified the user
       });
 
       if (signInError || !data.session) {

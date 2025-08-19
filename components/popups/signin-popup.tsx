@@ -7,8 +7,8 @@ import Modal, { ModalContext } from "../../context/ModalContext";
 import LoadingCard from "./loading-card";
 import CongratsPopup from "./congrats-popup";
 import Button from "../../ui/Button";
+import { useSignIn } from '@farcaster/auth-kit';
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
-import { farcasterClient } from '../../utils/farcaster';
 
 interface SigninPopupProps {
   onCloseModal?: () => void;
@@ -19,6 +19,43 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
   const modalContext = useContext(ModalContext);
   const { setFrameReady } = useMiniKit();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+
+  const { signIn, error: signInError } = useSignIn({
+    onSuccess: async (data) => {
+      try {
+        modalContext?.open("loading-modal");
+        
+        // Verify with our backend
+        const response = await fetch('/api/auth/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fid: data.fid,
+            username: data.username,
+            displayName: data.displayName,
+            pfpUrl: data.pfpUrl
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Verification failed');
+        }
+
+        modalContext?.close("loading-modal");
+        modalContext?.open("congrats-modal");
+        onSignIn();
+      } catch (error) {
+        console.error('Verification error:', error);
+        modalContext?.close("loading-modal");
+      }
+    },
+    onError: (error) => {
+      console.error('Sign in error:', error);
+      modalContext?.close("loading-modal");
+    }
+  });
 
   useEffect(() => {
     setFrameReady();
@@ -47,53 +84,10 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
 
       <Button 
         className="font-medium w-[200px] drop-shadow-[0_4px_4px_rgb(65,65,65)] flex items-center justify-center gap-2"
-        onClick={async () => {
-          try {
-            setIsAuthenticating(true);
-            modalContext?.open("loading-modal");
-
-            // Generate a nonce
-            const nonce = crypto.randomUUID();
-            
-            // Start the sign-in flow
-            const authData = await farcasterClient.actions.signIn({
-              nonce,
-              acceptAuthAddress: true,
-            });
-
-            if (!authData) {
-              throw new Error('Authentication failed');
-            }
-
-            // Get the user data from the response
-            const { message, signature } = authData;
-
-            // Verify with our backend
-            const verifyResponse = await fetch('/api/auth/verify', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                message,
-                signature,
-                nonce,
-              }),
-            });
-
-            if (!verifyResponse.ok) {
-              throw new Error('Verification failed');
-            }
-
-            modalContext?.close("loading-modal");
-            modalContext?.open("congrats-modal");
-            onSignIn();
-          } catch (error) {
-            console.error('Auth error:', error);
-            modalContext?.close("loading-modal");
-          } finally {
-            setIsAuthenticating(false);
-          }
+        onClick={() => {
+          setIsAuthenticating(true);
+          modalContext?.open("loading-modal");
+          signIn();
         }}
         disabled={isAuthenticating}
       >
