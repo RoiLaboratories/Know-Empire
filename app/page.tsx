@@ -6,11 +6,11 @@ import { useMiniKit } from '@coinbase/onchainkit/minikit';
 
 export default function Page() {
   const router = useRouter();
-  const { setFrameReady, isFrameReady } = useMiniKit();
+  const { setFrameReady } = useMiniKit();
 
   useEffect(() => {
-    if (!isFrameReady) setFrameReady();
-  }, [isFrameReady, setFrameReady]);
+    setFrameReady();
+  }, [setFrameReady]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
