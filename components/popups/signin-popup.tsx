@@ -8,7 +8,7 @@ import LoadingCard from "./loading-card";
 import CongratsPopup from "./congrats-popup";
 import Button from "../../ui/Button";
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
-import { sdk } from '@farcaster/miniapp-sdk';
+import { farcasterClient } from '../../utils/farcaster';
 
 interface SigninPopupProps {
   onCloseModal?: () => void;
@@ -51,19 +51,22 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
           try {
             setIsAuthenticating(true);
             modalContext?.open("loading-modal");
-            
+
             // Generate a nonce
             const nonce = crypto.randomUUID();
             
-            // Trigger Farcaster sign in using miniapp SDK
-            const authData = await sdk.actions.signIn({ 
+            // Start the sign-in flow
+            const authData = await farcasterClient.actions.signIn({
               nonce,
-              acceptAuthAddress: true
+              acceptAuthAddress: true,
             });
 
             if (!authData) {
               throw new Error('Authentication failed');
             }
+
+            // Get the user data from the response
+            const { message, signature } = authData;
 
             // Verify with our backend
             const verifyResponse = await fetch('/api/auth/verify', {
@@ -72,9 +75,9 @@ function SigninPopup({ onCloseModal, onSignIn }: SigninPopupProps) {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                message: authData.message,
-                signature: authData.signature,
-                nonce: nonce,
+                message,
+                signature,
+                nonce,
               }),
             });
 

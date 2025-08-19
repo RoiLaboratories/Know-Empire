@@ -3,7 +3,7 @@ import { supabase } from '@/utils/supabase';
 
 export async function POST(request: Request) {
   try {
-    const { message, signature } = await request.json();
+    const { message, signature, nonce } = await request.json();
 
     if (!message || !signature) {
       return NextResponse.json(
@@ -15,7 +15,15 @@ export async function POST(request: Request) {
     try {
       // Parse and validate the message
       const parsedMessage = JSON.parse(message);
-      const userInfo = parsedMessage.userInfo;
+      const { userInfo, nonce: messageNonce } = parsedMessage;
+
+      // Verify the nonce matches
+      if (messageNonce !== nonce) {
+        return NextResponse.json(
+          { error: 'Invalid nonce' },
+          { status: 401 }
+        );
+      }
 
       // The presence of userInfo indicates a successful Farcaster verification
       const isValid = Boolean(userInfo?.fid);
