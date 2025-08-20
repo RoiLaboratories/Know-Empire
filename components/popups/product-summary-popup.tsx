@@ -1,12 +1,17 @@
 import Image from "next/image";
 import Button from "../../ui/Button";
-import Phone from "../../assets/images/prod1.png";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import { sleep } from "../../utils/helpers";
 import { useState } from "react";
+import { ProductWithSeller } from "../../types/product";
 
-function ProductSummaryPopup({ onNext }: { onNext: () => void }) {
+interface ProductSummaryPopupProps {
+  onNext: () => void;
+  product: ProductWithSeller;
+}
+
+function ProductSummaryPopup({ onNext, product }: ProductSummaryPopupProps) {
   const [isLoading, setIsLoading] = useState(false);
   const handleNext = async () => {
     setIsLoading(true);
@@ -19,17 +24,17 @@ function ProductSummaryPopup({ onNext }: { onNext: () => void }) {
     <div className="space-y-2">
       <p className="font-semibold text-gray text-sm">Product Summary</p>
       <div className="rounded-[10px] border border-[#989898] p-5 space-y-4">
-        <div className="flex gap-x-2 ">
-          <div className="w-9 h-10">
+        <div className="flex gap-x-2">
+          <div className="w-9 h-10 relative">
             <Image
-              alt="phone"
-              src={Phone}
-              placeholder="blur"
-              className="w-full h-full object-cover"
+              alt={product.title}
+              src={product.photos[0]}
+              fill
+              className="object-cover rounded-lg"
             />
           </div>
           <p className="font-semibold text-gray-light text-sm line-clamp-2">
-            Iphone 15 Pro max Black | 1TB
+            {product.title}
           </p>
         </div>
         <div className="flex items-center gap-x-10 text-gray pb-4 border-b border-[#989898]">
@@ -38,31 +43,37 @@ function ProductSummaryPopup({ onNext }: { onNext: () => void }) {
             <span className="font-medium text-[13px]">Ratings</span>
           </p>
           <div className="flex flex-col gap-1">
-            <span className="font-medium text-[13px]">@Techseller</span>
+            <span className="font-medium text-[13px]">@{product.seller.username}</span>
             <div className="flex justify-between">
               <span className="flex gap-x-1 text-xs md:text-sm items-center">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Icon
                     icon={ICON.STAR}
-                    // fontSize={26}
+                    className={i < Math.floor(product.seller.rating || 0) ? "text-yellow-400" : "text-gray-300"}
                     key={i}
                   />
                 ))}
               </span>
               <p className="text-xs line-clamp-1 font-medium text-[#808080]">
-                (4.8 •24 reviews)
+                ({product.seller.rating?.toFixed(1) || "No"} • {product.seller.review_count || 0} reviews)
               </p>
             </div>
           </div>
         </div>
 
         <div className="flex flex-col gap-2">
-          <p className="font-semibold text-gray text-sm">Product Reviews (0)</p>
+          <p className="font-semibold text-gray text-sm">
+            Product Reviews ({product.seller.review_count || 0})
+          </p>
           <div className="border border-[#989898] text-[#989898] bg-[#f3f3f3] h-36 rounded-[10px] flex items-center text-xs justify-center">
-            <p>No review for this product yet</p>
+            <p>
+              {product.seller.review_count 
+                ? `${product.seller.review_count} reviews with average rating of ${product.seller.rating?.toFixed(1)}`
+                : "No review for this product yet"
+              }
+            </p>
           </div>
 
-          {/* <Modal.Open opens="purchase-popups"> */}
           <Button
             type="button"
             variant="secondary"

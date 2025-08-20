@@ -25,20 +25,20 @@ import { StaticImageData } from "next/image";
 //   },
 // ];
 
-interface Product {
-  id: string;
-  title: string;
+import { Product as BaseProduct, ProductWithSeller } from '../types/product';
+
+interface APIProduct extends Omit<BaseProduct, 'price'> {
   price: number;
-  photos: string[];
-  country: string;
   seller: {
     farcaster_username: string;
     display_name: string;
+    rating?: number;
+    review_count?: number;
   };
 }
 
 function useProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<APIProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -82,20 +82,23 @@ function Products() {
     <Modal>
       <Session title="Curated for you" link="See more">
         <ul className="grid grid-cols-2 gap-2">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={{
-                productId: product.id,
-                name: product.title,
-                unitPrice: product.price,
-                img: product.photos[0] || Phone,
-                location: product.country,
-                seller: product.seller.farcaster_username,
-                photos: product.photos,
-              }}
-            />
-          ))}
+          {products.map((apiProduct) => {
+            const product: ProductWithSeller = {
+              ...apiProduct,
+              price: apiProduct.price.toString(),
+              seller: {
+                username: apiProduct.seller.farcaster_username,
+                rating: apiProduct.seller.rating,
+                review_count: apiProduct.seller.review_count
+              }
+            };
+            return (
+              <ProductCard
+                key={product.id}
+                product={product}
+              />
+            );
+          })}
         </ul>
       </Session>
     </Modal>
