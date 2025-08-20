@@ -6,7 +6,7 @@ import User from "../../assets/images/user.svg";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "../../providers/cart";
-import { useProfile } from '@farcaster/auth-kit';
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { useEffect, useState } from 'react';
 
 const routes = [
@@ -14,18 +14,42 @@ const routes = [
   { title: "Sell Products", icon: ICON.SELL, path: "/marketplace/sell" },
 ];
 
+interface FarcasterUser {
+  fid: number;
+  username: string | undefined;
+  displayName: string | undefined;
+  pfpUrl: string | undefined;
+}
+
 function Header() {
   const pathname = usePathname();
   const { cart } = useCart();
-  const { profile, isAuthenticated } = useProfile();
+  const { context } = useMiniKit();
+  const [user, setUser] = useState<FarcasterUser | null>(null);
+
+  useEffect(() => {
+    // Get user data from context or localStorage
+    if (context?.user) {
+      const userData: FarcasterUser = {
+        fid: context.user.fid,
+        username: context.user.username || "",
+        displayName: context.user.displayName || "",
+        pfpUrl: context.user.pfpUrl || ""
+      };
+      setUser(userData);
+    } else {
+      const storedUser = localStorage.getItem('farcaster_user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    }
+  }, [context]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Wait for profile data to be available
-    if (profile || !isAuthenticated) {
-      setIsLoading(false);
-    }
-  }, [profile, isAuthenticated]);
+    setIsLoading(false);
+  }, []);
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -60,8 +84,8 @@ function Header() {
             <Image
               loading="lazy"
               fill
-              alt={profile?.username || "User Profile"}
-              src={profile?.pfpUrl || User}
+              alt={user?.username || "User Profile"}
+              src={user?.pfpUrl || User}
               className="rounded-full object-cover"
             />
           </Link>
@@ -71,7 +95,7 @@ function Header() {
       {/*header */}
       <div className="text-gray">
         <p className="font-bold text-[15px]">
-          Welcome {profile?.displayName || "Guest"}!
+          Welcome {user?.displayName || "Guest"}!
         </p>
         <p className="text-xs">
           To your secure market place for physical products
