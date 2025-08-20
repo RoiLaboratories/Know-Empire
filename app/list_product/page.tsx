@@ -2,6 +2,8 @@ import BackButton from "../../ui/BackButton";
 import ListingForm from "../../components/form/ListingForm";
 import Modal from "../../context/ModalContext";
 
+"use client";
+
 function ListProduct() {
   return (
     <section className="flex flex-col items-center min-h-screen pb-3 bg-white">
