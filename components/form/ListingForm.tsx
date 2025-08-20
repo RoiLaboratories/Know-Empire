@@ -1,181 +1,77 @@
 "use client";
+
 import { useFormik } from "formik";
 import { LIST_SCHEMA } from "../../schema/seller.schema";
 import FormInput from "./FormInput";
 import InputField from "./InputField";
-import { uploadMultipleProductImages } from "../../utils/supabase-storage";
 import Button from "../../ui/Button";
-import { ChangeEvent, useContext, useState, useEffect } from "react";
+import { ChangeEvent, useState } from "react";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import Image from "next/image";
-import Modal, { ModalContext } from "../../context/ModalContext";
-import GenericPopup from "../popups/generic-popup";
-import { supabase } from "../../utils/supabase";
-import { useRouter } from "next/navigation";
 import InputTextArea from "./InputTextArea";
 
-function ListingForm() {
+interface ListingFormValues {
+  category: string;
+  title: string;
+  description: string;
+  price: string;
+  country: string;
+  delivery: string;
+  photos: File[];
+}
+
+export default function ListingForm() {
   const [previews, setPreviews] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const modalContext = useContext(ModalContext);
-  const router = useRouter();
 
-  // Check if user is authenticated and is a seller
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (!session) {
-          router.push("/onboarding"); // Redirect to sign in
-          return;
-        }
-
-        // Check if user is a seller
-        const { data: userData, error } = await supabase
-          .from("users")
-          .select("is_seller")
-          .eq("id", session.user.id)
-          .single();
-
-        if (error || !userData?.is_seller) {
-          router.push("/marketplace/sell"); // Redirect to seller registration
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-        setError("Authentication check failed");
-      }
-    };
-
-    checkAuth();
-  }, [router]);
-
-  const formik = useFormik<ListingInput>({
-    validationSchema: LIST_SCHEMA,
+  const formik = useFormik<ListingFormValues>({
     initialValues: {
+      category: "",
       title: "",
       description: "",
-      price: 0,
-      delivery: "",
-      photos: [],
+      price: "",
       country: "",
-      category: "",
+      delivery: "",
+      photos: []
     },
+    validationSchema: LIST_SCHEMA,
     onSubmit: async (values) => {
-      setError(null);
-      try {
-        setIsLoading(true);
-
-        // Check session
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (!session) {
-          throw new Error("Please sign in to create a listing");
-        }
-
-        // Upload images first
-        const imageUrls = await uploadMultipleProductImages(values.photos);
-
-        // Submit the form data with image URLs to your API
-        const productData = {
-          ...values,
-          photos: imageUrls, // Replace File objects with URLs
-        };
-
-        const response = await fetch("/api/products", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify(productData),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to create listing");
-        }
-
-        // Show success modal
-        modalContext?.open("successful-listing-modal");
-
-        // Reset form
-        formik.resetForm();
-        setPreviews([]);
-
-        // Redirect to product page or marketplace
-        router.push("/marketplace");
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || "Failed to create product");
-        }
-
-        await response.json();
-        modalContext?.open("successful-listing-modal");
-      } catch (error) {
-        console.error("Error submitting form:", error);
-        // TODO: Add proper error handling UI here
-        alert("Failed to create product. Please try again.");
-      } finally {
-        setIsLoading(false);
-      }
-    },
+      // For now, just log the values
+      console.log("Form submitted:", values);
+      // We'll implement the actual submission later
+    }
   });
 
-  //   const handleImageUploadClick = () => {
-  //     document.getElementById("photos")?.click();
-  //   };
+
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
       const newFiles = Array.from(files);
 
-      const currentPhotos = formik.values.photos;
-      if (currentPhotos.length + newFiles.length > 4) {
-        console.log("You can only upload a maximum of 3 images.");
+      // Limit to 3 images
+      if (formik.values.photos.length + newFiles.length > 3) {
+        alert("You can only upload a maximum of 3 images.");
         return;
       }
 
-      const newPreviewUrls = newFiles.map((file) => URL.createObjectURL(file));
+      // Create preview URLs
+      const newPreviewUrls = newFiles.map(file => URL.createObjectURL(file));
+      setPreviews(prev => [...prev, ...newPreviewUrls]);
 
-      formik.setFieldValue("photos", [...currentPhotos, ...newFiles]);
-      setPreviews([...previews, ...newPreviewUrls]);
+      // Update form value
+      formik.setFieldValue("photos", [...formik.values.photos, ...newFiles]);
     }
   };
 
   const handleRemoveImage = (indexToRemove: number) => {
-    const newPhotos = formik.values.photos.filter(
-      (_, index) => index !== indexToRemove
-    );
+    // Remove the file from form values
+    const newPhotos = formik.values.photos.filter((_, index) => index !== indexToRemove);
     formik.setFieldValue("photos", newPhotos);
 
+    // Clean up preview URL
     URL.revokeObjectURL(previews[indexToRemove]);
-
-    const newPreviews = previews.filter((_, index) => index !== indexToRemove);
-    setPreviews(newPreviews);
+    setPreviews(prev => prev.filter((_, index) => index !== indexToRemove));
   };
-
-  // Error Modal
-  const ErrorModal = () => (
-    <Modal.Window name="error-modal">
-      <div className="p-6 bg-white rounded-lg">
-        <h3 className="text-red-600 font-semibold mb-2">Error</h3>
-        <p>{error}</p>
-        <Button onClick={() => modalContext?.close()} className="mt-4">
-          Close
-        </Button>
-      </div>
-    </Modal.Window>
-  );
-
-  if (error) {
-    return <ErrorModal />;
-  }
 
   return (
     <FormInput
@@ -191,7 +87,6 @@ function ListingForm() {
             </p>
             <label
               htmlFor="photos"
-              //   onClick={handleImageUploadClick}
               className="rounded-lg border-dashed border-2 text-gray-400 border-gray-400 flex flex-col gap-2 items-center justify-center size-32 cursor-pointer"
             >
               <Icon icon={ICON.UPLOAD} fontSize={44} />
@@ -199,25 +94,14 @@ function ListingForm() {
             </label>
             <input
               type="file"
-              accept="/image*"
+              accept="image/*"
               name="photos"
               id="photos"
               onChange={handleImageChange}
-              //   value={formik.values.photos}
-              //   onChange={(e) => {
-              //     if (e.currentTarget?.files) {
-              //       const files = e.target.files;
-              //       if (files) {
-              //         let myFiles = Array.from(files);
-              //         formik.setFieldValue("photos", myFiles);
-              //       }
-              //     }
-              //   }}
               hidden
               multiple
             />
           </div>
-          {/**selected file */}
           <ul className="flex flex-wrap gap-2 w-full">
             {previews.length > 0 &&
               previews.map((previewUrl, i) => (
@@ -227,10 +111,8 @@ function ListingForm() {
                 >
                   <Image
                     src={previewUrl}
-                    alt={`img-${i}`}
+                    alt={`Product image ${i + 1}`}
                     fill
-                    //   width={40}
-                    //   height={20}
                     className="object-cover rounded-lg w-full h-full"
                   />
                   <button
@@ -244,24 +126,31 @@ function ListingForm() {
               ))}
           </ul>
         </div>
-        {/* {formik.errors.photos && formik.touched.photos && ( */}
         <p className="text-red-500 text-xs h-2 mb-1 text-right">
-          {formik.errors.photos}
+          {formik.errors.photos?.toString()}
         </p>
-        {/* )} */}
-        <InputField
-          config={{
-            placeholder: "Select product category",
-            type: "text",
-            name: "category",
-            value: formik.values.category,
-            onChange: formik.handleChange,
-            onBlur: formik.handleBlur,
-          }}
-          label="Category"
-          error={Boolean(formik.errors.category && formik.touched.category)}
-          errorMessage={formik.errors.category}
-        />
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">Category</label>
+          <select
+            name="category"
+            value={formik.values.category}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
+            className="w-full h-[48px] px-4 py-2 text-sm border rounded-[10px] focus:outline-none focus:ring-1 focus:ring-primary bg-white"
+          >
+            <option value="">Select a category</option>
+            <option value="Fashion">Fashion</option>
+            <option value="Gadgets">Gadgets</option>
+            <option value="Sports">Sports</option>
+            <option value="Books">Books</option>
+            <option value="Home">Home</option>
+          </select>
+          {formik.touched.category && formik.errors.category && (
+            <p className="mt-1 text-xs text-red-500">{formik.errors.category}</p>
+          )}
+        </div>
+
         <InputField
           config={{
             placeholder: "Iphone 15 Pro Max - Like New",
@@ -277,17 +166,14 @@ function ListingForm() {
         />
         <InputTextArea
           config={{
-            placeholder:
-              "Detailed description of your product, condition, specification...",
+            placeholder: "Detailed description of your product, condition, specification...",
             name: "description",
             value: formik.values.description,
             onChange: formik.handleChange,
             onBlur: formik.handleBlur,
           }}
           label="Description"
-          error={Boolean(
-            formik.errors.description && formik.touched.description
-          )}
+          error={Boolean(formik.errors.description && formik.touched.description)}
           errorMessage={formik.errors.description}
         />
         <InputField
@@ -305,7 +191,7 @@ function ListingForm() {
         />
         <InputField
           config={{
-            placeholder: "United states",
+            placeholder: "United States",
             type: "text",
             name: "country",
             value: formik.values.country,
@@ -316,11 +202,9 @@ function ListingForm() {
           error={Boolean(formik.errors.country && formik.touched.country)}
           errorMessage={formik.errors.country}
         />
-
         <InputTextArea
           config={{
-            placeholder:
-              "Shipping method, estimated delivery time, special instructions...",
+            placeholder: "Shipping method, estimated delivery time, special instructions...",
             name: "delivery",
             value: formik.values.delivery,
             onChange: formik.handleChange,
@@ -336,37 +220,12 @@ function ListingForm() {
           variant="primary_gradient"
           size="xs"
           className="text-gray-medium mt-2 disabled:bg-[#989898]"
-          disabled={!formik.isValid || !formik.dirty || isLoading}
+          disabled={!formik.isValid || !formik.dirty}
         >
-          {!isLoading ? (
-            "Publish Listing"
-          ) : (
-            <>
-              <Icon
-                icon={ICON.SPINNER}
-                fontSize={15}
-                className="animate-spin"
-              />
-              Publishing...
-            </>
-          )}
+          Create Listing
         </Button>
-
-        {/*successful listing modal */}
-        <Modal.Window
-          name="successful-listing-modal"
-          allowOutsideClick
-          showBg={false}
-        >
-          <GenericPopup
-            iconStyle="text-green-600"
-            icon={ICON.CHECK_CIRCLE}
-            text="Your product has been successfully listed"
-          />
-        </Modal.Window>
       </div>
     </FormInput>
   );
 }
 
-export default ListingForm;
