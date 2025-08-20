@@ -9,9 +9,10 @@ import { useCart } from "../../providers/cart";
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { useEffect, useState } from 'react';
 
-// Base routes that don't change
-const baseRoutes = [
+// Default routes
+const defaultRoutes = [
   { title: "Buy Products", icon: ICON.BUY, path: "/marketplace" },
+  { title: "Sell Products", icon: ICON.SELL, path: "/marketplace/sell" }
 ];
 
 interface FarcasterUser {
@@ -27,7 +28,7 @@ function Header() {
   const { context } = useMiniKit();
   const [user, setUser] = useState<FarcasterUser | null>(null);
   const [isSellerAccount, setIsSellerAccount] = useState(false);
-  const [routes, setRoutes] = useState(baseRoutes);
+  const [routes, setRoutes] = useState(defaultRoutes);
 
   // Check seller status
   useEffect(() => {
@@ -38,12 +39,13 @@ function Header() {
           const data = await response.json();
           setIsSellerAccount(!!data);
           
-          // Update routes based on seller status
-          const sellerRoute = data ? 
-            { title: "List Product", icon: ICON.SELL, path: "/list_product" } :
-            { title: "Sell Products", icon: ICON.SELL, path: "/marketplace/sell" };
-          
-          setRoutes([...baseRoutes, sellerRoute]);
+          // Only update routes if user is a seller
+          if (data) {
+            setRoutes([
+              { title: "Buy Products", icon: ICON.BUY, path: "/marketplace" },
+              { title: "List Product", icon: ICON.SELL, path: "/list_product" }
+            ]);
+          }
         }
       } catch (error) {
         console.error('Error checking seller status:', error);
