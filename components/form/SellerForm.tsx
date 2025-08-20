@@ -121,7 +121,7 @@ function SellerForm() {
               value={formik.values.category}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className="w-full p-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full h-[48px] px-4 py-2 text-sm border rounded-[10px] focus:outline-none focus:ring-1 focus:ring-primary bg-white"
             >
               <option value="">Select a category</option>
               <option value="Fashion">Fashion</option>
@@ -203,7 +203,7 @@ function SellerForm() {
             variant="primary_gradient"
             size="xs"
             className="text-gray-medium mt-2 disabled:bg-[#989898]"
-            disabled={!formik.isValid || !formik.dirty || !acceptedTerms}
+            disabled={!acceptedTerms}
           >
             Create seller account
           </Button>
