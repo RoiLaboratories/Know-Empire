@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "../../providers/cart";
 import { useProfile } from '@farcaster/auth-kit';
+import { useEffect, useState } from 'react';
 
 const routes = [
   { title: "Buy Products", icon: ICON.BUY, path: "/marketplace" },
@@ -17,6 +18,19 @@ function Header() {
   const pathname = usePathname();
   const { cart } = useCart();
   const { profile, isAuthenticated } = useProfile();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Wait for profile data to be available
+    if (profile || !isAuthenticated) {
+      setIsLoading(false);
+    }
+  }, [profile, isAuthenticated]);
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="space-y-5 mb-3">
@@ -40,14 +54,14 @@ function Header() {
             </span>
           </span>
           <Link
-            href={isAuthenticated ? "/profile" : "/onboarding"}
+            href={"/profile"}
             className="size-[33px] rounded-full bg-gray-300 relative"
           >
             <Image
               loading="lazy"
               fill
-              alt={isAuthenticated && profile?.username ? profile.username : "User Profile"}
-              src={isAuthenticated && profile?.pfpUrl ? profile.pfpUrl : User}
+              alt={profile?.username || "User Profile"}
+              src={profile?.pfpUrl || User}
               className="rounded-full object-cover"
             />
           </Link>
@@ -57,7 +71,7 @@ function Header() {
       {/*header */}
       <div className="text-gray">
         <p className="font-bold text-[15px]">
-          Welcome {isAuthenticated ? profile.displayName : "Guest"}!
+          Welcome {profile?.displayName || "Guest"}!
         </p>
         <p className="text-xs">
           To your secure market place for physical products

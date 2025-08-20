@@ -30,11 +30,11 @@ function Profile() {
 
   // Check authentication first
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated && !profile) {
       router.push('/onboarding');
       return;
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, profile, router]);
 
   useEffect(() => {
     const loadSellerInfo = async () => {
