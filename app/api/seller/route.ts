@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     const { data: existingUser } = await supabaseAdmin
       .from('users')
       .select()
-      .eq('fid', fid)
+      .eq('farcaster_id', fid)
       .single()
 
     if (existingUser) {
@@ -39,12 +39,11 @@ export async function POST(request: Request) {
           seller_location: location,
           seller_description: description,
           is_seller: true,
-          username: username,
           display_name: displayName,
           avatar_url: pfpUrl,
           updated_at: new Date().toISOString()
         })
-        .eq('fid', fid)
+        .eq('farcaster_id', fid)
 
       if (updateError) {
         console.error('Error updating user as seller:', updateError)
@@ -58,8 +57,8 @@ export async function POST(request: Request) {
       const { error: insertError } = await supabaseAdmin
         .from('users')
         .insert({
-          fid: fid,
-          username: username,
+          farcaster_id: fid,
+          farcaster_username: username,
           display_name: displayName,
           avatar_url: pfpUrl,
           seller_category: category,
