@@ -40,14 +40,14 @@ function Header() {
             </span>
           </span>
           <Link
-            href="/profile"
+            href={isAuthenticated ? "/profile" : "/onboarding"}
             className="size-[33px] rounded-full bg-gray-300 relative"
           >
             <Image
               loading="lazy"
               fill
-              alt={isAuthenticated && profile.username ? profile.username : "User Profile"}
-              src={isAuthenticated && profile.pfpUrl ? profile.pfpUrl : User}
+              alt={isAuthenticated && profile?.username ? profile.username : "User Profile"}
+              src={isAuthenticated && profile?.pfpUrl ? profile.pfpUrl : User}
               className="rounded-full object-cover"
             />
           </Link>

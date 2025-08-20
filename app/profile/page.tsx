@@ -28,6 +28,14 @@ function Profile() {
   const { profile, isAuthenticated } = useProfile();
   const [sellerInfo, setSellerInfo] = useState<SellerInfo | null>(null);
 
+  // Check authentication first
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/onboarding');
+      return;
+    }
+  }, [isAuthenticated, router]);
+
   useEffect(() => {
     const loadSellerInfo = async () => {
       setIsLoading(true);
