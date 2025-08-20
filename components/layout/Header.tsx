@@ -6,6 +6,7 @@ import User from "../../assets/images/user.svg";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "../../providers/cart";
+import { useProfile } from '@farcaster/auth-kit';
 
 const routes = [
   { title: "Buy Products", icon: ICON.BUY, path: "/marketplace" },
@@ -15,6 +16,7 @@ const routes = [
 function Header() {
   const pathname = usePathname();
   const { cart } = useCart();
+  const { profile, isAuthenticated } = useProfile();
 
   return (
     <div className="space-y-5 mb-3">
@@ -44,9 +46,8 @@ function Header() {
             <Image
               loading="lazy"
               fill
-              alt="user logo"
-              src={User}
-              // placeholder="blur"
+              alt={isAuthenticated && profile.username ? profile.username : "User Profile"}
+              src={isAuthenticated && profile.pfpUrl ? profile.pfpUrl : User}
               className="rounded-full object-cover"
             />
           </Link>
@@ -55,7 +56,9 @@ function Header() {
 
       {/*header */}
       <div className="text-gray">
-        <p className="font-bold text-[15px]">Welcome Kaspa!</p>
+        <p className="font-bold text-[15px]">
+          Welcome {isAuthenticated ? profile.displayName : "Guest"}!
+        </p>
         <p className="text-xs">
           To your secure market place for physical products
         </p>

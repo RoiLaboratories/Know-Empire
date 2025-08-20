@@ -54,9 +54,10 @@ function Onboarding() {
   };
 
 
-  // Handle the Enter Marketplace button click (no auth needed)
+  // Handle the Enter Marketplace button click
   const handleMarketplaceEnter = () => {
     router.push("/marketplace");
+    // The user will be automatically authenticated through Farcaster Frame context
   };
 
   if (isLoading) {

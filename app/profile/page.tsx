@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import Image from "next/image";
 import { Icon } from "@iconify/react";
@@ -9,7 +9,7 @@ import ReviewsCard from "../../components/cards/ReviewsCard";
 import BackButton from "../../ui/BackButton";
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useFarcasterFrameContext } from '@/hooks/useFarcasterFrameContext';
+import { useProfile } from '@farcaster/auth-kit';
 import { supabase } from '@/utils/supabase';
 import Modal from "../../context/ModalContext";
 import GenericPopup from "../../components/popups/generic-popup";
@@ -24,33 +24,37 @@ interface SellerInfo {
 
 function Profile() {
   const router = useRouter();
-  const { user, loading } = useFarcasterFrameContext();
+  const [isLoading, setIsLoading] = useState(true);
+  const { profile, isAuthenticated } = useProfile();
   const [sellerInfo, setSellerInfo] = useState<SellerInfo | null>(null);
 
   useEffect(() => {
     const loadSellerInfo = async () => {
-      if (user?.fid) {
+      setIsLoading(true);
+      if (isAuthenticated && profile?.fid) {
         // Only check for seller info in Supabase
         const { data, error } = await supabase
           .from('sellers')
           .select('*')
-          .eq('fid', user.fid)
+          .eq('fid', profile.fid)
           .single();
 
         if (!error) {
           setSellerInfo(data);
         }
       }
+      setIsLoading(false);
     };
 
     loadSellerInfo();
-  }, [user?.fid]);
+  }, [isAuthenticated, profile?.fid]);
 
-  if (loading) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 
-  if (!user) {
+  if (!isAuthenticated || !profile) {
+    router.push('/');
     return null;
   }
 
@@ -85,8 +89,8 @@ function Profile() {
 
           <div className="absolute rounded-full size-24 border-3 border-white bottom-0 translate-y-1/2">
             <Image
-              alt={user?.displayName || "User profile"}
-              src={user?.pfp || ""}
+              alt={profile.displayName || "User profile"}
+              src={profile.pfpUrl || ""}
               width={96}
               height={96}
               className="w-full h-full object-cover rounded-full"
@@ -97,11 +101,11 @@ function Profile() {
         {/*user details */}
         <div className="px-5 py-12 bg-white space-y-3">
           <div className="space-y-1">
-            <p className="font-bold text-2xl">{user?.displayName}</p>
+            <p className="font-bold text-2xl">{profile.displayName}</p>
 
             <div className="text-sm text-[#5a5a5a] font-medium space-y-1">
-              <p>@{user?.username}</p>
-              <p>{user?.fid} FID</p>
+              <p>@{profile.username}</p>
+              <p>{profile.fid} FID</p>
             </div>
           </div>
 
