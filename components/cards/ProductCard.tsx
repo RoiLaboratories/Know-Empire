@@ -7,6 +7,8 @@ import { ICON } from "../../utils/icon-export";
 import PurchasePopup from "../popups/purchase-popup";
 import Modal from "../../context/ModalContext";
 import { useCart } from "../../providers/cart";
+import toast from 'react-hot-toast';
+import { ReactElement } from 'react';
 
 interface PProps {
   img: string | StaticImageData;
@@ -18,7 +20,7 @@ interface PProps {
   photos?: string[]; // Array of image URLs from Supabase
 }
 
-function ProductCard({ product }: { product: PProps }) {
+function ProductCard({ product }: { product: PProps }): ReactElement {
   const { addToCart } = useCart();
   const { img, name, unitPrice, productId, location, seller } = product;
   const handleAddToCart = () => {
@@ -32,6 +34,7 @@ function ProductCard({ product }: { product: PProps }) {
     };
 
     addToCart(newItem);
+    toast.success('Item added to cart');
   };
 
   return (
