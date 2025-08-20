@@ -5,7 +5,7 @@ import { LIST_SCHEMA } from "../../schema/seller.schema";
 import FormInput from "./FormInput";
 import InputField from "./InputField";
 import Button from "../../ui/Button";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import Image from "next/image";
@@ -14,6 +14,7 @@ import { useContext } from "react";
 import { ModalContext } from "../../context/ModalContext";
 import GenericPopup from "../popups/generic-popup";
 import LoadingCard from "../popups/loading-card";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
 
 
 interface ListingFormValues {
@@ -29,6 +30,19 @@ interface ListingFormValues {
 export default function ListingForm() {
   const [previews, setPreviews] = useState<string[]>([]);
   const modalContext = useContext(ModalContext);
+  const { context } = useMiniKit();
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    if (context?.user) {
+      setUser(context.user);
+    } else {
+      const storedUser = localStorage.getItem('farcaster_user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    }
+  }, [context]);
 
   const closeModals = () => {
     modalContext?.close('listing-loading');
@@ -70,7 +84,8 @@ export default function ListingForm() {
           },
           body: JSON.stringify({
             ...values,
-            photos: photoBase64
+            photos: photoBase64,
+            fid: user?.fid // Send Farcaster ID from user context
           }),
         });
 
@@ -128,6 +143,37 @@ export default function ListingForm() {
 
   return (
     <div className="relative">
+      {/* Modal container - fixed position */}
+      <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+        <div className="pointer-events-auto">
+          {modalContext?.openNames.includes('listing-loading') && (
+            <LoadingCard message="Listing your product..." />
+          )}
+
+          {modalContext?.openNames.includes('listing-success') && (
+            <GenericPopup
+              text="Your product has been listed successfully!"
+              icon={ICON.CHECK_CIRCLE}
+              iconStyle="text-green-500"
+              onCloseModal={() => {
+                closeModals();
+                window.location.href = '/marketplace';
+              }}
+            />
+          )}
+
+          {modalContext?.openNames.includes('listing-error') && (
+            <GenericPopup
+              text="Failed to create product. Please try again."
+              icon={ICON.CANCEL}
+              iconStyle="text-red-500"
+              onCloseModal={() => closeModals()}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Form content */}
       <FormInput
         config={{
           onSubmit: formik.handleSubmit,
@@ -281,30 +327,7 @@ export default function ListingForm() {
       </div>
     </FormInput>
 
-    {modalContext?.openNames.includes('listing-loading') && (
-      <LoadingCard message="Listing your product..." />
-    )}
 
-    {modalContext?.openNames.includes('listing-success') && (
-      <GenericPopup
-        text="Your product has been listed successfully!"
-        icon={ICON.CHECK_CIRCLE}
-        iconStyle="text-green-500"
-        onCloseModal={() => {
-          closeModals();
-          window.location.href = '/marketplace';
-        }}
-      />
-    )}
-
-    {modalContext?.openNames.includes('listing-error') && (
-      <GenericPopup
-        text="Failed to create product. Please try again."
-        icon={ICON.CANCEL}
-        iconStyle="text-red-500"
-        onCloseModal={() => closeModals()}
-      />
-    )}
     </div>
   );
 }
