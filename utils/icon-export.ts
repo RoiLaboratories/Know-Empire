@@ -1,4 +1,5 @@
 export enum ICON {
+  ADD_OUTLINE = "basil:add-outline",
   ARROW_RIGHT = "ri:arrow-right-long-line",
   ARROW_BACK = "lets-icons:arrow-left-light",
   ARROW_CIRCLE_RIGHT = "icon-park-solid:arrow-circle-right",
@@ -16,6 +17,7 @@ export enum ICON {
   ORGANISATION = "eos-icons:trusted-organization",
   COPY = "solar:copy-bold",
   CAUTION = "icon-park-outline:caution",
+  CAUTION2 = "streamline-pixel:interface-essential-alert-caution",
   TRUCK = "tabler:truck-delivery",
   PACKAGE = "ph:package",
   STAR = "noto:star",
@@ -45,4 +47,5 @@ export enum ICON {
   SPINNER = "ri:loader-4-fill",
   CHECK_CIRCLE = "material-symbols:check-circle-unread",
   SECURITY = "material-symbols:security-rounded",
+  PROTECT = "material-symbols:shield-outline",
 }

@@ -5,6 +5,7 @@ import { ICON } from "../../utils/icon-export";
 import User from "../../assets/images/user.svg";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { useCart } from "../../providers/cart";
 
 const routes = [
   { title: "Buy Products", icon: ICON.BUY, path: "/marketplace" },
@@ -13,6 +14,7 @@ const routes = [
 
 function Header() {
   const pathname = usePathname();
+  const { cart } = useCart();
 
   return (
     <div className="space-y-5 mb-3">
@@ -26,11 +28,13 @@ function Header() {
           src="/group-dark.svg"
         />
         <div className="flex items-center gap-x-2">
-          <Icon icon={ICON.HISTORY} fontSize={21} />
+          {/* <Icon icon={ICON.HISTORY} fontSize={21} /> */}
           <span className="relative">
-            <Icon icon={ICON.CART} fontSize={21} />
+            <Link href="/cart">
+              <Icon icon={ICON.CART} fontSize={21} />
+            </Link>
             <span className="rounded-full bg-primary size-2.5 absolute bottom-1 right-0 grid place-items-center text-white text-[5px]">
-              1
+              {cart.length}
             </span>
           </span>
           <Link

@@ -35,10 +35,10 @@
   "name": "know_empire",
   "private": true,
   "scripts": {
+    "dev": "next dev --turbopack",
     "build": "next build",
-    "dev": "next dev",
-    "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "lint": "next lint"
   },
   "version": "0.1.0"
 }

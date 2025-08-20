@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Image from "next/image";
 import { Icon } from "@iconify/react";
@@ -11,6 +11,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useFarcasterFrameContext } from '@/hooks/useFarcasterFrameContext';
 import { supabase } from '@/utils/supabase';
+import Modal from "../../context/ModalContext";
+import GenericPopup from "../../components/popups/generic-popup";
+import ReferralPopup from "../../components/popups/referral-link-popup";
 
 interface SellerInfo {
   is_seller: boolean;
@@ -59,7 +62,26 @@ function Profile() {
         </div>
         <div className="bg-primary h-50 flex justify-between items-center p-5 text-white relative">
           <Image alt="wallet" src={Wallet} />
-          <Icon icon={ICON.SHARE} fontSize={30} />
+
+          <Modal>
+            <Modal.Open opens="share-referral-modal">
+              <Icon
+                icon={ICON.SHARE}
+                fontSize={30}
+                className="cursor-pointer"
+              />
+            </Modal.Open>
+            <Modal.Window name="share-referral-modal" showBg={false}>
+              <ReferralPopup />
+            </Modal.Window>
+            <Modal.Window name="referral-link-copied-popup" showBg={false}>
+              <GenericPopup
+                iconStyle="text-green-600"
+                icon={ICON.CHECK_CIRCLE}
+                text="Your referal link has been copied"
+              />
+            </Modal.Window>
+          </Modal>
 
           <div className="absolute rounded-full size-24 border-3 border-white bottom-0 translate-y-1/2">
             <Image

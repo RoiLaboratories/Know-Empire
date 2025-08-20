@@ -13,6 +13,7 @@ import Modal, { ModalContext } from "../../context/ModalContext";
 import GenericPopup from "../popups/generic-popup";
 import { supabase } from "../../utils/supabase";
 import { useRouter } from "next/navigation";
+import InputTextArea from "./InputTextArea";
 
 function ListingForm() {
   const [previews, setPreviews] = useState<string[]>([]);
@@ -25,25 +26,27 @@ function ListingForm() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (!session) {
-          router.push('/onboarding'); // Redirect to sign in
+          router.push("/onboarding"); // Redirect to sign in
           return;
         }
 
         // Check if user is a seller
         const { data: userData, error } = await supabase
-          .from('users')
-          .select('is_seller')
-          .eq('id', session.user.id)
+          .from("users")
+          .select("is_seller")
+          .eq("id", session.user.id)
           .single();
 
         if (error || !userData?.is_seller) {
-          router.push('/marketplace/sell'); // Redirect to seller registration
+          router.push("/marketplace/sell"); // Redirect to seller registration
         }
       } catch (error) {
-        console.error('Auth check error:', error);
-        setError('Authentication check failed');
+        console.error("Auth check error:", error);
+        setError("Authentication check failed");
       }
     };
 
@@ -67,55 +70,57 @@ function ListingForm() {
         setIsLoading(true);
 
         // Check session
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (!session) {
-          throw new Error('Please sign in to create a listing');
+          throw new Error("Please sign in to create a listing");
         }
 
         // Upload images first
         const imageUrls = await uploadMultipleProductImages(values.photos);
-        
+
         // Submit the form data with image URLs to your API
         const productData = {
           ...values,
-          photos: imageUrls  // Replace File objects with URLs
+          photos: imageUrls, // Replace File objects with URLs
         };
-        
-        const response = await fetch('/api/products', {
-          method: 'POST',
+
+        const response = await fetch("/api/products", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify(productData),
         });
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to create listing');
+          throw new Error(errorData.error || "Failed to create listing");
         }
 
         // Show success modal
         modalContext?.open("successful-listing-modal");
-        
+
         // Reset form
         formik.resetForm();
         setPreviews([]);
-        
+
         // Redirect to product page or marketplace
-        router.push('/marketplace');
+        router.push("/marketplace");
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.message || 'Failed to create product');
+          throw new Error(error.message || "Failed to create product");
         }
 
         await response.json();
         modalContext?.open("successful-listing-modal");
       } catch (error) {
-        console.error('Error submitting form:', error);
+        console.error("Error submitting form:", error);
         // TODO: Add proper error handling UI here
-        alert('Failed to create product. Please try again.');
+        alert("Failed to create product. Please try again.");
       } finally {
         setIsLoading(false);
       }
@@ -161,10 +166,7 @@ function ListingForm() {
       <div className="p-6 bg-white rounded-lg">
         <h3 className="text-red-600 font-semibold mb-2">Error</h3>
         <p>{error}</p>
-        <Button
-          onClick={() => modalContext?.close()}
-          className="mt-4"
-        >
+        <Button onClick={() => modalContext?.close()} className="mt-4">
           Close
         </Button>
       </div>
@@ -273,11 +275,10 @@ function ListingForm() {
           error={Boolean(formik.errors.title && formik.touched.title)}
           errorMessage={formik.errors.title}
         />
-        <InputField
+        <InputTextArea
           config={{
             placeholder:
               "Detailed description of your product, condition, specification...",
-            type: "text",
             name: "description",
             value: formik.values.description,
             onChange: formik.handleChange,
@@ -315,11 +316,11 @@ function ListingForm() {
           error={Boolean(formik.errors.country && formik.touched.country)}
           errorMessage={formik.errors.country}
         />
-        <InputField
+
+        <InputTextArea
           config={{
             placeholder:
               "Shipping method, estimated delivery time, special instructions...",
-            type: "text",
             name: "delivery",
             value: formik.values.delivery,
             onChange: formik.handleChange,

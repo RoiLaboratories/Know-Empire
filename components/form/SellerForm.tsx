@@ -11,6 +11,7 @@ import { ICON } from "../../utils/icon-export";
 import Modal, { ModalContext } from "../../context/ModalContext";
 import LoadingCard from "../popups/loading-card";
 import SellerCongratsPopup from "../popups/seller-congrats-popup";
+import InputTextArea from "./InputTextArea";
 
 function SellerForm() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -149,10 +150,24 @@ function SellerForm() {
             error={Boolean(formik.errors.location && formik.touched.location)}
             errorMessage={formik.errors.location}
           />
-          <InputField
+          {/* <InputField
             config={{
               placeholder: "Select description",
               type: "text",
+              name: "description",
+              value: formik.values.description,
+              onChange: formik.handleChange,
+              onBlur: formik.handleBlur,
+            }}
+            label="Brief Description"
+            error={Boolean(
+              formik.errors.description && formik.touched.description
+            )}
+            errorMessage={formik.errors.description}
+          /> */}
+          <InputTextArea
+            config={{
+              placeholder: "Tell buyers about yourself and what you sell...",
               name: "description",
               value: formik.values.description,
               onChange: formik.handleChange,
@@ -205,14 +220,7 @@ function SellerForm() {
       </Modal.Window>
 
       <Modal.Window name="congrats-modal" showBg={false}>
-        <SellerCongratsPopup
-        // onCloseModal={() => {
-        //   console.log("Closing congrats modal");
-        //   modalContext?.close();
-        // }}
-        // onMount={() => console.log("Congrats modal mounted")}
-        // onUnmount={() => console.log("Congrats modal unmounted")}
-        />
+        <SellerCongratsPopup />
       </Modal.Window>
     </>
   );

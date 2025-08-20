@@ -1,3 +1,4 @@
+import { CartProvider } from "../providers/cart";
 import "../styles/global.css";
 import AuthProvider from "../components/auth/AuthProvider";
 import { MiniKitContextProvider } from "../providers/MiniKitProvider";
@@ -36,11 +37,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`antialiased min-h-screen`}>
+        <CartProvider>
         <MiniKitContextProvider>
           <AuthProvider>
             <FarcasterAuthProvider>{children}</FarcasterAuthProvider>
           </AuthProvider>
         </MiniKitContextProvider>
+      </CartProvider>
       </body>
     </html>
   );
