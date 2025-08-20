@@ -23,6 +23,7 @@ import InputTextArea from "./InputTextArea";
 
 function SellerForm() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const modalContext = useContext(ModalContext);
 
 
@@ -91,8 +92,8 @@ function SellerForm() {
       } catch (error) {
         console.error('Error creating seller account:', error);
         modalContext?.close();
-        // Show error message to user
-        alert(error instanceof Error ? error.message : 'Failed to create seller account. Please try again.');
+        // Set error message
+        setError(error instanceof Error ? error.message : 'Failed to create seller account. Please try again.');
       }
     },
   });
@@ -205,6 +206,9 @@ function SellerForm() {
 
           {/* No need for this as its handled by formik already */}
           {/* <Modal.Open opens="loading-modal">  */}
+          {error && (
+            <p className="text-red-500 text-sm mt-2 mb-2">{error}</p>
+          )}
           <Button
             type="submit"
             variant="primary_gradient"
