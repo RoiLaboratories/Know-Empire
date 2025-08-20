@@ -43,6 +43,8 @@ function SellerForm() {
 
   const formik = useFormik<SellerInput>({
     validationSchema: SELLER_SCHEMA,
+    validateOnChange: true,
+    validateOnBlur: true,
     initialValues: {
       category: "",
       email: "",
@@ -50,11 +52,16 @@ function SellerForm() {
       description: "",
     },
     onSubmit: async (values) => {
+      if (!formik.isValid) {
+        return;
+      }
+
       try {
         if (!user) {
           throw new Error('Please make sure you are connected with Farcaster');
         }
 
+        // Open loading modal first
         modalContext?.open("loading-modal");
 
         const response = await fetch('/api/seller', {
@@ -203,7 +210,7 @@ function SellerForm() {
             variant="primary_gradient"
             size="xs"
             className="text-gray-medium mt-2 disabled:bg-[#989898]"
-            disabled={!acceptedTerms}
+            disabled={!acceptedTerms || !formik.isValid}
           >
             Create seller account
           </Button>
