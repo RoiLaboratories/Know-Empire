@@ -29,8 +29,16 @@ function SellerCongratsPopup({ onCloseModal, onMount, onUnmount }: ISProps) {
 
       <button
         onClick={() => {
-          router.push("/list_product/");
-          if (onCloseModal) onCloseModal();
+          // Use replace instead of push to avoid navigation stack issues
+          if (onCloseModal) {
+            // Set a small timeout to ensure modal cleanup happens after navigation
+            onCloseModal();
+            setTimeout(() => {
+              window.location.href = "/list_product";
+            }, 100);
+          } else {
+            window.location.href = "/list_product";
+          }
         }}
         className="text-white rounded bg-primary flex justify-center gap-x-1 items-center text-xs font-bold py-2 px-5 drop-shadow-dark btn"
       >
