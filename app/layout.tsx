@@ -3,6 +3,7 @@ import "../styles/global.css";
 import AuthProvider from "../components/auth/AuthProvider";
 import { MiniKitContextProvider } from "../providers/MiniKitProvider";
 import { FarcasterAuthProvider } from "../context/FarcasterAuthContext";
+import { OrdersProvider } from "../providers/orders";
 import { Metadata } from "next";
 import { Toaster } from 'react-hot-toast';
 
@@ -42,8 +43,9 @@ export default function RootLayout({
         <MiniKitContextProvider>
           <AuthProvider>
             <FarcasterAuthProvider>
-              {children}
-              <Toaster
+              <OrdersProvider>
+                {children}
+                <Toaster
                 position="top-center"
                 toastOptions={{
                   style: {
@@ -60,6 +62,7 @@ export default function RootLayout({
                   }
                 }}
               />
+              </OrdersProvider>
             </FarcasterAuthProvider>
           </AuthProvider>
         </MiniKitContextProvider>
