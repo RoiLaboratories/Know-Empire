@@ -14,6 +14,7 @@ import { useContext } from "react";
 import { ModalContext } from "../../context/ModalContext";
 import GenericPopup from "../popups/generic-popup";
 import LoadingCard from "../popups/loading-card";
+import ErrorPopup from "../popups/error-popup";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 
 
@@ -111,23 +112,85 @@ export default function ListingForm() {
   });
 
 
-  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+  // Image requirements
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  const MIN_DIMENSIONS = { width: 400, height: 400 }; // Minimum dimensions
+  const MAX_DIMENSIONS = { width: 2048, height: 2048 }; // Maximum dimensions
+
+  const validateImage = (file: File): Promise<string | null> => {
+    return new Promise((resolve) => {
+      // Check file size
+      if (file.size > MAX_FILE_SIZE) {
+        resolve(`Image "${file.name}" is too large. Maximum size is 5MB.`);
+        return;
+      }
+
+      // Check file type
+      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+        resolve(`"${file.name}" has unsupported format. Please use JPEG, PNG or WebP.`);
+        return;
+      }
+
+      // Check dimensions
+      const img = document.createElement('img') as HTMLImageElement;
+      const objectUrl = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        
+        if (img.width < MIN_DIMENSIONS.width || img.height < MIN_DIMENSIONS.height) {
+          resolve(`Image "${file.name}" is too small. Minimum dimensions are 400x400px.`);
+          return;
+        }
+
+        if (img.width > MAX_DIMENSIONS.width || img.height > MAX_DIMENSIONS.height) {
+          resolve(`Image "${file.name}" is too large. Maximum dimensions are 2048x2048px.`);
+          return;
+        }
+
+        resolve(null);
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(`Failed to load image "${file.name}". Please try another file.`);
+      };
+
+      img.src = objectUrl;
+    });
+  };
+
+  const handleImageChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
       const newFiles = Array.from(files);
 
       // Limit to 3 images
       if (formik.values.photos.length + newFiles.length > 3) {
-        alert("You can only upload a maximum of 3 images.");
+        modalContext?.open('listing-error-custom');
         return;
       }
 
-      // Create preview URLs
-      const newPreviewUrls = newFiles.map(file => URL.createObjectURL(file));
-      setPreviews(prev => [...prev, ...newPreviewUrls]);
+      // Validate each file
+      const validFiles: File[] = [];
+      const validPreviewUrls: string[] = [];
 
-      // Update form value
-      formik.setFieldValue("photos", [...formik.values.photos, ...newFiles]);
+      for (const file of newFiles) {
+        const error = await validateImage(file);
+        if (error) {
+          modalContext?.open('listing-error-custom', { message: error });
+          continue;
+        }
+
+        validFiles.push(file);
+        validPreviewUrls.push(URL.createObjectURL(file));
+      }
+
+      if (validFiles.length > 0) {
+        setPreviews(prev => [...prev, ...validPreviewUrls]);
+        formik.setFieldValue("photos", [...formik.values.photos, ...validFiles]);
+      }
     }
   };
 
@@ -176,6 +239,13 @@ export default function ListingForm() {
                 onCloseModal={() => closeModals()}
               />
             )}
+
+            {modalContext?.openNames.includes('listing-error-custom') && (
+              <ErrorPopup
+                message="You can only upload a maximum of 3 images."
+                onCloseModal={() => closeModals()}
+              />
+            )}
           </div>
         </div>
       )}
@@ -189,9 +259,17 @@ export default function ListingForm() {
         <div className="w-full">
         <div className="flex gap-2 items-end mb-1">
           <div className="space-y-1.5">
-            <p className="font-medium text-gray text-xs text-nowrap">
-              Product Images (Max 3)
-            </p>
+            <div>
+              <p className="font-medium text-gray text-xs text-nowrap mb-1">
+                Product Images (Max 3)
+              </p>
+              <p className="text-[10px] text-gray-500">
+                Requirements:
+                <br />• File types: JPEG, PNG, WebP
+                <br />• Max size: 5MB per image
+                <br />• Dimensions: 400x400px to 2048x2048px
+              </p>
+            </div>
             <label
               htmlFor="photos"
               className="rounded-lg border-dashed border-2 text-gray-400 border-gray-400 flex flex-col gap-2 items-center justify-center size-32 cursor-pointer"
