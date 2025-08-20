@@ -4,7 +4,15 @@ import { useContext, useEffect, useState } from "react";
 import { SELLER_SCHEMA } from "../../schema/seller.schema";
 import FormInput from "./FormInput";
 import { supabase } from "../../utils/supabase";
+
+interface SellerInput {
+  category: string;
+  email: string;
+  location: string;
+  description: string;
+}
 import InputField from "./InputField";
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import Button from "../../ui/Button";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
@@ -17,32 +25,25 @@ function SellerForm() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const modalContext = useContext(ModalContext);
 
-  const handleCreateAccount = () => {
-    // Already wrapped parent of sellerform with Modal context so no need for this
 
-    // if (!modalContext) {
-    //   console.log("No modal context available");
-    //   return;
-    // }
 
-    console.log("Opening loading modal");
-    // Open loading modal immediately
-    modalContext?.open("loading-modal");
+  const { context } = useMiniKit();
+  const [user, setUser] = useState<any>(null);
 
-    // After 5 seconds, show congrats
-    setTimeout(() => {
-      modalContext?.close();
-      console.log("Transitioning to congrats");
-      console.log("Opening congrats modal");
-      modalContext?.open("congrats-modal");
-      // modalContext?.close(); // Close loading modal
-    }, 5000);
-  };
+  useEffect(() => {
+    if (context?.user) {
+      setUser(context.user);
+    } else {
+      const storedUser = localStorage.getItem('farcaster_user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    }
+  }, [context]);
 
   const formik = useFormik<SellerInput>({
     validationSchema: SELLER_SCHEMA,
     initialValues: {
-      handle: "",
       category: "",
       email: "",
       location: "",
@@ -50,21 +51,24 @@ function SellerForm() {
     },
     onSubmit: async (values) => {
       try {
-        modalContext?.open("loading-modal");
-
-        // Get the current session
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          throw new Error('Please sign in first');
+        if (!user) {
+          throw new Error('Please make sure you are connected with Farcaster');
         }
+
+        modalContext?.open("loading-modal");
 
         const response = await fetch('/api/seller', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`
           },
-          body: JSON.stringify(values),
+          body: JSON.stringify({
+            ...values,
+            fid: user.fid,
+            username: user.username,
+            displayName: user.displayName,
+            pfpUrl: user.pfpUrl
+          }),
         });
 
         if (!response.ok) {
@@ -80,10 +84,9 @@ function SellerForm() {
       } catch (error) {
         console.error('Error creating seller account:', error);
         modalContext?.close();
-        // TODO: Show error message to user
-        alert('Failed to create seller account. Please try again.');
+        // Show error message to user
+        alert(error instanceof Error ? error.message : 'Failed to create seller account. Please try again.');
       }
-      handleCreateAccount();
     },
   });
 
@@ -93,24 +96,11 @@ function SellerForm() {
         config={{
           onSubmit: (e) => {
             e.preventDefault();
-            handleCreateAccount();
+            formik.handleSubmit();
           },
         }}
       >
         <div className="w-full">
-          <InputField
-            config={{
-              placeholder: "@yourhandle",
-              type: "text",
-              name: "handle",
-              value: formik.values.handle,
-              onChange: formik.handleChange,
-              onBlur: formik.handleBlur,
-            }}
-            label="Farcaster Handle"
-            error={Boolean(formik.errors.handle && formik.touched.handle)}
-            errorMessage={formik.errors.handle}
-          />
           <InputField
             config={{
               placeholder: "@youremail",
@@ -124,19 +114,26 @@ function SellerForm() {
             error={Boolean(formik.errors.email && formik.touched.email)}
             errorMessage={formik.errors.email}
           />
-          <InputField
-            config={{
-              placeholder: "Select category",
-              type: "text",
-              name: "category",
-              value: formik.values.category,
-              onChange: formik.handleChange,
-              onBlur: formik.handleBlur,
-            }}
-            label="Product Category"
-            error={Boolean(formik.errors.category && formik.touched.category)}
-            errorMessage={formik.errors.category}
-          />
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Product Category</label>
+            <select
+              name="category"
+              value={formik.values.category}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className="w-full p-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="">Select a category</option>
+              <option value="Fashion">Fashion</option>
+              <option value="Gadgets">Gadgets</option>
+              <option value="Sports">Sports</option>
+              <option value="Books">Books</option>
+              <option value="Home">Home</option>
+            </select>
+            {formik.touched.category && formik.errors.category && (
+              <p className="mt-1 text-xs text-red-500">{formik.errors.category}</p>
+            )}
+          </div>
           <InputField
             config={{
               placeholder: "United States",
