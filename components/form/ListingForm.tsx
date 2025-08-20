@@ -143,35 +143,42 @@ export default function ListingForm() {
 
   return (
     <div className="relative">
-      {/* Modal container - fixed position */}
-      <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-        <div className="pointer-events-auto">
-          {modalContext?.openNames.includes('listing-loading') && (
-            <LoadingCard message="Listing your product..." />
-          )}
+      {/* Modal container with blur overlay */}
+      {(modalContext?.openNames.includes('listing-loading') ||
+        modalContext?.openNames.includes('listing-success') ||
+        modalContext?.openNames.includes('listing-error')) && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          {/* Blur overlay */}
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" onClick={closeModals}></div>
+          {/* Modal content */}
+          <div className="relative z-10">
+            {modalContext?.openNames.includes('listing-loading') && (
+              <LoadingCard message="Listing your product..." />
+            )}
 
-          {modalContext?.openNames.includes('listing-success') && (
-            <GenericPopup
-              text="Your product has been listed successfully!"
-              icon={ICON.CHECK_CIRCLE}
-              iconStyle="text-green-500"
-              onCloseModal={() => {
-                closeModals();
-                window.location.href = '/marketplace';
-              }}
-            />
-          )}
+            {modalContext?.openNames.includes('listing-success') && (
+              <GenericPopup
+                text="Your product has been listed successfully!"
+                icon={ICON.CHECK_CIRCLE}
+                iconStyle="text-green-500"
+                onCloseModal={() => {
+                  closeModals();
+                  window.location.href = '/marketplace';
+                }}
+              />
+            )}
 
-          {modalContext?.openNames.includes('listing-error') && (
-            <GenericPopup
-              text="Failed to create product. Please try again."
-              icon={ICON.CANCEL}
-              iconStyle="text-red-500"
-              onCloseModal={() => closeModals()}
-            />
-          )}
+            {modalContext?.openNames.includes('listing-error') && (
+              <GenericPopup
+                text="Failed to create product. Please try again."
+                icon={ICON.CANCEL}
+                iconStyle="text-red-500"
+                onCloseModal={() => closeModals()}
+              />
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Form content */}
       <FormInput
