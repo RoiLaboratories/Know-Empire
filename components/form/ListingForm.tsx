@@ -10,6 +10,11 @@ import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import Image from "next/image";
 import InputTextArea from "./InputTextArea";
+import { useContext } from "react";
+import { ModalContext } from "../../context/ModalContext";
+import GenericPopup from "../popups/generic-popup";
+import LoadingCard from "../popups/loading-card";
+
 
 interface ListingFormValues {
   category: string;
@@ -23,6 +28,13 @@ interface ListingFormValues {
 
 export default function ListingForm() {
   const [previews, setPreviews] = useState<string[]>([]);
+  const modalContext = useContext(ModalContext);
+
+  const closeModals = () => {
+    modalContext?.close('listing-loading');
+    modalContext?.close('listing-success');
+    modalContext?.close('listing-error');
+  };
 
   const formik = useFormik<ListingFormValues>({
     initialValues: {
@@ -36,9 +48,50 @@ export default function ListingForm() {
     },
     validationSchema: LIST_SCHEMA,
     onSubmit: async (values) => {
-      // For now, just log the values
-      console.log("Form submitted:", values);
-      // We'll implement the actual submission later
+      try {
+        modalContext?.open('listing-loading');
+
+        // Convert the File objects to base64 strings
+        const photoPromises = values.photos.map((file) => {
+          return new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = (error) => reject(error);
+          });
+        });
+        
+        const photoBase64 = await Promise.all(photoPromises);
+
+        const response = await fetch('/api/products', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...values,
+            photos: photoBase64
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create product');
+        }
+
+        // Clear form and previews after successful submission
+        formik.resetForm();
+        setPreviews([]);
+        
+        // Close loading modal and show success
+        modalContext?.close('listing-loading');
+        modalContext?.open('listing-success');
+
+      } catch (error) {
+        console.error('Error submitting form:', error);
+        // Close loading modal and show error
+        modalContext?.close('listing-loading');
+        modalContext?.open('listing-error');
+      }
     }
   });
 
@@ -74,12 +127,13 @@ export default function ListingForm() {
   };
 
   return (
-    <FormInput
-      config={{
-        onSubmit: formik.handleSubmit,
-      }}
-    >
-      <div className="w-full">
+    <div className="relative">
+      <FormInput
+        config={{
+          onSubmit: formik.handleSubmit,
+        }}
+      >
+        <div className="w-full">
         <div className="flex gap-2 items-end mb-1">
           <div className="space-y-1.5">
             <p className="font-medium text-gray text-xs text-nowrap">
@@ -226,6 +280,32 @@ export default function ListingForm() {
         </Button>
       </div>
     </FormInput>
+
+    {modalContext?.openNames.includes('listing-loading') && (
+      <LoadingCard message="Listing your product..." />
+    )}
+
+    {modalContext?.openNames.includes('listing-success') && (
+      <GenericPopup
+        text="Your product has been listed successfully!"
+        icon={ICON.CHECK_CIRCLE}
+        iconStyle="text-green-500"
+        onCloseModal={() => {
+          closeModals();
+          window.location.href = '/marketplace';
+        }}
+      />
+    )}
+
+    {modalContext?.openNames.includes('listing-error') && (
+      <GenericPopup
+        text="Failed to create product. Please try again."
+        icon={ICON.CANCEL}
+        iconStyle="text-red-500"
+        onCloseModal={() => closeModals()}
+      />
+    )}
+    </div>
   );
 }
 
