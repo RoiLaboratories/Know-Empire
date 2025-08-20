@@ -121,9 +121,14 @@ function Window({ children, name, allowOutsideClick, showBg = true }: Window) {
 
   return createPortal(
     //Overlay
-    <div className="transition-all ease-in-out fixed h-screen top-0 left-0 w-full z-[1000] bg-black/20 backdrop-blur-sm text">
+    <div 
+      role="dialog"
+      aria-modal="true"
+      className="transition-all ease-in-out fixed h-screen top-0 left-0 w-full z-[1000] bg-black/20 backdrop-blur-sm text"
+    >
       {/*Modal */}
       <div
+        role="document"
         className={`transition-all duration-300 ease-in-out transform 
           fixed top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2  rounded-t-2xl  ${
             showBg && "bg-white shadow-menu"
@@ -140,7 +145,7 @@ function Window({ children, name, allowOutsideClick, showBg = true }: Window) {
       >
         {/*close button */}
         {showBg && (
-          <Button onClick={close}>
+          <Button onClick={close} aria-label="Close modal">
             <Icon icon={ICON.CANCEL} fontSize={24} />
           </Button>
         )}
