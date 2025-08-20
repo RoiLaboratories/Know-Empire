@@ -9,9 +9,9 @@ import { useCart } from "../../providers/cart";
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { useEffect, useState } from 'react';
 
-const routes = [
+// Base routes that don't change
+const baseRoutes = [
   { title: "Buy Products", icon: ICON.BUY, path: "/marketplace" },
-  { title: "Sell Products", icon: ICON.SELL, path: "/marketplace/sell" },
 ];
 
 interface FarcasterUser {
@@ -26,8 +26,30 @@ function Header() {
   const { cart } = useCart();
   const { context } = useMiniKit();
   const [user, setUser] = useState<FarcasterUser | null>(null);
+  const [isSellerAccount, setIsSellerAccount] = useState(false);
+  const [routes, setRoutes] = useState(baseRoutes);
 
+  // Check seller status
   useEffect(() => {
+    const checkSellerStatus = async (fid: number) => {
+      try {
+        const response = await fetch(`/api/seller?fid=${fid}`);
+        if (response.ok) {
+          const data = await response.json();
+          setIsSellerAccount(!!data);
+          
+          // Update routes based on seller status
+          const sellerRoute = data ? 
+            { title: "List Product", icon: ICON.SELL, path: "/list_product" } :
+            { title: "Sell Products", icon: ICON.SELL, path: "/marketplace/sell" };
+          
+          setRoutes([...baseRoutes, sellerRoute]);
+        }
+      } catch (error) {
+        console.error('Error checking seller status:', error);
+      }
+    };
+
     // Get user data from context or localStorage
     if (context?.user) {
       const userData: FarcasterUser = {
@@ -37,10 +59,15 @@ function Header() {
         pfpUrl: context.user.pfpUrl || ""
       };
       setUser(userData);
+      checkSellerStatus(context.user.fid);
     } else {
       const storedUser = localStorage.getItem('farcaster_user');
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        if (parsedUser.fid) {
+          checkSellerStatus(parsedUser.fid);
+        }
       }
     }
   }, [context]);
