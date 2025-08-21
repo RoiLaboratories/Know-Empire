@@ -2,8 +2,6 @@
 import CartItem from "../../components/cart/CartItem";
 import Tab from "../../components/layout/Tab";
 import BackButton from "../../ui/BackButton";
-import Phone from "../../assets/images/prod1.png";
-import Pc from "../../assets/images/prod2.png";
 import Invite from "../../assets/images/invite.png";
 import Image from "next/image";
 import Button from "../../ui/Button";
@@ -14,6 +12,7 @@ import { formatCurrency } from "../../utils/helpers";
 import Link from "next/link";
 import Modal from "../../context/ModalContext";
 import PurchasePopup from "../../components/popups/purchase-popup";
+import EmptyCart from "../../assets/images/empty-cart.svg";
 
 function Cart() {
   const {
@@ -37,8 +36,8 @@ function Cart() {
               showRoutes={false}
             />
           </div>
-
-          {cart.length !== 0 ? (
+          {/* cart.length !== 0 */}
+          {!true ? (
             <>
               {/*main content */}
               <ul className="space-y-5">
@@ -101,12 +100,7 @@ function Cart() {
               </div>
             </>
           ) : (
-            <div className="flex flex-col items-center gap-3">
-              <p className="font-semibold text-center">Your cart is empty :)</p>
-              <Button className="w-fit" to="/marketplace">
-                Visit market
-              </Button>
-            </div>
+            <EmptyCart />
           )}
         </div>
 
