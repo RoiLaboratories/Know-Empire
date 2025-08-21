@@ -44,8 +44,8 @@ function DeliveryInformationPopup({ onNext, onBack, product }: IDProps) {
             <p className=" text-[#808080]">{product.delivery}</p>
           </div>
         </div>
-        <div className="flex gap-x-1">
-          <Icon icon={ICON.FILE} fontSize={16} className="text-[#808080]" />
+        <div className="flex gap-x-2 items-start">
+          <Icon icon={ICON.FILE} fontSize={20} className="text-[#808080] mt-0.5" />
           <div className=" text-[11px]">
             <p className="font-medium">Delivery Policy</p>
             <p className=" text-[#808080]">
