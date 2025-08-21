@@ -20,6 +20,7 @@ function CartItem({ item }: { item: CProps }) {
           alt="phone"
           src={item.img}
           placeholder="blur"
+          fill
           className="w-full h-full object-contain"
         />
       </div>

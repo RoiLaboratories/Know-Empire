@@ -3,27 +3,26 @@ import "../styles/global.css";
 import AuthProvider from "../components/auth/AuthProvider";
 import { MiniKitContextProvider } from "../providers/MiniKitProvider";
 import { FarcasterAuthProvider } from "../context/FarcasterAuthContext";
-import { OrdersProvider } from "../providers/orders";
 import { Metadata } from "next";
-import { Toaster } from 'react-hot-toast';
 
 export async function generateMetadata(): Promise<Metadata> {
   const URL = process.env.NEXT_PUBLIC_URL as string;
   return {
     title: process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME,
-    description: 'A marketplace for physical goods powered by Farcaster`',
+    description: "A marketplace for physical goods powered by Farcaster`",
     other: {
-      'fc:frame': JSON.stringify({
-        version: 'next',
+      "fc:frame": JSON.stringify({
+        version: "next",
         imageUrl: process.env.NEXT_PUBLIC_APP_HERO_IMAGE,
         button: {
           title: `Launch ${process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME}`,
           action: {
-            type: 'launch_frame',
+            type: "launch_frame",
             name: process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME,
             url: URL,
             splashImageUrl: process.env.NEXT_PUBLIC_SPLASH_IMAGE,
-            splashBackgroundColor: process.env.NEXT_PUBLIC_SPLASH_BACKGROUND_COLOR,
+            splashBackgroundColor:
+              process.env.NEXT_PUBLIC_SPLASH_BACKGROUND_COLOR,
           },
         },
       }),
@@ -40,33 +39,12 @@ export default function RootLayout({
     <html lang="en">
       <body className={`antialiased min-h-screen`}>
         <CartProvider>
-        <MiniKitContextProvider>
-          <AuthProvider>
-            <FarcasterAuthProvider>
-              <OrdersProvider>
-                {children}
-                <Toaster
-                position="top-center"
-                toastOptions={{
-                  style: {
-                    background: '#B400F7',
-                    color: 'white',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                  },
-                  success: {
-                    iconTheme: {
-                      primary: 'white',
-                      secondary: '#B400F7',
-                    },
-                  }
-                }}
-              />
-              </OrdersProvider>
-            </FarcasterAuthProvider>
-          </AuthProvider>
-        </MiniKitContextProvider>
-      </CartProvider>
+          <MiniKitContextProvider>
+            <AuthProvider>
+              <FarcasterAuthProvider>{children}</FarcasterAuthProvider>
+            </AuthProvider>
+          </MiniKitContextProvider>
+        </CartProvider>
       </body>
     </html>
   );
