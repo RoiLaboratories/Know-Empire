@@ -30,25 +30,25 @@ function DeliveryInformationPopup({ onNext, onBack, product }: IDProps) {
       <div className="rounded-[10px] border border-[#989898] p-5 space-y-4">
         <p className="font-medium text-gray text-[13px]">Shipping details</p>
 
-        <div className="flex gap-x-1">
-          <Icon icon={ICON.LOCATION} fontSize={16} className="text-[#808080]" />
-          <div className=" text-[11px]">
+        <div className="flex gap-x-2 items-center">
+          <Icon icon={ICON.LOCATION} fontSize={24} className="text-[#808080] shrink-0" />
+          <div className="text-[11px]">
             <p className="font-medium">Shipping from</p>
-            <p className=" text-[#808080]">{product.country}</p>
+            <p className="text-[#808080]">{product.country}</p>
           </div>
         </div>
-        <div className="flex gap-x-1">
-          <Icon icon={ICON.HISTORY} fontSize={16} className="text-[#808080]" />
-          <div className=" text-[11px]">
+        <div className="flex gap-x-2 items-center">
+          <Icon icon={ICON.HISTORY} fontSize={24} className="text-[#808080] shrink-0" />
+          <div className="text-[11px]">
             <p className="font-medium">Delivery Details</p>
-            <p className=" text-[#808080]">{product.delivery}</p>
+            <p className="text-[#808080]">{product.delivery}</p>
           </div>
         </div>
-        <div className="flex gap-x-2 items-start">
-          <Icon icon={ICON.FILE} fontSize={20} className="text-[#808080] mt-0.5" />
-          <div className=" text-[11px]">
+        <div className="flex gap-x-2 items-center">
+          <Icon icon={ICON.FILE} fontSize={24} className="text-[#808080] shrink-0" />
+          <div className="text-[11px]">
             <p className="font-medium">Delivery Policy</p>
-            <p className=" text-[#808080]">
+            <p className="text-[#808080]">
               Sellers are responsible for delivery and must provide tracking information
             </p>
           </div>
