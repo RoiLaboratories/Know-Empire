@@ -32,24 +32,32 @@ export default function CartSummaryPopup({ onCloseModal, setSelectedProduct }: C
       // Close the cart summary first to avoid UI glitches
       modalContext?.close("cart-summary-popup");
 
-      // Fetch the product data for the first item in cart
-      const response = await fetch(`/api/products/${cart[0].productId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      // Fetch updated data for each product in cart
+      const productsData = await Promise.all(cart.map(async (item) => {
+        const response = await fetch(`/api/products/${item.productId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-      const data = await response.json();
-      if (!data) {
+        return response.json();
+      }));
+
+      if (!productsData.length) {
         throw new Error('No data received from the server');
       }
 
-      setSelectedProduct(data);
+      // Set the selected product to the first item's full data
+      setSelectedProduct(productsData[0]);
+      
+      // Store all product data in a context or state if needed for the full cart
+      // TODO: You might want to store full product data for all items here
+      
       // Open the purchase popup after setting the product
       modalContext?.open("purchase-product-popup");
     } catch (error) {
