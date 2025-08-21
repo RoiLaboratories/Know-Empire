@@ -10,10 +10,10 @@ export async function GET(request: Request) {
       .from('products')
       .select(`
         *,
-        seller: seller_id (
-          id,
-          username,
-          farcaster_id,
+        seller:users!seller_id (
+          farcaster_username,
+          display_name,
+          avatar_url,
           rating,
           review_count
         )
@@ -32,7 +32,17 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.json(product);
+    // Transform the data to match the frontend's expected format
+    const transformedProduct = {
+      ...product,
+      seller: {
+        username: product.seller.farcaster_username,
+        rating: product.seller.rating,
+        review_count: product.seller.review_count
+      }
+    };
+
+    return NextResponse.json(transformedProduct);
   } catch (error) {
     console.error('Error fetching product:', error);
     return NextResponse.json(

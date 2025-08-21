@@ -8,12 +8,15 @@ import PurchasePopup from "../popups/purchase-popup";
 import Modal from "../../context/ModalContext";
 import { useCart } from "../../providers/cart";
 import toast from 'react-hot-toast';
-import { ReactElement } from 'react';
+import { ReactElement, useState } from 'react';
 import { ProductWithSeller } from "../../types/product";
 
 function ProductCard({ product }: { product: ProductWithSeller }): ReactElement {
   const { addToCart } = useCart();
+  const [isLoading, setIsLoading] = useState(false);
+  const [updatedProduct, setUpdatedProduct] = useState<ProductWithSeller | null>(null);
   const { photos, title: name, price: unitPrice, id: productId, country: location } = product;
+  
   const handleAddToCart = () => {
     const numericPrice = parseFloat(unitPrice);
     const newItem = {
@@ -27,6 +30,37 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
 
     addToCart(newItem);
     toast.success('Item added to cart');
+  };
+
+  const fetchUpdatedProduct = async () => {
+    setIsLoading(true);
+    try {
+      console.log('Fetching product with ID:', productId);
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Fetched product data:', data);
+      
+      if (!data) {
+        throw new Error('No data received from the server');
+      }
+
+      setUpdatedProduct(data);
+    } catch (error) {
+      console.error('Error fetching product:', error);
+      toast.error('Failed to fetch latest product data');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -55,14 +89,22 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
         </p>
 
         <div className="grid grid-cols-2 gap-x-2 w-full">
-          <Modal.Open opens="purchase-product-popup">
+          <Modal.Open opens={`purchase-product-popup-${productId}`}>
             <Button
               variant="primary_gradient"
               size="xs"
               className="text-gray-medium"
+              onClick={fetchUpdatedProduct}
+              disabled={isLoading}
             >
-              <Icon icon={ICON.BUY2} fontSize={16} />
-              Buy now
+              {isLoading ? (
+                <Icon icon={ICON.SPINNER} className="animate-spin" fontSize={16} />
+              ) : (
+                <>
+                  <Icon icon={ICON.BUY2} fontSize={16} />
+                  Buy now
+                </>
+              )}
             </Button>
           </Modal.Open>
           <Button
@@ -70,6 +112,7 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
             size="xs"
             className="font-semibold"
             onClick={handleAddToCart}
+            disabled={isLoading}
           >
             <Icon icon={ICON.ADD_OUTLINE} fontSize={16} />
             Cart it
@@ -79,11 +122,11 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
 
       {/*all purchase modals */}
       <Modal.Window
-        name="purchase-product-popup"
+        name={`purchase-product-popup-${productId}`}
         // allowOutsideClick
         showBg={false}
       >
-        <PurchasePopup product={product} />
+        <PurchasePopup product={updatedProduct || product} />
       </Modal.Window>
     </li>
   );

@@ -58,6 +58,7 @@ function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
           <DeliveryInformationPopup
             onNext={handleNextStep}
             onBack={handleBack}
+            product={product}
           />
         )}
 
