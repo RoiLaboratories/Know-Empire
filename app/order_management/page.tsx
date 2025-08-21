@@ -4,9 +4,7 @@ import Search from "../../components/Search";
 import Phone from "../../assets/images/prod1.png";
 import Pc from "../../assets/images/prod2.png";
 import OrdersCard from "../../components/cards/OrdersCard";
-import Modal from "../../context/ModalContext";
-
-import PurchasePopup from "../../components/popups/purchase-popup";
+// Order management page only displays orders, no purchase functionality
 
 const orders = [
   {
@@ -34,14 +32,7 @@ function OrderManagement() {
         <div className="sticky top-0 space-y-3 py-3 bg-white">
           <BackButton />
           <div className="text-gray flex flex-col items-center">
-            <Modal>
-              <Modal.Open opens="test">
-                <p className="text-xl font-bold">Order Management</p>
-              </Modal.Open>
-              <Modal.Window name="test" allowOutsideClick showBg={false}>
-                <PurchasePopup />
-              </Modal.Window>
-            </Modal>
+            <p className="text-xl font-bold">Order Management</p>
           </div>
           <div className="mt-6">
             <Search placeholder="Search orders..." />
