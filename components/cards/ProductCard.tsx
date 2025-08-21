@@ -35,6 +35,7 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
   const fetchUpdatedProduct = async () => {
     setIsLoading(true);
     try {
+      console.log('Fetching product with ID:', productId);
       const response = await fetch(`/api/products/${productId}`, {
         method: 'GET',
         headers: {
@@ -47,6 +48,8 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
       }
 
       const data = await response.json();
+      console.log('Fetched product data:', data);
+      
       if (!data) {
         throw new Error('No data received from the server');
       }
@@ -86,7 +89,7 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
         </p>
 
         <div className="grid grid-cols-2 gap-x-2 w-full">
-          <Modal.Open opens="purchase-product-popup">
+          <Modal.Open opens={`purchase-product-popup-${productId}`}>
             <Button
               variant="primary_gradient"
               size="xs"
@@ -119,7 +122,7 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
 
       {/*all purchase modals */}
       <Modal.Window
-        name="purchase-product-popup"
+        name={`purchase-product-popup-${productId}`}
         // allowOutsideClick
         showBg={false}
       >

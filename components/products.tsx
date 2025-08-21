@@ -78,11 +78,14 @@ function Products() {
     return <div>Error: {error}</div>;
   }
 
+  console.log('Raw products from API:', products);
+
   return (
     <Modal>
       <Session title="Curated for you" link="See more">
         <ul className="grid grid-cols-2 gap-2">
           {products.map((apiProduct) => {
+            console.log('Processing product:', apiProduct);
             const product: ProductWithSeller = {
               ...apiProduct,
               price: apiProduct.price.toString(),
