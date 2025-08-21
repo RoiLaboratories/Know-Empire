@@ -1,11 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createServiceClient } from '../../../../utils/supabase';
 
-export async function GET(
-  request: NextRequest,
-  context: { params: { id: string } }
-) {
-  const { id } = context.params;
+interface RouteContext {
+  params: { id: string }
+}
+
+export async function GET(request: Request, { params }: RouteContext) {
+  const { id } = params;
   const supabaseAdmin = createServiceClient();
   try {
     const { data: product, error } = await supabaseAdmin
