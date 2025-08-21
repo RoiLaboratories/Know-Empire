@@ -46,7 +46,7 @@ function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
 
       {/*main content  */}
 
-      <div>
+      <div className="max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar no-scrollbar">
         {purchaseStep === 1 && (
           <ProductSummaryPopup 
             onNext={handleNextStep}

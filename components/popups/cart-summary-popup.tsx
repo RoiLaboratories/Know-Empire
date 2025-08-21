@@ -26,14 +26,24 @@ export default function CartSummaryPopup({ onCloseModal }: CartSummaryPopupProps
     setIsLoading(true);
     await sleep(1000);
     setIsLoading(false);
-    modalContext?.close("purchase-product-popup");
-    modalContext?.open("delivery-information-popup");
+    modalContext?.close("cart-summary-popup");
+    modalContext?.open("purchase-product-popup");
   };
 
   return (
-    <div className="space-y-2">
-      <p className="font-semibold text-gray text-sm">Cart Summary</p>
-      <div className="rounded-[10px] border border-[#989898] p-5">
+    <div className="rounded-t-2xl px-5 pt-5 pb-10 w-[300px] md:w-[402px] bg-white space-y-10">
+      <div className="flex items-center justify-between">
+        <p className="font-semibold text-gray text-sm">Cart Summary</p>
+        <Icon
+          icon={ICON.CANCEL}
+          fontSize={24}
+          onClick={onCloseModal}
+          className="cursor-pointer"
+        />
+      </div>
+
+      {/*main content  */}
+      <div>
         <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar no-scrollbar">
           {/* Cart Items */}
           <div className="space-y-4">
@@ -105,7 +115,7 @@ export default function CartSummaryPopup({ onCloseModal }: CartSummaryPopupProps
               disabled={isLoading || cart.length === 0}
             >
               {!isLoading ? (
-                "Continue to Delivery info"
+                "Proceed to Purchase"
               ) : (
                 <>
                   <Icon icon={ICON.SPINNER} fontSize={15} className="animate-spin" />
