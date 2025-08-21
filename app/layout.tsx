@@ -1,7 +1,11 @@
+import { CartProvider } from "../providers/cart";
 import "../styles/global.css";
 import AuthProvider from "../components/auth/AuthProvider";
 import { MiniKitContextProvider } from "../providers/MiniKitProvider";
+import { FarcasterAuthProvider } from "../context/FarcasterAuthContext";
+import { OrdersProvider } from "../providers/orders";
 import { Metadata } from "next";
+import { Toaster } from 'react-hot-toast';
 
 export async function generateMetadata(): Promise<Metadata> {
   const URL = process.env.NEXT_PUBLIC_URL as string;
@@ -35,9 +39,34 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`antialiased min-h-screen`}>
+        <CartProvider>
         <MiniKitContextProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <FarcasterAuthProvider>
+              <OrdersProvider>
+                {children}
+                <Toaster
+                position="top-center"
+                toastOptions={{
+                  style: {
+                    background: '#B400F7',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                  },
+                  success: {
+                    iconTheme: {
+                      primary: 'white',
+                      secondary: '#B400F7',
+                    },
+                  }
+                }}
+              />
+              </OrdersProvider>
+            </FarcasterAuthProvider>
+          </AuthProvider>
         </MiniKitContextProvider>
+      </CartProvider>
       </body>
     </html>
   );

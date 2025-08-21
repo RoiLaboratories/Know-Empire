@@ -4,36 +4,58 @@ import ProductCard from "./cards/ProductCard";
 import Session from "./Session";
 import Phone from "../assets/images/prod1.png"; // Fallback image
 import Modal from "../context/ModalContext";
+import { StaticImageData } from "next/image";
 
-interface Product {
-  id: string;
-  title: string;
+// const products = [
+//   {
+//     name: "Iphone 15 Pro max Black | 1TB",
+//     unitPrice: 999,
+//     img: Phone,
+//     location: "United States",
+//     seller: "TechSeller",
+//     productId: 1,
+//   },
+//   {
+//     name: "Asus Geoforce- RX 4080",
+//     unitPrice: 1299,
+//     img: Pc,
+//     location: "United States",
+//     seller: "TechSeller",
+//     productId: 2,
+//   },
+// ];
+
+import { Product as BaseProduct, ProductWithSeller } from '../types/product';
+
+interface APIProduct extends Omit<BaseProduct, 'price'> {
   price: number;
-  photos: string[];
-  country: string;
   seller: {
     farcaster_username: string;
     display_name: string;
+    rating?: number;
+    review_count?: number;
   };
 }
 
 function useProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<APIProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch('/api/products/list');
+        const response = await fetch("/api/products/list");
         if (!response.ok) {
-          throw new Error('Failed to fetch products');
+          throw new Error("Failed to fetch products");
         }
         const data = await response.json();
         setProducts(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch products');
-        console.error('Error fetching products:', err);
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch products"
+        );
+        console.error("Error fetching products:", err);
       } finally {
         setLoading(false);
       }
@@ -60,19 +82,23 @@ function Products() {
     <Modal>
       <Session title="Curated for you" link="See more">
         <ul className="grid grid-cols-2 gap-2">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={{
-                name: product.title,
-                price: product.price.toString(),
-                img: product.photos[0] || Phone,
-                location: product.country,
-                seller: product.seller.farcaster_username,
-                photos: product.photos
-              }}
-            />
-          ))}
+          {products.map((apiProduct) => {
+            const product: ProductWithSeller = {
+              ...apiProduct,
+              price: apiProduct.price.toString(),
+              seller: {
+                username: apiProduct.seller.farcaster_username,
+                rating: apiProduct.seller.rating,
+                review_count: apiProduct.seller.review_count
+              }
+            };
+            return (
+              <ProductCard
+                key={product.id}
+                product={product}
+              />
+            );
+          })}
         </ul>
       </Session>
     </Modal>

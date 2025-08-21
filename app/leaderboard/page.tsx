@@ -1,3 +1,5 @@
+"use client";
+
 import BackButton from "../../ui/BackButton";
 import LeadersCard from "../../components/cards/LeadersCard";
 import Tab from "../../components/layout/Tab";
@@ -65,9 +67,9 @@ const leaders = [
 
 function LeaderBoard() {
   return (
-    <section className="flex flex-col items-center justify-center min-h-screen pb-3">
+    <section className="flex flex-col items-center  min-h-screen pb-3">
       <div className="w-9/10 max-w-lg flex flex-col gap-y-1">
-        <div className="sticky top-0 space-y-3 bg-background py-3">
+        <div className="sticky top-0 space-y-3 bg-background py-3 z-10">
           <BackButton />
           <Tab name="Leaderboard" description="Check your ranking" />
         </div>

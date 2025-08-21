@@ -1,10 +1,9 @@
 import * as Yup from "yup";
 
 export const SELLER_SCHEMA = Yup.object({
-  handle: Yup.string().required("handle is required"),
   category: Yup.string().required("category is required"),
   email: Yup.string().email("Invalid email").required("Email is required"),
-  location: Yup.string().required("loaction is required"),
+  location: Yup.string().required("location is required"),
   description: Yup.string().required("description is required"),
 });
 

@@ -15,3 +15,9 @@ declare interface ListingInput {
   photos: [];
   category: string;
 }
+
+declare interface DisputeInput {
+  reason: string;
+  details: string;
+  photos: [];
+}

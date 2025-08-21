@@ -4,66 +4,79 @@ import { useContext, useEffect, useState } from "react";
 import { SELLER_SCHEMA } from "../../schema/seller.schema";
 import FormInput from "./FormInput";
 import { supabase } from "../../utils/supabase";
+
+interface SellerInput {
+  category: string;
+  email: string;
+  location: string;
+  description: string;
+}
 import InputField from "./InputField";
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import Button from "../../ui/Button";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import Modal, { ModalContext } from "../../context/ModalContext";
 import LoadingCard from "../popups/loading-card";
 import SellerCongratsPopup from "../popups/seller-congrats-popup";
+import InputTextArea from "./InputTextArea";
 
 function SellerForm() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const modalContext = useContext(ModalContext);
 
-  const handleCreateAccount = () => {
-    // Already wrapped parent of sellerform with Modal context so no need for this
 
-    // if (!modalContext) {
-    //   console.log("No modal context available");
-    //   return;
-    // }
 
-    console.log("Opening loading modal");
-    // Open loading modal immediately
-    modalContext?.open("loading-modal");
+  const { context } = useMiniKit();
+  const [user, setUser] = useState<any>(null);
 
-    // After 5 seconds, show congrats
-    setTimeout(() => {
-      modalContext?.close();
-      console.log("Transitioning to congrats");
-      console.log("Opening congrats modal");
-      modalContext?.open("congrats-modal");
-      // modalContext?.close(); // Close loading modal
-    }, 5000);
-  };
+  useEffect(() => {
+    if (context?.user) {
+      setUser(context.user);
+    } else {
+      const storedUser = localStorage.getItem('farcaster_user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    }
+  }, [context]);
 
   const formik = useFormik<SellerInput>({
     validationSchema: SELLER_SCHEMA,
+    validateOnChange: true,
+    validateOnBlur: true,
     initialValues: {
-      handle: "",
       category: "",
       email: "",
       location: "",
       description: "",
     },
     onSubmit: async (values) => {
-      try {
-        modalContext?.open("loading-modal");
+      if (!formik.isValid) {
+        return;
+      }
 
-        // Get the current session
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          throw new Error('Please sign in first');
+      try {
+        if (!user) {
+          throw new Error('Please make sure you are connected with Farcaster');
         }
+
+        // Open loading modal first
+        modalContext?.open("loading-modal");
 
         const response = await fetch('/api/seller', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`
           },
-          body: JSON.stringify(values),
+          body: JSON.stringify({
+            ...values,
+            fid: user.fid,
+            username: user.username,
+            displayName: user.displayName,
+            pfpUrl: user.pfpUrl
+          }),
         });
 
         if (!response.ok) {
@@ -79,10 +92,9 @@ function SellerForm() {
       } catch (error) {
         console.error('Error creating seller account:', error);
         modalContext?.close();
-        // TODO: Show error message to user
-        alert('Failed to create seller account. Please try again.');
+        // Set error message
+        setError(error instanceof Error ? error.message : 'Failed to create seller account. Please try again.');
       }
-      handleCreateAccount();
     },
   });
 
@@ -92,24 +104,11 @@ function SellerForm() {
         config={{
           onSubmit: (e) => {
             e.preventDefault();
-            handleCreateAccount();
+            formik.handleSubmit();
           },
         }}
       >
         <div className="w-full">
-          <InputField
-            config={{
-              placeholder: "@yourhandle",
-              type: "text",
-              name: "handle",
-              value: formik.values.handle,
-              onChange: formik.handleChange,
-              onBlur: formik.handleBlur,
-            }}
-            label="Farcaster Handle"
-            error={Boolean(formik.errors.handle && formik.touched.handle)}
-            errorMessage={formik.errors.handle}
-          />
           <InputField
             config={{
               placeholder: "@youremail",
@@ -123,19 +122,26 @@ function SellerForm() {
             error={Boolean(formik.errors.email && formik.touched.email)}
             errorMessage={formik.errors.email}
           />
-          <InputField
-            config={{
-              placeholder: "Select category",
-              type: "text",
-              name: "category",
-              value: formik.values.category,
-              onChange: formik.handleChange,
-              onBlur: formik.handleBlur,
-            }}
-            label="Product Category"
-            error={Boolean(formik.errors.category && formik.touched.category)}
-            errorMessage={formik.errors.category}
-          />
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Product Category</label>
+            <select
+              name="category"
+              value={formik.values.category}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className="w-full h-[48px] px-4 py-2 text-sm border rounded-[10px] focus:outline-none focus:ring-1 focus:ring-primary bg-white"
+            >
+              <option value="">Select a category</option>
+              <option value="Fashion">Fashion</option>
+              <option value="Gadgets">Gadgets</option>
+              <option value="Sports">Sports</option>
+              <option value="Books">Books</option>
+              <option value="Home">Home</option>
+            </select>
+            {formik.touched.category && formik.errors.category && (
+              <p className="mt-1 text-xs text-red-500">{formik.errors.category}</p>
+            )}
+          </div>
           <InputField
             config={{
               placeholder: "United States",
@@ -149,10 +155,24 @@ function SellerForm() {
             error={Boolean(formik.errors.location && formik.touched.location)}
             errorMessage={formik.errors.location}
           />
-          <InputField
+          {/* <InputField
             config={{
               placeholder: "Select description",
               type: "text",
+              name: "description",
+              value: formik.values.description,
+              onChange: formik.handleChange,
+              onBlur: formik.handleBlur,
+            }}
+            label="Brief Description"
+            error={Boolean(
+              formik.errors.description && formik.touched.description
+            )}
+            errorMessage={formik.errors.description}
+          /> */}
+          <InputTextArea
+            config={{
+              placeholder: "Tell buyers about yourself and what you sell...",
               name: "description",
               value: formik.values.description,
               onChange: formik.handleChange,
@@ -186,12 +206,15 @@ function SellerForm() {
 
           {/* No need for this as its handled by formik already */}
           {/* <Modal.Open opens="loading-modal">  */}
+          {error && (
+            <p className="text-red-500 text-sm mt-2 mb-2">{error}</p>
+          )}
           <Button
             type="submit"
             variant="primary_gradient"
             size="xs"
             className="text-gray-medium mt-2 disabled:bg-[#989898]"
-            disabled={!formik.isValid || !formik.dirty || !acceptedTerms}
+            disabled={!acceptedTerms || !formik.isValid}
           >
             Create seller account
           </Button>
@@ -205,14 +228,7 @@ function SellerForm() {
       </Modal.Window>
 
       <Modal.Window name="congrats-modal" showBg={false}>
-        <SellerCongratsPopup
-        // onCloseModal={() => {
-        //   console.log("Closing congrats modal");
-        //   modalContext?.close();
-        // }}
-        // onMount={() => console.log("Congrats modal mounted")}
-        // onUnmount={() => console.log("Congrats modal unmounted")}
-        />
+        <SellerCongratsPopup />
       </Modal.Window>
     </>
   );

@@ -6,19 +6,34 @@ import { useMiniKit } from '@coinbase/onchainkit/minikit';
 
 export default function Page() {
   const router = useRouter();
-  const { setFrameReady, isFrameReady } = useMiniKit();
+  const { setFrameReady, context } = useMiniKit();
 
   useEffect(() => {
-    if (!isFrameReady) setFrameReady();
-  }, [isFrameReady, setFrameReady]);
+    setFrameReady();
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      router.push("/onboarding");
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, [router]);
+    // If we have user context, store it and redirect to marketplace
+    if (context?.user) {
+      const userData = {
+        fid: context.user.fid,
+        username: context.user.username,
+        displayName: context.user.displayName,
+        pfpUrl: context.user.pfpUrl
+      };
+      
+      // Store user data in localStorage for use across the app
+      localStorage.setItem('farcaster_user', JSON.stringify(userData));
+      
+      // Redirect to marketplace since user is authenticated
+      router.push("/marketplace");
+    } else {
+      // If no user context, redirect to onboarding after splash
+      const timer = setTimeout(() => {
+        router.push("/onboarding");
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [setFrameReady, context, router]);
 
   return <Splash />;
 }

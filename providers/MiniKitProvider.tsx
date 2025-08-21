@@ -1,14 +1,14 @@
 'use client';
+
 import { MiniKitProvider } from '@coinbase/onchainkit/minikit';
 import { ReactNode } from 'react';
-import { base } from 'wagmi/chains';
+import { optimism } from 'viem/chains';
 
 export function MiniKitContextProvider({ children }: { children: ReactNode }) {
-  // For development, we'll use just the essential props
   return (
     <MiniKitProvider
-      apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY}
-      chain={base}
+      chain={optimism}
+      rpcUrl={`https://opt-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`}
     >
       {children}
     </MiniKitProvider>

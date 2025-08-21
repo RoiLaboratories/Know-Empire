@@ -12,13 +12,26 @@ export async function POST(request: Request) {
       delivery,
       category,
       photos,
+      fid, // Farcaster user ID from client
     } = await request.json()
 
-    // Get the current user's ID from their session
-    const { data: { session } } = await supabaseAdmin.auth.getSession()
-    if (!session) {
+    if (!fid) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Farcaster ID is required' },
+        { status: 401 }
+      )
+    }
+
+    // Get the user from the database
+    const { data: user, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('farcaster_id', fid)
+      .single()
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: 'User not found' },
         { status: 401 }
       )
     }
@@ -27,7 +40,7 @@ export async function POST(request: Request) {
     const { data: product, error } = await supabaseAdmin
       .from('products')
       .insert({
-        seller_id: session.user.id,
+        seller_id: user.id,
         title: title,
         description: description,
         price: price,

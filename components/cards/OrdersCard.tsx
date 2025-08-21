@@ -73,7 +73,12 @@ function OrdersCard({
         {/*dispute */}
         {status === "shipped" ? (
           <>
-            <Button variant="warning" size="xs" className="rounded-lg">
+            <Button
+              variant="warning"
+              size="xs"
+              className="rounded-lg"
+              to="/raise-dispute"
+            >
               <Icon icon={ICON.CAUTION} fontSize={16} />
               Raised a Dispute
             </Button>

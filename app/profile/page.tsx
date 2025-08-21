@@ -1,13 +1,89 @@
+'use client';
+
 import Image from "next/image";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import Wallet from "../../assets/icons/wallet.svg";
-import Avatar from "../../assets/images/avatar.png";
 import Verified from "../../assets/icons/verified.svg";
 import ReviewsCard from "../../components/cards/ReviewsCard";
 import BackButton from "../../ui/BackButton";
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
+import { supabase } from '@/utils/supabase';
+import Modal from "../../context/ModalContext";
+import GenericPopup from "../../components/popups/generic-popup";
+import ReferralPopup from "../../components/popups/referral-link-popup";
+
+interface SellerInfo {
+  is_seller: boolean;
+  seller_since?: string;
+  items_sold?: number;
+  rating?: number;
+}
+
+interface FarcasterUser {
+  fid: number;
+  username: string | undefined;
+  displayName: string | undefined;
+  pfpUrl: string | undefined;
+}
 
 function Profile() {
+  const router = useRouter();
+  const { context } = useMiniKit();
+  const [user, setUser] = useState<FarcasterUser | null>(null);
+  const [sellerInfo, setSellerInfo] = useState<SellerInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Get user data from context or localStorage
+  useEffect(() => {
+    if (context?.user) {
+      setUser({
+        fid: context.user.fid,
+        username: context.user.username || "",
+        displayName: context.user.displayName || "",
+        pfpUrl: context.user.pfpUrl || ""
+      });
+    } else {
+      const storedUser = localStorage.getItem('farcaster_user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      } else {
+        router.push('/onboarding');
+      }
+    }
+  }, [context, router]);
+
+  useEffect(() => {
+    const loadSellerInfo = async () => {
+      if (user?.fid) {
+        // Only check for seller info in Supabase
+        const { data, error } = await supabase
+          .from('sellers')
+          .select('*')
+          .eq('fid', user.fid)
+          .single();
+
+        if (!error) {
+          setSellerInfo(data);
+        }
+      }
+      setIsLoading(false);
+    };
+
+    loadSellerInfo();
+  }, [user?.fid]);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user) {
+    router.push('/');
+    return null;
+  }
+
   return (
     <section className="flex flex-col items-center min-h-screen">
       <div className="w-full max-w-lg flex flex-1 flex-col relative">
@@ -16,13 +92,33 @@ function Profile() {
         </div>
         <div className="bg-primary h-50 flex justify-between items-center p-5 text-white relative">
           <Image alt="wallet" src={Wallet} />
-          <Icon icon={ICON.SHARE} fontSize={30} />
+
+          <Modal>
+            <Modal.Open opens="share-referral-modal">
+              <Icon
+                icon={ICON.SHARE}
+                fontSize={30}
+                className="cursor-pointer"
+              />
+            </Modal.Open>
+            <Modal.Window name="share-referral-modal" showBg={false}>
+              <ReferralPopup />
+            </Modal.Window>
+            <Modal.Window name="referral-link-copied-popup" showBg={false}>
+              <GenericPopup
+                iconStyle="text-green-600"
+                icon={ICON.CHECK_CIRCLE}
+                text="Your referal link has been copied"
+              />
+            </Modal.Window>
+          </Modal>
 
           <div className="absolute rounded-full size-24 border-3 border-white bottom-0 translate-y-1/2">
             <Image
-              alt="user"
-              src={Avatar}
-              placeholder="blur"
+              alt={user?.displayName || "User profile"}
+              src={user?.pfpUrl || ""}
+              width={96}
+              height={96}
               className="w-full h-full object-cover rounded-full"
             />
           </div>
@@ -31,11 +127,11 @@ function Profile() {
         {/*user details */}
         <div className="px-5 py-12 bg-white space-y-3">
           <div className="space-y-1">
-            <p className="font-bold text-2xl">Kaspa Thompson</p>
+            <p className="font-bold text-2xl">{user?.displayName}</p>
 
             <div className="text-sm text-[#5a5a5a] font-medium space-y-1">
-              <p>@Id0care</p>
-              <p>120 followers</p>
+              <p>@{user?.username}</p>
+              <p>{user?.fid} FID</p>
             </div>
           </div>
 
@@ -60,12 +156,12 @@ function Profile() {
           <div className="grid grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
               <Icon icon={ICON.PACKAGE} fontSize={26} className="text-orange" />
-              <p className="text-[10px] font-medium">24</p>
+              <p className="text-[10px] font-medium">{sellerInfo?.items_sold || 0}</p>
               <p className="text-[7px] text-nowrap">items sold</p>
             </div>
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
               <Icon icon={ICON.BUY} fontSize={26} className="text-green-500" />
-              <p className="text-[10px] font-medium">12</p>
+              <p className="text-[10px] font-medium">{sellerInfo?.items_sold || 0}</p>
               <p className="text-[7px] text-nowrap">items Bought</p>
             </div>
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
@@ -74,17 +170,17 @@ function Profile() {
                 fontSize={26}
                 className="text-yellow-500"
               />
-              <p className="text-[10px] font-medium">4.8</p>
+              <p className="text-[10px] font-medium">{sellerInfo?.rating || 0}</p>
               <p className="text-[7px]">Rating</p>
             </div>
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
               <Icon
-                icon={ICON.PEOPLE}
+                icon={ICON.VERIFIED}
                 fontSize={26}
-                className="text-purple-500"
+                className={sellerInfo?.is_seller ? "text-green-500" : "text-gray-400"}
               />
-              <p className="text-[10px] font-medium">8</p>
-              <p className="text-[7px]">Referrals</p>
+              <p className="text-[10px] font-medium">{sellerInfo?.is_seller ? "Verified" : "Not"}</p>
+              <p className="text-[7px]">Seller</p>
             </div>
           </div>
 

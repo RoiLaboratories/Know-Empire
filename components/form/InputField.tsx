@@ -63,10 +63,11 @@ export default function InputField({
       </div>
       <input
         {...config}
-        className={`ring-1 px-2.5 py-[6px] disabled:cursor-not-allowed  placeholder:text-[#888888] rounded-[5px] ease-in transition-all duration-200 bg-white outline-0 ${
+        className={`ring-1 px-2.5 py-[6px] disabled:cursor-not-allowed placeholder:text-[#888888] rounded-[5px] ease-in transition-all duration-200 bg-white outline-0 ${
           error ? "ring-red-500" : "ring-[#989898]  focus:ring-primary"
         }`}
       />
+
       {/* {error && ( */}
       <div className="text-red-500 text-xs h-2 text-right">{errorMessage}</div>
       {/* )} */}

@@ -1,9 +1,9 @@
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import Button from "../../ui/Button";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { sleep } from "../../utils/helpers";
-import Modal, { ModalContext } from "../../context/ModalContext";
+import Modal from "../../context/ModalContext";
 import GenericPopup from "./generic-popup";
 
 interface Props {
@@ -13,13 +13,6 @@ interface Props {
 
 function EscrowProtectionPopup({ onNext, onBack }: Props) {
   const [isLoading, setIsLoading] = useState(false);
-  const modalContext = useContext(ModalContext);
-
-  useEffect(() => {
-    setTimeout(() => {
-      modalContext?.open("escrow-protection-popup");
-    }, 1000);
-  }, []);
 
   const handleNext = async () => {
     setIsLoading(true);
@@ -82,7 +75,9 @@ function EscrowProtectionPopup({ onNext, onBack }: Props) {
       <div className="text-[11px] flex items-center gap-1">
         <Icon icon={ICON.CONFIRM} className="text-[#2d69ec]" fontSize={12} />
         <p className="font-medium">Buyer Protection</p>
-        <Icon icon={ICON.INFO} className="text-[#989898]" />
+        <Modal.Open opens="escrow-protection-popup">
+          <Icon icon={ICON.INFO} className="text-[#989898] cursor-pointer" />
+        </Modal.Open>
       </div>
 
       <div className="flex gap-x-6 mt-2">

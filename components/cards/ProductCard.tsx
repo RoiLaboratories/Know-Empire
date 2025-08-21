@@ -1,58 +1,80 @@
 "use client";
-import Image, { StaticImageData } from "next/image";
+import Image from "next/image";
 import Map from "../../assets/icons/map.svg";
 import Button from "../../ui/Button";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import PurchasePopup from "../popups/purchase-popup";
 import Modal from "../../context/ModalContext";
+import { useCart } from "../../providers/cart";
+import toast from 'react-hot-toast';
+import { ReactElement } from 'react';
+import { ProductWithSeller } from "../../types/product";
 
-interface PProps {
-  img: StaticImageData | string;  // Can be either a static image or a URL string
-  location: string;
-  name: string;
-  seller: string;
-  price: string;
-  photos?: string[];  // Array of image URLs from Supabase
-}
+function ProductCard({ product }: { product: ProductWithSeller }): ReactElement {
+  const { addToCart } = useCart();
+  const { photos, title: name, price: unitPrice, id: productId, country: location } = product;
+  const handleAddToCart = () => {
+    const numericPrice = parseFloat(unitPrice);
+    const newItem = {
+      productId,
+      name,
+      quantity: 1,
+      unitPrice: numericPrice,
+      totalPrice: numericPrice,
+      img: photos[0]
+    };
 
-function ProductCard({ product }: { product: PProps }) {
+    addToCart(newItem);
+    toast.success('Item added to cart');
+  };
+
   return (
     <li className="flex flex-col p-1.5 gap-1 rounded-md border border-gray-medium">
       <div className="h-28 bg-gray-medium aspect-square rounded-md">
         <Image
-          alt={product.name}
-          src={product.photos?.[0] || product.img}
+          alt={name}
+          src={photos[0]}
           width={112}
           height={112}
-          placeholder={typeof product.img !== 'string' ? "blur" : "empty"}
           className="w-full h-full object-contain"
         />
       </div>
       <div className="flex flex-col flex-1 justify-between gap-3">
-        <p className="font-semibold text-sm md:text-base">{product.name}</p>
+        <p className="font-semibold text-sm md:text-base">{name}</p>
 
         <p className="flex items-center justify-between gap-x-1.5 truncate">
           <span className="font-semibold text-primary text-xs">
-            ${product.price}
+            ${unitPrice}
           </span>
-          <span className="text-[10px] text-yellow-300">{product.seller}</span>
+          <span className="text-[10px] text-yellow-300">@{product.seller.username}</span>
           <span className="text-gray-lighter text-[8px] flex items-center gap-x-1">
-            <Image alt="phone" src={Map} />
-            {product.location}
+            <Image alt="location" src={Map} />
+            {location}
           </span>
         </p>
 
-        <Modal.Open opens="purchase-product-popup">
+        <div className="grid grid-cols-2 gap-x-2 w-full">
+          <Modal.Open opens="purchase-product-popup">
+            <Button
+              variant="primary_gradient"
+              size="xs"
+              className="text-gray-medium"
+            >
+              <Icon icon={ICON.BUY2} fontSize={16} />
+              Buy now
+            </Button>
+          </Modal.Open>
           <Button
-            variant="primary_gradient"
+            variant="primary_outline"
             size="xs"
-            className="text-gray-medium w-8/10 mx-auto"
+            className="font-semibold"
+            onClick={handleAddToCart}
           >
-            <Icon icon={ICON.BUY2} fontSize={16} />
-            Buy now
+            <Icon icon={ICON.ADD_OUTLINE} fontSize={16} />
+            Cart it
           </Button>
-        </Modal.Open>
+        </div>
       </div>
 
       {/*all purchase modals */}
@@ -61,7 +83,7 @@ function ProductCard({ product }: { product: PProps }) {
         // allowOutsideClick
         showBg={false}
       >
-        <PurchasePopup />
+        <PurchasePopup product={product} />
       </Modal.Window>
     </li>
   );
