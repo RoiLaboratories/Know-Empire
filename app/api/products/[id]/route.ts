@@ -1,16 +1,17 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '../../../../utils/supabase';
 
-interface Props {
+type GetContext = {
   params: {
-    id: string
-  }
-}
+    id: string;
+  };
+};
 
 export async function GET(
-  request: Request,
-  { params }: Props
+  _request: Request,
+  context: GetContext
 ) {
+  const { id } = context.params;
   const supabaseAdmin = createServiceClient();
   try {
     const { data: product, error } = await supabaseAdmin
@@ -25,7 +26,7 @@ export async function GET(
           review_count
         )
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
 
     if (error) {
