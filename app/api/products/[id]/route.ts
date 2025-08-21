@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '../../../../utils/supabase';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  const id = params.id;
+export async function GET(request: Request) {
+  const { pathname } = new URL(request.url);
+  const id = pathname.split('/').pop();
   const supabaseAdmin = createServiceClient();
   try {
     const { data: product, error } = await supabaseAdmin
