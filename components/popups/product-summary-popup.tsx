@@ -23,8 +23,8 @@ function ProductSummaryPopup({ onNext, product }: ProductSummaryPopupProps) {
   return (
     <div className="space-y-2">
       <p className="font-semibold text-gray text-sm">Product Summary</p>
-      <div className="rounded-[10px] border border-[#989898] p-5 space-y-4">
-        <div className="space-y-4">
+      <div className="rounded-[10px] border border-[#989898] p-5">
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
           <div className="flex gap-x-3">
             <div className="w-20 h-20 relative">
               <Image
