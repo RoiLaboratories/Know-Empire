@@ -1,10 +1,15 @@
-"use server";
-import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '../../../../utils/supabase'
+import { NextResponse } from 'next/server';
+import { createServiceClient } from '../../../../utils/supabase';
+
+interface Props {
+  params: {
+    id: string
+  }
+}
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  request: Request,
+  { params }: Props
 ) {
   const supabaseAdmin = createServiceClient();
   try {
