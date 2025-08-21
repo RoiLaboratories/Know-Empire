@@ -11,10 +11,10 @@ import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import { useCart } from "../../providers/cart";
 import { formatCurrency } from "../../utils/helpers";
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { ProductWithSeller } from "../../types/product";
 import Link from "next/link";
-import Modal from "../../context/ModalContext";
+import Modal, { ModalContext } from "../../context/ModalContext";
 import CartSummaryPopup from "../../components/popups/cart-summary-popup";
 import PurchasePopup from "../../components/popups/purchase-popup";
 
@@ -23,6 +23,7 @@ function Cart() {
     cart,
     costBreakDown: { total },
   } = useCart();
+  const modalContext = useContext(ModalContext);
   const taxesAndFees = 10;
   const deliveryFee = 5;
   const [selectedProduct, setSelectedProduct] = useState<ProductWithSeller | null>(null);
@@ -115,14 +116,20 @@ function Cart() {
         </div>
 
         {/*all purchase modals */}
-        <Modal.Window name="cart-summary-popup" showBg={false}>
-          <CartSummaryPopup setSelectedProduct={setSelectedProduct} />
+        <Modal.Window name="purchase-product-popup" showBg={false}>
+          {selectedProduct ? (
+            <PurchasePopup 
+              product={selectedProduct}
+              onCloseModal={() => {
+                setSelectedProduct(null);
+                modalContext?.close("purchase-product-popup");
+              }} 
+            />
+          ) : undefined}
         </Modal.Window>
-        {selectedProduct && (
-          <Modal.Window name="purchase-product-popup" showBg={false}>
-            <PurchasePopup product={selectedProduct} />
-          </Modal.Window>
-        )}
+        <Modal.Window name="cart-summary-popup" showBg={false}>
+          <CartSummaryPopup setSelectedProduct={setSelectedProduct} onCloseModal={() => modalContext?.close("cart-summary-popup")} />
+        </Modal.Window>
       </section>
     </Modal>
   );

@@ -30,7 +30,12 @@ export default function CartSummaryPopup({ onCloseModal, setSelectedProduct }: C
     try {
       const response = await fetch(`/api/products/${cart[0].productId}`);
       const data = await response.json();
-      setSelectedProduct(data);
+      await new Promise(resolve => {
+        setSelectedProduct(data);
+        resolve(null);
+      });
+      // Wait a tick for the state to update
+      await new Promise(resolve => setTimeout(resolve, 0));
       modalContext?.close("cart-summary-popup");
       modalContext?.open("purchase-product-popup");
     } catch (error) {
