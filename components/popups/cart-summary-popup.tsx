@@ -25,21 +25,37 @@ export default function CartSummaryPopup({ onCloseModal, setSelectedProduct }: C
   const grandTotal = total + taxesAndFees + deliveryFee;
 
   const handleNext = async () => {
+    if (!cart.length) return;
+    
     setIsLoading(true);
-    // Fetch the product data for the first item in cart
     try {
-      const response = await fetch(`/api/products/${cart[0].productId}`);
-      const data = await response.json();
-      await new Promise(resolve => {
-        setSelectedProduct(data);
-        resolve(null);
-      });
-      // Wait a tick for the state to update
-      await new Promise(resolve => setTimeout(resolve, 0));
+      // Close the cart summary first to avoid UI glitches
       modalContext?.close("cart-summary-popup");
+
+      // Fetch the product data for the first item in cart
+      const response = await fetch(`/api/products/${cart[0].productId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (!data) {
+        throw new Error('No data received from the server');
+      }
+
+      setSelectedProduct(data);
+      // Open the purchase popup after setting the product
       modalContext?.open("purchase-product-popup");
     } catch (error) {
       console.error('Error fetching product:', error);
+      // If there's an error, re-open the cart summary
+      modalContext?.open("cart-summary-popup");
     } finally {
       setIsLoading(false);
     }
