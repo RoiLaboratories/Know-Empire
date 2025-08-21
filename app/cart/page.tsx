@@ -36,8 +36,7 @@ function Cart() {
               showRoutes={false}
             />
           </div>
-          {/* cart.length !== 0 */}
-          {!true ? (
+          {cart.length !== 0 ? (
             <>
               {/*main content */}
               <ul className="space-y-5">
