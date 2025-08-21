@@ -54,8 +54,9 @@ function Onboarding() {
   };
 
 
-  // Handle the Enter Marketplace button click (no auth needed)
+  // Handle the Enter Marketplace button click
   const handleMarketplaceEnter = () => {
+    localStorage.removeItem("onboardingStep"); // Clear onboarding state
     router.push("/marketplace");
   };
 

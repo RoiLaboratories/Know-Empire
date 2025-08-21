@@ -6,6 +6,7 @@
     "@farcaster/core": "^0.18.5",
     "@farcaster/hub-web": "^0.11.4",
     "@farcaster/miniapp-sdk": "^0.1.9",
+    "@farcaster/quick-auth": "^0.0.7",
     "@iconify/react": "^6.0.0",
     "@supabase/supabase-js": "^2.55.0",
     "class-variance-authority": "^0.7.1",
@@ -15,6 +16,7 @@
     "next": "^15.3.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.5.0",
     "tailwind-merge": "^3.3.1",
     "yup": "^1.7.0"

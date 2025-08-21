@@ -12,11 +12,14 @@ import EscrowProtectionPopup from "./escrow-protection-popup";
 import SecurePaymentPopup from "./secure-payment-popup";
 import SecurePaymentConfirmed from "./secure-payment-confirmed-popup";
 
-interface IPProps {
+import { ProductWithSeller } from "../../types/product";
+
+interface PurchasePopupProps {
   onCloseModal?: () => void;
+  product: ProductWithSeller;
 }
 
-function PurchasePopup({ onCloseModal }: IPProps) {
+function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
   const [purchaseStep, setPurchaseStep] = useState(1);
 
   const handleNextStep = () => {
@@ -43,8 +46,13 @@ function PurchasePopup({ onCloseModal }: IPProps) {
 
       {/*main content  */}
 
-      <div>
-        {purchaseStep === 1 && <ProductSummaryPopup onNext={handleNextStep} />}
+      <div className="max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar no-scrollbar">
+        {purchaseStep === 1 && (
+          <ProductSummaryPopup 
+            onNext={handleNextStep}
+            product={product}
+          />
+        )}
 
         {purchaseStep === 2 && (
           <DeliveryInformationPopup

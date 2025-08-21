@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import Image from "next/image";
 import { Icon } from "@iconify/react";
@@ -7,113 +7,80 @@ import Wallet from "../../assets/icons/wallet.svg";
 import Verified from "../../assets/icons/verified.svg";
 import ReviewsCard from "../../components/cards/ReviewsCard";
 import BackButton from "../../ui/BackButton";
-import { useFarcasterAuth } from "@/hooks/useFarcasterAuth";
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
+import { supabase } from '@/utils/supabase';
 import Modal from "../../context/ModalContext";
 import GenericPopup from "../../components/popups/generic-popup";
 import ReferralPopup from "../../components/popups/referral-link-popup";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { supabase } from "@/utils/supabase";
 
-interface User {
-  id: string;
-  fid: string;
-  username: string;
-  display_name: string;
-  avatar_url: string;
-  created_at?: string;
-  updated_at?: string;
+interface SellerInfo {
+  is_seller: boolean;
+  seller_since?: string;
+  items_sold?: number;
+  rating?: number;
 }
 
-// Aliases for UI display to match Farcaster naming
-const mapUserForDisplay = (user: User) => ({
-  ...user,
-  displayName: user.display_name,
-  pfp: user.avatar_url,
-});
+interface FarcasterUser {
+  fid: number;
+  username: string | undefined;
+  displayName: string | undefined;
+  pfpUrl: string | undefined;
+}
 
 function Profile() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { context } = useMiniKit();
+  const [user, setUser] = useState<FarcasterUser | null>(null);
+  const [sellerInfo, setSellerInfo] = useState<SellerInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Get user data from context or localStorage
   useEffect(() => {
-    if (!loading && !user) {
-      router.push("/");
+    if (context?.user) {
+      setUser({
+        fid: context.user.fid,
+        username: context.user.username || "",
+        displayName: context.user.displayName || "",
+        pfpUrl: context.user.pfpUrl || ""
+      });
+    } else {
+      const storedUser = localStorage.getItem('farcaster_user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      } else {
+        router.push('/onboarding');
+      }
     }
-  }, [loading, user, router]);
+  }, [context, router]);
 
   useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        // Get user data from Farcaster Frame context
-        const frameContext = window.parent.location.search;
-        const params = new URLSearchParams(frameContext);
-        const fid = params.get("fid");
-
-        if (!fid) {
-          console.error("No FID found in Frame context");
-          router.push("/");
-          return;
-        }
-
-        // Fetch user data from Supabase
-        const { data: dbUser, error } = await supabase
-          .from("users")
-          .select("*")
-          .eq("fid", fid)
+    const loadSellerInfo = async () => {
+      if (user?.fid) {
+        // Only check for seller info in Supabase
+        const { data, error } = await supabase
+          .from('sellers')
+          .select('*')
+          .eq('fid', user.fid)
           .single();
 
-        if (error && error.code !== "PGRST116") {
-          console.error("Error fetching user data:", error);
-          // If user doesn't exist in DB yet, we'll create them
-          const response = await fetch("/api/auth/farcaster/user", {
-            method: "GET",
-            headers: {
-              fid: fid,
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error("Failed to fetch Farcaster user data");
-          }
-
-          const farcasterUser = await response.json();
-
-          // Create user in Supabase
-          const { data: newUser, error: createError } = await supabase
-            .from("users")
-            .insert({
-              fid: fid,
-              username: farcasterUser.username,
-              display_name: farcasterUser.displayName,
-              avatar_url: farcasterUser.pfp,
-            })
-            .select()
-            .single();
-
-          if (createError) throw createError;
-          setUser(newUser);
-        } else {
-          setUser(dbUser);
+        if (!error) {
+          setSellerInfo(data);
         }
-
-        setLoading(false);
-      } catch (error) {
-        console.error("Error loading user data:", error);
-        setLoading(false);
-        router.push("/");
       }
+      setIsLoading(false);
     };
 
-    loadUserData();
-  }, [router]);
+    loadSellerInfo();
+  }, [user?.fid]);
 
-  if (loading) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 
   if (!user) {
+    router.push('/');
     return null;
   }
 
@@ -148,8 +115,8 @@ function Profile() {
 
           <div className="absolute rounded-full size-24 border-3 border-white bottom-0 translate-y-1/2">
             <Image
-              alt={mapUserForDisplay(user).displayName || "User profile"}
-              src={mapUserForDisplay(user).pfp}
+              alt={user?.displayName || "User profile"}
+              src={user?.pfpUrl || ""}
               width={96}
               height={96}
               className="w-full h-full object-cover rounded-full"
@@ -160,13 +127,11 @@ function Profile() {
         {/*user details */}
         <div className="px-5 py-12 bg-white space-y-3">
           <div className="space-y-1">
-            <p className="font-bold text-2xl">
-              {mapUserForDisplay(user).displayName}
-            </p>
+            <p className="font-bold text-2xl">{user?.displayName}</p>
 
             <div className="text-sm text-[#5a5a5a] font-medium space-y-1">
-              <p>@{user.username}</p>
-              <p>{user.fid} FID</p>
+              <p>@{user?.username}</p>
+              <p>{user?.fid} FID</p>
             </div>
           </div>
 
@@ -191,12 +156,12 @@ function Profile() {
           <div className="grid grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
               <Icon icon={ICON.PACKAGE} fontSize={26} className="text-orange" />
-              <p className="text-[10px] font-medium">24</p>
+              <p className="text-[10px] font-medium">{sellerInfo?.items_sold || 0}</p>
               <p className="text-[7px] text-nowrap">items sold</p>
             </div>
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
               <Icon icon={ICON.BUY} fontSize={26} className="text-green-500" />
-              <p className="text-[10px] font-medium">12</p>
+              <p className="text-[10px] font-medium">{sellerInfo?.items_sold || 0}</p>
               <p className="text-[7px] text-nowrap">items Bought</p>
             </div>
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
@@ -205,17 +170,17 @@ function Profile() {
                 fontSize={26}
                 className="text-yellow-500"
               />
-              <p className="text-[10px] font-medium">4.8</p>
+              <p className="text-[10px] font-medium">{sellerInfo?.rating || 0}</p>
               <p className="text-[7px]">Rating</p>
             </div>
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
               <Icon
-                icon={ICON.PEOPLE}
+                icon={ICON.VERIFIED}
                 fontSize={26}
-                className="text-purple-500"
+                className={sellerInfo?.is_seller ? "text-green-500" : "text-gray-400"}
               />
-              <p className="text-[10px] font-medium">8</p>
-              <p className="text-[7px]">Referrals</p>
+              <p className="text-[10px] font-medium">{sellerInfo?.is_seller ? "Verified" : "Not"}</p>
+              <p className="text-[7px]">Seller</p>
             </div>
           </div>
 

@@ -1,37 +1,29 @@
+"use client";
 import Tab from "../../components/layout/Tab";
 import Search from "../../components/Search";
 import OrdersCard from "../../components/cards/OrdersCard";
-import Phone from "../../assets/images/prod1.png";
-import Pc from "../../assets/images/prod2.png";
 import BackButton from "../../ui/BackButton";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import Button from "../../ui/Button";
 import Empty from "../../assets/images/empty.svg";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useOrders } from "../../providers/orders";
+import type { StaticImageData } from "next/image";
 
-//Turn order to an empty array to test empty state
-
-const orders = [
-  {
-    name: "Iphone 15 Pro Max",
-    status: "shipped",
-    img: Phone,
-    seller: "TechSeller",
-    price: "999",
-    id: "1Z123456789",
-  },
-  {
-    name: "Asus Geoforce- RX 4080",
-    status: "pending",
-    img: Pc,
-    seller: "TechSeller",
-    price: "1,299",
-    id: "1Z123456789",
-  },
-];
+interface Order {
+  name: string;
+  status: "shipped" | "pending";
+  img: StaticImageData | string;
+  seller: string;
+  price: string;
+  id: string;
+}
 
 function Orders() {
+  const { orders } = useOrders();
+  const router = useRouter();
   return (
     <section className="flex flex-col items-center min-h-screen pb-3">
       <div className="w-9/10 max-w-lg flex flex-col flex-1 gap-y-1">
@@ -71,7 +63,10 @@ function Orders() {
               <span className="text-primary font-bold"> here</span>
             </p>
 
-            <Button className="text-white rounded bg-primary flex justify-center gap-x-1 items-center text-xs font-bold py-2 px-5 drop-shadow-dark btn w-fit">
+            <Button 
+              className="text-white rounded bg-primary flex justify-center gap-x-1 items-center text-xs font-bold py-2 px-5 drop-shadow-dark btn w-fit"
+              onClick={() => router.push("/marketplace")}
+            >
               Go to marketplace
               <Icon icon={ICON.ARROW_CIRCLE_RIGHT} className="" />
             </Button>

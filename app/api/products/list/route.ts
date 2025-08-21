@@ -13,12 +13,15 @@ export async function GET(request: Request) {
         price,
         photos,
         country,
+        delivery,
         category,
         status,
         seller:users (
           farcaster_username,
           display_name,
-          avatar_url
+          avatar_url,
+          rating,
+          review_count
         )
       `)
       .eq('status', 'active')

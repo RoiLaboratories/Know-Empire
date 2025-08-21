@@ -1,5 +1,5 @@
 "use client";
-import Image, { StaticImageData } from "next/image";
+import Image from "next/image";
 import Map from "../../assets/icons/map.svg";
 import Button from "../../ui/Button";
 import { Icon } from "@iconify/react";
@@ -7,42 +7,36 @@ import { ICON } from "../../utils/icon-export";
 import PurchasePopup from "../popups/purchase-popup";
 import Modal from "../../context/ModalContext";
 import { useCart } from "../../providers/cart";
+import toast from 'react-hot-toast';
+import { ReactElement } from 'react';
+import { ProductWithSeller } from "../../types/product";
 
-interface PProps {
-  img: string | StaticImageData;
-  location: string;
-  name: string;
-  seller: string;
-  unitPrice: number;
-  productId: string;
-  photos?: string[]; // Array of image URLs from Supabase
-}
-
-function ProductCard({ product }: { product: PProps }) {
+function ProductCard({ product }: { product: ProductWithSeller }): ReactElement {
   const { addToCart } = useCart();
-  const { img, name, unitPrice, productId, location, seller } = product;
+  const { photos, title: name, price: unitPrice, id: productId, country: location } = product;
   const handleAddToCart = () => {
+    const numericPrice = parseFloat(unitPrice);
     const newItem = {
       productId,
       name,
       quantity: 1,
-      unitPrice,
-      totalPrice: unitPrice * 1,
-      img,
+      unitPrice: numericPrice,
+      totalPrice: numericPrice,
+      img: photos[0]
     };
 
     addToCart(newItem);
+    toast.success('Item added to cart');
   };
 
   return (
     <li className="flex flex-col p-1.5 gap-1 rounded-md border border-gray-medium">
       <div className="h-28 bg-gray-medium aspect-square rounded-md">
         <Image
-          alt={product.name}
-          src={product.photos?.[0] || img}
+          alt={name}
+          src={photos[0]}
           width={112}
           height={112}
-          placeholder={typeof product.img !== "string" ? "blur" : "empty"}
           className="w-full h-full object-contain"
         />
       </div>
@@ -53,9 +47,9 @@ function ProductCard({ product }: { product: PProps }) {
           <span className="font-semibold text-primary text-xs">
             ${unitPrice}
           </span>
-          <span className="text-[10px] text-yellow-300">{seller}</span>
+          <span className="text-[10px] text-yellow-300">@{product.seller.username}</span>
           <span className="text-gray-lighter text-[8px] flex items-center gap-x-1">
-            <Image alt="phone" src={Map} />
+            <Image alt="location" src={Map} />
             {location}
           </span>
         </p>
@@ -89,7 +83,7 @@ function ProductCard({ product }: { product: PProps }) {
         // allowOutsideClick
         showBg={false}
       >
-        <PurchasePopup />
+        <PurchasePopup product={product} />
       </Modal.Window>
     </li>
   );
