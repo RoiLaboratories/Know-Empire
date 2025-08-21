@@ -10,12 +10,10 @@ export async function GET(request: Request) {
       .from('products')
       .select(`
         *,
-        seller: seller_id (
-          id,
-          username,
-          farcaster_id,
-          rating,
-          review_count
+        seller:users!seller_id (
+          farcaster_username,
+          display_name,
+          avatar_url
         )
       `)
       .eq('id', id)
