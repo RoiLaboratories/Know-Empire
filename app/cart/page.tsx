@@ -11,9 +11,12 @@ import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import { useCart } from "../../providers/cart";
 import { formatCurrency } from "../../utils/helpers";
+import { useState } from "react";
+import { ProductWithSeller } from "../../types/product";
 import Link from "next/link";
 import Modal from "../../context/ModalContext";
 import CartSummaryPopup from "../../components/popups/cart-summary-popup";
+import PurchasePopup from "../../components/popups/purchase-popup";
 
 function Cart() {
   const {
@@ -22,6 +25,7 @@ function Cart() {
   } = useCart();
   const taxesAndFees = 10;
   const deliveryFee = 5;
+  const [selectedProduct, setSelectedProduct] = useState<ProductWithSeller | null>(null);
 
   const grandTotal = total + taxesAndFees + deliveryFee;
 
@@ -92,7 +96,7 @@ function Cart() {
                     </p>
                   </li>
                 </ul>
-                <Modal.Open opens="purchase-product-popup">
+                <Modal.Open opens="cart-summary-popup">
                   <Button variant="success" size="xs" className="rounded-lg">
                     <Icon icon={ICON.ARROW_CHECKED} fontSize={16} />
                     Checkout
@@ -111,9 +115,14 @@ function Cart() {
         </div>
 
         {/*all purchase modals */}
-        <Modal.Window name="purchase-product-popup" showBg={false}>
-          <CartSummaryPopup />
+        <Modal.Window name="cart-summary-popup" showBg={false}>
+          <CartSummaryPopup setSelectedProduct={setSelectedProduct} />
         </Modal.Window>
+        {selectedProduct && (
+          <Modal.Window name="purchase-product-popup" showBg={false}>
+            <PurchasePopup product={selectedProduct} />
+          </Modal.Window>
+        )}
       </section>
     </Modal>
   );

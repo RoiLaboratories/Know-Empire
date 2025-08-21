@@ -8,12 +8,14 @@ import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import { sleep, formatCurrency } from "../../utils/helpers";
 import { ModalContext } from "../../context/ModalContext";
+import { ProductWithSeller } from "../../types/product";
 
 interface CartSummaryPopupProps {
   onCloseModal?: () => void;
+  setSelectedProduct: (product: ProductWithSeller | null) => void;
 }
 
-export default function CartSummaryPopup({ onCloseModal }: CartSummaryPopupProps) {
+export default function CartSummaryPopup({ onCloseModal, setSelectedProduct }: CartSummaryPopupProps) {
   const { cart, costBreakDown: { total } } = useCart();
   const [isLoading, setIsLoading] = useState(false);
   const modalContext = useContext(ModalContext);
@@ -24,10 +26,18 @@ export default function CartSummaryPopup({ onCloseModal }: CartSummaryPopupProps
 
   const handleNext = async () => {
     setIsLoading(true);
-    await sleep(1000);
-    setIsLoading(false);
-    modalContext?.close("cart-summary-popup");
-    modalContext?.open("purchase-product-popup");
+    // Fetch the product data for the first item in cart
+    try {
+      const response = await fetch(`/api/products/${cart[0].productId}`);
+      const data = await response.json();
+      setSelectedProduct(data);
+      modalContext?.close("cart-summary-popup");
+      modalContext?.open("purchase-product-popup");
+    } catch (error) {
+      console.error('Error fetching product:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
