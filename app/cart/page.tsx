@@ -13,7 +13,7 @@ import { useCart } from "../../providers/cart";
 import { formatCurrency } from "../../utils/helpers";
 import Link from "next/link";
 import Modal from "../../context/ModalContext";
-import PurchasePopup from "../../components/popups/purchase-popup";
+import CartSummaryPopup from "../../components/popups/cart-summary-popup";
 
 function Cart() {
   const {
@@ -112,7 +112,7 @@ function Cart() {
 
         {/*all purchase modals */}
         <Modal.Window name="purchase-product-popup" showBg={false}>
-          <PurchasePopup />
+          <CartSummaryPopup />
         </Modal.Window>
       </section>
     </Modal>
