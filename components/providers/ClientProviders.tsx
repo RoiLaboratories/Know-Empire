@@ -7,6 +7,8 @@ import { FarcasterAuthProvider } from "../../context/FarcasterAuthContext";
 import OrdersProvider from "../../providers/orders";
 import { Toaster } from 'react-hot-toast';
 
+import { PrivyAuthProvider } from "../../providers/PrivyAuthProvider";
+
 const ClientProviders = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
@@ -14,9 +16,11 @@ const ClientProviders = ({ children }: { children: React.ReactNode }) => {
         <MiniKitContextProvider>
           <AuthProvider>
             <FarcasterAuthProvider>
-              <OrdersProvider>
-                {children}
-              </OrdersProvider>
+              <PrivyAuthProvider>
+                <OrdersProvider>
+                  {children}
+                </OrdersProvider>
+              </PrivyAuthProvider>
             </FarcasterAuthProvider>
           </AuthProvider>
         </MiniKitContextProvider>

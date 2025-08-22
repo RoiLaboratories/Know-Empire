@@ -22,9 +22,8 @@ function SecurePaymentPopup({ onNext, onBack, product }: Props) {
   const modalContext = useContext(ModalContext);
   const { user } = useFarcasterAuth();
 
-  // Calculate total including fees
-  const fees = 10; // Example fees in USDC
-  const total = parseFloat(product.price) + fees;
+  // Total is just the product price as it includes delivery
+  const total = parseFloat(product.price);
 
   const simulateWalletCheck = async () => {
     // This is a placeholder for actual wallet balance check
@@ -83,18 +82,6 @@ function SecurePaymentPopup({ onNext, onBack, product }: Props) {
         </div>
 
         <div className="space-y-2">
-          <p className="flex items-center justify-between">
-            <span className="font-medium text-gray text-sm">
-              Product Price
-            </span>
-            <span className="text-gray-600 text-sm">{formatCurrency(parseFloat(product.price))}</span>
-          </p>
-          <p className="flex items-center justify-between">
-            <span className="font-medium text-gray text-sm">
-              Escrow Fee
-            </span>
-            <span className="text-gray-600 text-sm">{formatCurrency(fees)}</span>
-          </p>
           <div className="border-t border-[#989898] pt-2">
             <p className="flex items-center justify-between">
               <span className="font-medium text-gray text-sm">

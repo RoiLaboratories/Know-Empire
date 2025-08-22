@@ -49,4 +49,7 @@ export enum ICON {
   SECURITY = "material-symbols:security-rounded",
   PROTECT = "material-symbols:shield-outline",
   LOGOUT = "material-symbols:logout",
+  WARNING = "material-symbols:warning-outline",
+  CHEVRON = "heroicons:chevron-down-20-solid",
+  USER = "heroicons:user-20-solid",
 }
