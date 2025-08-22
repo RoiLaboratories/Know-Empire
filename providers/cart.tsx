@@ -47,20 +47,23 @@ const CartProvider = ({ children }: CartProviderProps) => {
 
   // Create a function to show toast with proper styling
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    toast.dismiss();  // Dismiss any existing toasts
     toast[type](message, {
       duration: 1500,
       position: 'top-center',
       style: {
-        background: type === 'success' 
-          ? 'linear-gradient(to right, #b400f7, #6a0091)'
-          : '#dc2626',
+        background: type === 'success' ? '#b400f7' : '#dc2626',
         color: 'white',
         padding: '8px 12px',
         borderRadius: '6px',
         fontSize: '0.875rem',
         maxWidth: '260px',
         textAlign: 'center',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+      },
+      icon: type === 'success' ? '✓' : '✕',
+      iconTheme: {
+        primary: '#ffffff',
+        secondary: type === 'success' ? '#b400f7' : '#dc2626',
       },
     });
   };
@@ -102,7 +105,7 @@ const CartProvider = ({ children }: CartProviderProps) => {
     setCart((prevCart) => {
       const targetItem = prevCart.find(item => item.productId === productId);
       if (targetItem) {
-        showToast(`Item removed`, 'error');
+        showToast(`Item removed from cart`, 'error');
       }
 
       const updatedCart = prevCart.filter(

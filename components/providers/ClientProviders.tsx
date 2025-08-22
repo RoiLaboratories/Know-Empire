@@ -23,10 +23,9 @@ const ClientProviders = ({ children }: { children: React.ReactNode }) => {
       </CartProvider>
       <Toaster 
         toastOptions={{
-          className: '',
           style: {
-            minWidth: 'auto',
-            padding: '0',
+            background: 'transparent',
+            boxShadow: 'none',
           },
         }}
         gutter={8}
