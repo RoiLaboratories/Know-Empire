@@ -30,7 +30,7 @@ function Cart() {
   const grandTotal = total + taxesAndFees + deliveryFee;
 
   return (
-    <div>
+    <Modal>
       <section className="flex flex-col items-center min-h-screen pb-3">
         <div className="w-9/10 max-w-lg flex flex-col gap-y-5">
           <div className="sticky top-0 space-y-3 bg-background py-3">
@@ -124,7 +124,7 @@ function Cart() {
           <CartSummaryPopup setSelectedProduct={setSelectedProduct} onCloseModal={() => modalContext?.close("cart-summary-popup")} />
         </Modal.Window>
       </section>
-    </div>
+    </Modal>
   );
 }
 
