@@ -27,7 +27,7 @@ interface OrdersContextType {
 
 const OrdersContext = createContext<OrdersContextType | undefined>(undefined);
 
-export function OrdersProvider({ children }: { children: React.ReactNode }) {
+export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,9 +68,9 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
       {children}
     </OrdersContext.Provider>
   );
-}
+};
 
-export function useOrders() {
+export const useOrders = () => {
   const context = useContext(OrdersContext);
   if (context === undefined) {
     throw new Error("useOrders must be used within an OrdersProvider");

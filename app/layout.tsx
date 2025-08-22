@@ -6,6 +6,14 @@ import { FarcasterAuthProvider } from "../context/FarcasterAuthContext";
 import { OrdersProvider } from "../providers/orders";
 import { Metadata } from "next";
 
+// Ensure all providers are client-side only
+import dynamic from 'next/dynamic';
+
+const DynamicOrdersProvider = dynamic(
+  () => import('../providers/orders').then(mod => mod.OrdersProvider),
+  { ssr: false }
+);
+
 export async function generateMetadata(): Promise<Metadata> {
   const URL = process.env.NEXT_PUBLIC_URL as string;
   return {
@@ -43,9 +51,9 @@ export default function RootLayout({
           <MiniKitContextProvider>
             <AuthProvider>
               <FarcasterAuthProvider>
-                <OrdersProvider>
+                <DynamicOrdersProvider>
                   {children}
-                </OrdersProvider>
+                </DynamicOrdersProvider>
               </FarcasterAuthProvider>
             </AuthProvider>
           </MiniKitContextProvider>
