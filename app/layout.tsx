@@ -3,6 +3,7 @@ import "../styles/global.css";
 import AuthProvider from "../components/auth/AuthProvider";
 import { MiniKitContextProvider } from "../providers/MiniKitProvider";
 import { FarcasterAuthProvider } from "../context/FarcasterAuthContext";
+import { OrdersProvider } from "../providers/orders";
 import { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -41,7 +42,11 @@ export default function RootLayout({
         <CartProvider>
           <MiniKitContextProvider>
             <AuthProvider>
-              <FarcasterAuthProvider>{children}</FarcasterAuthProvider>
+              <FarcasterAuthProvider>
+                <OrdersProvider>
+                  {children}
+                </OrdersProvider>
+              </FarcasterAuthProvider>
             </AuthProvider>
           </MiniKitContextProvider>
         </CartProvider>
