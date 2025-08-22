@@ -29,7 +29,6 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
     };
 
     addToCart(newItem);
-    toast.success('Item added to cart');
   };
 
   const fetchUpdatedProduct = async () => {

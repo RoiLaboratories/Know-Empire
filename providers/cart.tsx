@@ -145,7 +145,7 @@ const CartProvider = ({ children }: CartProviderProps) => {
       if (!targetItem) return prevCart;
 
       if (targetItem.quantity === 1) {
-        showToast(`Item removed`, 'error');
+        showToast(`Item removed from cart`, 'error');
       } else {
         showToast(`Qty: ${targetItem.quantity - 1}`);
       }
