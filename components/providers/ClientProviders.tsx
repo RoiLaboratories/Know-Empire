@@ -21,7 +21,19 @@ const ClientProviders = ({ children }: { children: React.ReactNode }) => {
           </AuthProvider>
         </MiniKitContextProvider>
       </CartProvider>
-      <Toaster />
+      <Toaster 
+        toastOptions={{
+          className: '',
+          style: {
+            minWidth: 'auto',
+            padding: '0',
+          },
+        }}
+        gutter={8}
+        containerStyle={{
+          top: 20
+        }}
+      />
     </>
   );
 };

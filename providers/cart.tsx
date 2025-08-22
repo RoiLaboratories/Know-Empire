@@ -48,13 +48,19 @@ const CartProvider = ({ children }: CartProviderProps) => {
   // Create a function to show toast with proper styling
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     toast[type](message, {
-      duration: 2000,
+      duration: 1500,
       position: 'top-center',
       style: {
-        background: type === 'success' ? '#16a34a' : '#dc2626',
+        background: type === 'success' 
+          ? 'linear-gradient(to right, #b400f7, #6a0091)'
+          : '#dc2626',
         color: 'white',
-        padding: '16px',
-        borderRadius: '8px',
+        padding: '8px 12px',
+        borderRadius: '6px',
+        fontSize: '0.875rem',
+        maxWidth: '260px',
+        textAlign: 'center',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
       },
     });
   };
@@ -77,13 +83,13 @@ const CartProvider = ({ children }: CartProviderProps) => {
               }
             : item
         );
-        showToast(`Updated ${newItem.name} quantity to ${existingItem.quantity + newItem.quantity}`);
+        showToast(`${newItem.name} × ${existingItem.quantity + newItem.quantity}`);
       } else {
         updatedCart = [
           ...prevCart,
           { ...newItem, totalPrice: newItem.unitPrice * newItem.quantity },
         ];
-        showToast(`Added ${newItem.name} to cart`);
+        showToast(`Item added to cart`);
       }
 
       saveCartToLocalStorage(updatedCart);
@@ -96,7 +102,7 @@ const CartProvider = ({ children }: CartProviderProps) => {
     setCart((prevCart) => {
       const targetItem = prevCart.find(item => item.productId === productId);
       if (targetItem) {
-        showToast(`Removed ${targetItem.name} from cart`, 'error');
+        showToast(`Item removed`, 'error');
       }
 
       const updatedCart = prevCart.filter(
@@ -124,7 +130,7 @@ const CartProvider = ({ children }: CartProviderProps) => {
           : item
       );
 
-      showToast(`Updated ${targetItem.name} quantity to ${targetItem.quantity + 1}`);
+      showToast(`Qty: ${targetItem.quantity + 1}`);
       saveCartToLocalStorage(updatedCart);
       return updatedCart;
     });
@@ -136,9 +142,9 @@ const CartProvider = ({ children }: CartProviderProps) => {
       if (!targetItem) return prevCart;
 
       if (targetItem.quantity === 1) {
-        showToast(`Removed ${targetItem.name} from cart`, 'error');
+        showToast(`Item removed`, 'error');
       } else {
-        showToast(`Updated ${targetItem.name} quantity to ${targetItem.quantity - 1}`);
+        showToast(`Qty: ${targetItem.quantity - 1}`);
       }
 
       const updatedCart = prevCart
