@@ -45,6 +45,20 @@ const CartProvider = ({ children }: CartProviderProps) => {
     localStorage.setItem("cart", JSON.stringify(cart));
   };
 
+  // Create a function to show toast with proper styling
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    toast[type](message, {
+      duration: 2000,
+      position: 'top-center',
+      style: {
+        background: type === 'success' ? '#16a34a' : '#dc2626',
+        color: 'white',
+        padding: '16px',
+        borderRadius: '8px',
+      },
+    });
+  };
+
   //add item to cart or update quantity if item exists
   const addToCart = (newItem: CartItem) => {
     setCart((prevCart) => {
@@ -63,13 +77,13 @@ const CartProvider = ({ children }: CartProviderProps) => {
               }
             : item
         );
-        toast.success(`Updated quantity for ${newItem.name}`);
+        showToast(`Updated ${newItem.name} quantity to ${existingItem.quantity + newItem.quantity}`);
       } else {
         updatedCart = [
           ...prevCart,
           { ...newItem, totalPrice: newItem.unitPrice * newItem.quantity },
         ];
-        toast.success(`Added ${newItem.name} to cart`);
+        showToast(`Added ${newItem.name} to cart`);
       }
 
       saveCartToLocalStorage(updatedCart);
@@ -80,6 +94,11 @@ const CartProvider = ({ children }: CartProviderProps) => {
   //remove item from cart
   const removeFromCart = (productId: string) => {
     setCart((prevCart) => {
+      const targetItem = prevCart.find(item => item.productId === productId);
+      if (targetItem) {
+        showToast(`Removed ${targetItem.name} from cart`, 'error');
+      }
+
       const updatedCart = prevCart.filter(
         (item) => item.productId !== productId
       );
@@ -92,6 +111,9 @@ const CartProvider = ({ children }: CartProviderProps) => {
   //update quantity of item in cart
   const incQuantity = (productId: string) => {
     setCart((prevCart) => {
+      const targetItem = prevCart.find(item => item.productId === productId);
+      if (!targetItem) return prevCart;
+
       const updatedCart = prevCart.map((item) =>
         item.productId === productId
           ? {
@@ -101,12 +123,8 @@ const CartProvider = ({ children }: CartProviderProps) => {
             }
           : item
       );
-      
-      const updatedItem = updatedCart.find(item => item.productId === productId);
-      if (updatedItem) {
-        toast.success(`Updated ${updatedItem.name} quantity to ${updatedItem.quantity}`);
-      }
 
+      showToast(`Updated ${targetItem.name} quantity to ${targetItem.quantity + 1}`);
       saveCartToLocalStorage(updatedCart);
       return updatedCart;
     });
@@ -114,6 +132,15 @@ const CartProvider = ({ children }: CartProviderProps) => {
 
   const decQuantity = (productId: string) => {
     setCart((prevCart) => {
+      const targetItem = prevCart.find(item => item.productId === productId);
+      if (!targetItem) return prevCart;
+
+      if (targetItem.quantity === 1) {
+        showToast(`Removed ${targetItem.name} from cart`, 'error');
+      } else {
+        showToast(`Updated ${targetItem.name} quantity to ${targetItem.quantity - 1}`);
+      }
+
       const updatedCart = prevCart
         .map((item) =>
           item.productId === productId
