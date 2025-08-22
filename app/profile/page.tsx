@@ -8,8 +8,9 @@ import Verified from "../../assets/icons/verified.svg";
 import ReviewsCard from "../../components/cards/ReviewsCard";
 import BackButton from "../../ui/BackButton";
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
+import { useFarcasterAuth } from '../../hooks/useFarcasterAuth';
 import { supabase } from '@/utils/supabase';
 import Modal from "../../context/ModalContext";
 import GenericPopup from "../../components/popups/generic-popup";
@@ -32,9 +33,28 @@ interface FarcasterUser {
 function Profile() {
   const router = useRouter();
   const { context } = useMiniKit();
+  const { signOut } = useFarcasterAuth();
   const [user, setUser] = useState<FarcasterUser | null>(null);
   const [sellerInfo, setSellerInfo] = useState<SellerInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showWalletDropdown, setShowWalletDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Handle clicking outside of dropdown to close it
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowWalletDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSignOut = () => {
+    signOut();
+    router.push('/onboarding?step=4');
+  };
 
   // Get user data from context or localStorage
   useEffect(() => {
@@ -91,7 +111,30 @@ function Profile() {
           <BackButton className="text-white" />
         </div>
         <div className="bg-primary h-50 flex justify-between items-center p-5 text-white relative">
-          <Image alt="wallet" src={Wallet} />
+          <div className="relative" ref={dropdownRef}>
+            <button 
+              onClick={() => setShowWalletDropdown(!showWalletDropdown)}
+              className="flex items-center hover:opacity-80"
+            >
+              <Image alt="wallet" src={Wallet} />
+            </button>
+            
+            {showWalletDropdown && (
+              <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-lg text-gray-800 z-20">
+                <div className="p-4 border-b border-gray-100">
+                  <p className="text-xs text-gray-500 mb-1">Wallet Address</p>
+                  <p className="text-sm font-medium truncate">{(context as any)?.address || 'No wallet connected'}</p>
+                </div>
+                <button 
+                  onClick={handleSignOut}
+                  className="w-full p-3 text-left text-sm text-red-600 hover:bg-gray-50 rounded-b-lg flex items-center gap-2"
+                >
+                  <Icon icon={ICON.LOGOUT} />
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
 
           <Modal>
             <Modal.Open opens="share-referral-modal">

@@ -48,4 +48,5 @@ export enum ICON {
   CHECK_CIRCLE = "material-symbols:check-circle-unread",
   SECURITY = "material-symbols:security-rounded",
   PROTECT = "material-symbols:shield-outline",
+  LOGOUT = "material-symbols:logout",
 }
