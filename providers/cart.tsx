@@ -8,6 +8,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import toast from "react-hot-toast";
 
 interface CartItem {
   name: string;
@@ -62,11 +63,13 @@ const CartProvider = ({ children }: CartProviderProps) => {
               }
             : item
         );
+        toast.success(`Updated quantity for ${newItem.name}`);
       } else {
         updatedCart = [
           ...prevCart,
           { ...newItem, totalPrice: newItem.unitPrice * newItem.quantity },
         ];
+        toast.success(`Added ${newItem.name} to cart`);
       }
 
       saveCartToLocalStorage(updatedCart);
@@ -98,6 +101,11 @@ const CartProvider = ({ children }: CartProviderProps) => {
             }
           : item
       );
+      
+      const updatedItem = updatedCart.find(item => item.productId === productId);
+      if (updatedItem) {
+        toast.success(`Updated ${updatedItem.name} quantity to ${updatedItem.quantity}`);
+      }
 
       saveCartToLocalStorage(updatedCart);
       return updatedCart;
