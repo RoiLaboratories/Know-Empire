@@ -36,7 +36,7 @@ interface CartProviderProps {
   children: ReactNode;
 }
 
-export const CartProvider = ({ children }: CartProviderProps) => {
+const CartProvider = ({ children }: CartProviderProps) => {
   const [cart, setCart] = useState<CartItem[]>([]);
 
   //save cart to localstorage if any changes occur
@@ -165,3 +165,5 @@ export const useCart = () => {
   }
   return context;
 };
+
+export default CartProvider;

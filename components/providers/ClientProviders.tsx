@@ -1,12 +1,12 @@
 "use client";
 
-import { CartProvider } from "../../providers/cart";
-import { MiniKitContextProvider } from "../../providers/MiniKitProvider";
+import CartProvider from "../../providers/cart";
+import MiniKitContextProvider from "../../providers/MiniKitProvider";
 import AuthProvider from "../auth/AuthProvider";
 import { FarcasterAuthProvider } from "../../context/FarcasterAuthContext";
 import OrdersProvider from "../../providers/orders";
 
-export function ClientProviders({ children }: { children: React.ReactNode }) {
+const ClientProviders = ({ children }: { children: React.ReactNode }) => {
   return (
     <CartProvider>
       <MiniKitContextProvider>
@@ -20,4 +20,6 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
       </MiniKitContextProvider>
     </CartProvider>
   );
-}
+};
+
+export default ClientProviders;

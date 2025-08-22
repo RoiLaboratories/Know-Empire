@@ -1,6 +1,6 @@
 import "../styles/global.css";
 import { Metadata } from "next";
-import { ClientProviders } from "../components/providers/ClientProviders";
+import ClientProviders from "../components/providers/ClientProviders";
 
 export async function generateMetadata(): Promise<Metadata> {
   const URL = process.env.NEXT_PUBLIC_URL as string;
