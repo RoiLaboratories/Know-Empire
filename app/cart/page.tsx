@@ -15,7 +15,7 @@ import Link from "next/link";
 import Modal, { ModalContext } from "../../context/ModalContext";
 import CartSummaryPopup from "../../components/popups/cart-summary-popup";
 import PurchasePopup from "../../components/popups/purchase-popup";
-import EmptyCart from "../../assets/images/empty-cart.svg";
+import EmptyCart from "../../components/cart/EmptyCart";
 
 function Cart() {
   const {

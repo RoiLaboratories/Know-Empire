@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import Button from "@/ui/Button";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { ICON } from "@/utils/icon-export";
@@ -18,10 +19,12 @@ function EmptyCart() {
         <span className="text-primary font-bold"> here</span>
       </p>
 
-      <Button className="text-white rounded bg-primary flex justify-center gap-x-1 items-center text-xs font-bold py-2 px-5 drop-shadow-dark btn w-fit">
-        Go to marketplace
-        <Icon icon={ICON.ARROW_CIRCLE_RIGHT} className="" />
-      </Button>
+      <Link href="/marketplace">
+        <Button className="text-white rounded bg-primary flex justify-center gap-x-1 items-center text-xs font-bold py-2 px-5 drop-shadow-dark btn w-fit">
+          Go to marketplace
+          <Icon icon={ICON.ARROW_CIRCLE_RIGHT} className="" />
+        </Button>
+      </Link>
     </div>
   );
 }
