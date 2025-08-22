@@ -27,7 +27,7 @@ interface OrdersContextType {
 
 const OrdersContext = createContext<OrdersContextType | undefined>(undefined);
 
-export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,3 +77,5 @@ export const useOrders = () => {
   }
   return context;
 }
+
+export default OrdersProvider;

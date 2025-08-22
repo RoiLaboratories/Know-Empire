@@ -4,7 +4,7 @@ import { CartProvider } from "../../providers/cart";
 import { MiniKitContextProvider } from "../../providers/MiniKitProvider";
 import AuthProvider from "../auth/AuthProvider";
 import { FarcasterAuthProvider } from "../../context/FarcasterAuthContext";
-import { OrdersProvider } from "../../providers/orders";
+import OrdersProvider from "../../providers/orders";
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
   return (
