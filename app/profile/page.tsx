@@ -39,6 +39,7 @@ function Profile() {
   const [isLoading, setIsLoading] = useState(true);
   const [showWalletDropdown, setShowWalletDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [walletAddress, setWalletAddress] = useState<string>('');
 
   // Handle clicking outside of dropdown to close it
   useEffect(() => {
@@ -53,6 +54,8 @@ function Profile() {
 
   const handleSignOut = () => {
     signOut();
+    localStorage.removeItem('farcaster_wallet');
+    setWalletAddress('');
     router.push('/onboarding?step=4');
   };
 
@@ -65,10 +68,21 @@ function Profile() {
         displayName: context.user.displayName || "",
         pfpUrl: context.user.pfpUrl || ""
       });
+      // Get the signer/wallet address
+      if ((context as any).signer?.ethereum?.address) {
+        const address = (context as any).signer.ethereum.address;
+        setWalletAddress(address);
+        localStorage.setItem('farcaster_wallet', address);
+      }
     } else {
       const storedUser = localStorage.getItem('farcaster_user');
       if (storedUser) {
         setUser(JSON.parse(storedUser));
+        // Try to get the stored wallet address
+        const storedWallet = localStorage.getItem('farcaster_wallet');
+        if (storedWallet) {
+          setWalletAddress(storedWallet);
+        }
       } else {
         router.push('/onboarding');
       }
@@ -123,7 +137,7 @@ function Profile() {
               <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-lg text-gray-800 z-20">
                 <div className="p-4 border-b border-gray-100">
                   <p className="text-xs text-gray-500 mb-1">Wallet Address</p>
-                  <p className="text-sm font-medium truncate">{(context as any)?.address || 'No wallet connected'}</p>
+                  <p className="text-sm font-medium truncate">{walletAddress || 'No wallet connected'}</p>
                 </div>
                 <button 
                   onClick={handleSignOut}
