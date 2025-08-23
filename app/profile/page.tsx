@@ -180,53 +180,67 @@ function Profile() {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setShowWalletDropdown(!showWalletDropdown)}
-                  className="flex items-center gap-2 text-white hover:opacity-80 transition-opacity"
+                  className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-primary-dark transition-colors"
                 >
-                  <Image src={Wallet} alt="Wallet" width={24} height={24} />
-                  <span>{walletConnection ? 'Connected' : 'Connect Wallet'}</span>
-                  <Icon icon={ICON.CHEVRON} className={`transform ${showWalletDropdown ? 'rotate-180' : ''}`} />
+                  <Image src={Wallet} alt="Wallet" width={24} height={24} className="text-white" />
                 </button>
 
                 {showWalletDropdown && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                  <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                    <div className="p-4 border-b border-gray-100">
+                      <h3 className="text-sm font-medium text-gray-900">Wallet</h3>
+                    </div>
+                    
                     {walletConnection ? (
                       <>
                         <div className="p-4">
                           <div className="flex items-center gap-2 mb-2">
                             <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                            <span className="text-sm text-black">Connected with Privy</span>
+                            <span className="text-sm font-medium text-gray-900">Connected to Base</span>
                           </div>
-                          <div className="text-xs text-gray-500 break-all">
-                            {`${walletConnection.address.slice(0, 6)}...${walletConnection.address.slice(-4)}`}
+                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <span className="font-mono">{`${walletConnection.address.slice(0, 6)}...${walletConnection.address.slice(-4)}`}</span>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(walletConnection.address);
+                              }}
+                              className="p-1 hover:text-gray-900"
+                            >
+                              <Icon icon={ICON.COPY} className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
                         {isWrongNetwork && (
-                          <div className="px-4 py-2 border-t border-gray-200">
-                            <div className="flex items-center gap-2 text-yellow-500">
-                              <Icon icon={ICON.WARNING} />
+                          <div className="px-4 py-3 bg-yellow-50 border-y border-yellow-100">
+                            <div className="flex items-center gap-2">
+                              <Icon icon={ICON.WARNING} className="text-yellow-500" />
                               <button 
                                 onClick={handleSwitchNetwork}
-                                className="text-sm hover:underline"
+                                className="text-sm text-yellow-700 hover:text-yellow-900"
                               >
                                 Switch to Base Network
                               </button>
                             </div>
                           </div>
                         )}
-                        <button
-                          onClick={handleDisconnectWallet}
-                          className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100 border-t border-gray-200"
-                        >
-                          Disconnect
-                        </button>
+                        <div className="p-4">
+                          <button
+                            onClick={handleDisconnectWallet}
+                            className="w-full px-4 py-2 text-sm text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
+                          >
+                            Disconnect Wallet
+                          </button>
+                        </div>
                       </>
                     ) : (
-                      <button
-                        onClick={handleWalletConnect}
-                        className="w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-100"
-                      >
-                        Connect Wallet
-                      </button>
+                      <div className="p-4">
+                        <button
+                          onClick={handleWalletConnect}
+                          className="w-full px-4 py-2 text-sm text-white bg-primary hover:bg-primary-dark rounded-lg transition-colors"
+                        >
+                          Connect Wallet
+                        </button>
+                      </div>
                     )}
                   </div>
                 )}
