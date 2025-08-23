@@ -32,7 +32,7 @@ interface FarcasterUser {
   pfpUrl: string | undefined;
 }
 
-function Profile() {
+export default function Profile() {
   const router = useRouter();
   const { context } = useMiniKit();
   const { signOut } = useFarcasterAuth();
