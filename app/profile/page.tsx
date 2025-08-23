@@ -156,8 +156,18 @@ function Profile() {
       // If no Farcaster wallet, connect with Privy
       await connectWallet();
       
+      // Give Privy state a moment to update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Check if wallet was connected successfully
+      if (!privyUser || !privyUser.wallet) {
+        console.error('Wallet connection failed');
+        return;
+      }
+      
       // After connecting, check if we need to switch to Base network
-      if (privyUser?.wallet?.chainId !== '8453' && privyUser?.wallet?.chainId !== 8453) {
+      const chainId = privyUser.wallet.chainId;
+      if (chainId !== '8453' && chainId !== 8453) {
         try {
           await handleSwitchNetwork();
         } catch (error) {
@@ -175,29 +185,36 @@ function Profile() {
     try {
       const baseChainId = '0x2105'; // 8453 in hex
 
+      // If using Privy wallet and we have a wallet connection
+      if (privyUser && privyUser.wallet && walletConnection && 
+          privyUser.wallet.address === walletConnection.address) {
+        await privyUser.wallet.switchChain(8453);
+        
+        // Update wallet connection after successful switch
+        const newChainId = await privyUser.wallet.chainId;
+        if (walletConnection) {
+          setWalletConnection({
+            address: walletConnection.address,
+            chainId: typeof newChainId === 'string' ? parseInt(newChainId) : newChainId,
+            connector: walletConnection.connector
+          });
+        }
+        return;
+      }
+
+      // Fallback to window.ethereum
+      if (!window.ethereum) {
+        throw new Error('No provider available');
+      }
+
       try {
-        // Try switching first using Privy's switchChain
-        if (privyUser?.wallet?.switchChain) {
-          await privyUser.wallet.switchChain(8453);
-          return;
-        }
-
-        // Fallback to window.ethereum if Privy's switchChain is not available
-        if (!window.ethereum) {
-          throw new Error('No provider available');
-        }
-
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
           params: [{ chainId: baseChainId }],
         });
       } catch (switchError: any) {
-        // This error code indicates that the chain has not been added to MetaMask.
+        // This error code indicates that the chain has not been added
         if (switchError.code === 4902 || switchError.message?.includes('Unrecognized chain ID')) {
-          if (!window.ethereum) {
-            throw new Error('No provider available');
-          }
-
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [{
@@ -217,11 +234,13 @@ function Profile() {
         }
       }
 
-      // Update wallet connection state with new chain
-      if (walletConnection) {
+      // Get the new chain ID and update state
+      const newChainId = await window.ethereum.request({ method: 'eth_chainId' });
+      if (walletConnection && typeof newChainId === 'string') {
         setWalletConnection({
-          ...walletConnection,
-          chainId: 8453
+          address: walletConnection.address,
+          chainId: parseInt(newChainId, 16),
+          connector: walletConnection.connector
         });
       }
     } catch (error) {
@@ -232,17 +251,34 @@ function Profile() {
 
   const handleDisconnectWallet = async () => {
     try {
-      // If it's a Farcaster wallet, we can't disconnect it
-      const verifiedAccounts = (context?.user as any)?.verified_accounts;
-      if (verifiedAccounts?.[0]?.wallet_address === walletConnection?.address) {
+      if (!walletConnection) {
         setShowWalletDropdown(false);
         return;
       }
 
-      // For external wallets, try to disconnect
-      if (privyUser?.wallet?.disconnect) {
+      // If it's a Farcaster wallet, we can't disconnect it
+      const verifiedAccounts = (context?.user as any)?.verified_accounts;
+      if (verifiedAccounts?.[0]?.wallet_address === walletConnection.address) {
+        setShowWalletDropdown(false);
+        return;
+      }
+
+      // For Privy-connected wallets
+      if (privyUser && privyUser.wallet && privyUser.wallet.address === walletConnection.address) {
         await privyUser.wallet.disconnect();
         setWalletConnection(null);
+      } else if (window.ethereum) {
+        // For MetaMask or other injected wallets
+        // Get the current selected address
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' }) as string[];
+          const currentAddress = accounts[0]?.toLowerCase();
+          if (currentAddress === walletConnection.address.toLowerCase()) {
+            setWalletConnection(null);
+          }
+        } catch (error) {
+          console.error('Failed to get ethereum accounts:', error);
+        }
       }
       
       setShowWalletDropdown(false);
