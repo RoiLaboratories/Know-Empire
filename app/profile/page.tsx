@@ -95,6 +95,17 @@ function Profile() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [ready]);
 
+  // Close dropdown when wallet is connected
+  useEffect(() => {
+    if (walletConnection) {
+      // Give the UI a moment to update before closing
+      const timer = setTimeout(() => {
+        setShowWalletDropdown(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [walletConnection]);
+
   // Handle wallet connection and network check
   useEffect(() => {
     if (!ready) return;
@@ -191,7 +202,6 @@ function Profile() {
           connector: 'privy' as const
         };
         setWalletConnection(farcasterWallet);
-        setShowWalletDropdown(false);
         return;
       }
       
@@ -429,7 +439,11 @@ function Profile() {
         <div className="bg-primary h-50 flex justify-between items-center p-5 text-white relative">
           <div className="relative" ref={dropdownRef}>
             <button
-              onClick={() => setShowWalletDropdown(!showWalletDropdown)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowWalletDropdown(!showWalletDropdown);
+              }}
               className="flex items-center justify-center rounded-full hover:opacity-80 transition-opacity"
             >
               <Image alt="wallet" src={Wallet} />
@@ -505,7 +519,11 @@ function Profile() {
                 ) : (
                   <div className="p-4">
                     <button
-                      onClick={handleWalletConnect}
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        await handleWalletConnect();
+                      }}
                       className="w-full px-4 py-2 text-sm text-white bg-primary hover:bg-primary-dark rounded-lg transition-colors"
                     >
                       Connect Wallet
