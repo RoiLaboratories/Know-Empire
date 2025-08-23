@@ -45,16 +45,27 @@ function Profile() {
   const { login, authenticated, ready, user: privyUser } = usePrivy();
   const [isWrongNetwork, setIsWrongNetwork] = useState(false);
 
-  // Show loading state or redirect if not authenticated
+  // Handle authentication and loading state
   useEffect(() => {
-    if (!context || !context.user) {
-      router.push('/'); // Redirect to home if not authenticated
-      return;
-    }
-    setIsLoading(false);
-  }, [context, router]);
+    const checkAuth = async () => {
+      if (!context?.user) {
+        await router.push('/');
+      } else {
+        setUser({
+          fid: context.user.fid,
+          username: context.user.username,
+          displayName: context.user.displayName,
+          pfpUrl: context.user.pfpUrl
+        });
+        setIsLoading(false);
+      }
+    };
+    
+    checkAuth();
+  }, [context?.user, router]);
 
-  if (isLoading) {
+  // Render loading state
+  if (isLoading || !context?.user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
@@ -75,23 +86,25 @@ function Profile() {
 
   // Check if connected wallet is on Base network
   useEffect(() => {
-    if (privyUser?.wallet?.chainId) {
-      const chainId = typeof privyUser.wallet.chainId === 'string' 
-        ? parseInt(privyUser.wallet.chainId) 
-        : privyUser.wallet.chainId;
-      const isBaseNetwork = chainId === 8453 || chainId === 84532; // Base mainnet or testnet
+    const updateWalletState = () => {
+      const chainId = privyUser?.wallet?.chainId;
+      if (!chainId) return;
+
+      const numericChainId = typeof chainId === 'string' ? parseInt(chainId) : chainId;
+      const isBaseNetwork = numericChainId === 8453 || numericChainId === 84532; // Base mainnet or testnet
       setIsWrongNetwork(!isBaseNetwork);
       
-      // Update wallet connection state
-      if (privyUser.wallet.address) {
+      if (privyUser?.wallet?.address) {
         setWalletConnection({
           address: privyUser.wallet.address,
-          chainId,
+          chainId: numericChainId,
           connector: 'privy'
         });
       }
-    }
-  }, [privyUser]);
+    };
+
+    updateWalletState();
+  }, [privyUser?.wallet?.chainId, privyUser?.wallet?.address]);
 
   // Get user data from context or localStorage
   useEffect(() => {
