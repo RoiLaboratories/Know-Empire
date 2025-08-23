@@ -10,6 +10,7 @@ import BackButton from "../../ui/BackButton";
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
+import { useFarcasterAuth } from '../../hooks/useFarcasterAuth';
 import { usePrivy } from '@privy-io/react-auth';
 import type { WalletConnection } from '@know-empire/types';
 import { supabase } from '@/utils/supabase';
@@ -138,6 +139,7 @@ export default function Profile() {
         await privyUser.wallet.disconnect();
         setWalletConnection(null);
       }
+      setShowWalletDropdown(false);
     } catch (error) {
       console.error('Failed to disconnect wallet:', error);
     }
