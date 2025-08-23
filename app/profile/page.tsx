@@ -95,16 +95,21 @@ function Profile() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [ready]);
 
-  // Handle wallet connection
+  // Handle wallet connection and network check
   useEffect(() => {
-    if (!ready || !privyUser?.wallet) return;
+    if (!ready || !privyUser?.wallet) {
+      setWalletConnection(null);
+      return;
+    }
     
     if (privyUser.wallet.address) {
+      const chainId = typeof privyUser.wallet.chainId === 'string' ? 
+        parseInt(privyUser.wallet.chainId) : 
+        privyUser.wallet.chainId;
+
       setWalletConnection({
         address: privyUser.wallet.address,
-        chainId: typeof privyUser.wallet.chainId === 'string' ? 
-          parseInt(privyUser.wallet.chainId) : 
-          privyUser.wallet.chainId,
+        chainId: chainId,
         connector: 'privy'
       });
     }
@@ -120,9 +125,19 @@ function Profile() {
     }
   };
 
+  const handleSwitchNetwork = async () => {
+    try {
+      if (privyUser?.wallet?.switchChain) {
+        await privyUser.wallet.switchChain(8453); // Base Mainnet
+      }
+    } catch (error) {
+      console.error('Failed to switch network:', error);
+    }
+  };
+
   const handleDisconnectWallet = async () => {
     try {
-      if (privyUser?.wallet?.disconnect) {
+      if (authenticated && privyUser?.wallet?.disconnect) {
         await privyUser.wallet.disconnect();
         setWalletConnection(null);
         setShowWalletDropdown(false);
@@ -166,8 +181,10 @@ function Profile() {
                   <>
                     <div className="p-4">
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                        <span className="text-sm font-medium text-gray-900">Connected to Base</span>
+                        <div className={`w-2 h-2 rounded-full ${walletConnection.chainId === 8453 ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                        <span className="text-sm font-medium text-gray-900">
+                          {walletConnection.chainId === 8453 ? 'Connected to Base' : 'Wrong Network'}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-500">
                         <span className="font-mono">{`${walletConnection.address.slice(0, 6)}...${walletConnection.address.slice(-4)}`}</span>
@@ -181,6 +198,17 @@ function Profile() {
                         </button>
                       </div>
                     </div>
+                    {walletConnection.chainId !== 8453 && (
+                      <div className="px-4 py-3 bg-yellow-50 border-y border-yellow-100">
+                        <button 
+                          onClick={handleSwitchNetwork}
+                          className="flex items-center gap-2 w-full text-sm text-yellow-700 hover:text-yellow-900"
+                        >
+                          <Icon icon={ICON.WARNING} className="text-yellow-500" />
+                          Switch to Base Network
+                        </button>
+                      </div>
+                    )}
                     <div className="p-4">
                       <button
                         onClick={handleDisconnectWallet}
