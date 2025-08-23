@@ -43,7 +43,7 @@ const config: PrivyClientConfig = {
   appearance: {
     theme: 'light',
     accentColor: '#676FFF' as `#${string}`,
-    logo: 'https://your-logo-url.com/logo.png',
+    logo: '/group.svg',
   },
   supportedChains: [baseMainnet, baseSepolia],
   defaultChain: process.env.NODE_ENV === 'production' ? baseMainnet : baseSepolia,

@@ -45,6 +45,23 @@ function Profile() {
   const { login, authenticated, ready, user: privyUser } = usePrivy();
   const [isWrongNetwork, setIsWrongNetwork] = useState(false);
 
+  // Show loading state or redirect if not authenticated
+  useEffect(() => {
+    if (!context || !context.user) {
+      router.push('/'); // Redirect to home if not authenticated
+      return;
+    }
+    setIsLoading(false);
+  }, [context, router]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
   // Handle clicking outside of dropdown to close it
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
