@@ -32,7 +32,7 @@ interface FarcasterUser {
   pfpUrl: string | undefined;
 }
 
-function Profile() {
+export default function Profile() {
   const router = useRouter();
   const { context } = useMiniKit();
   const { signOut } = useFarcasterAuth();
@@ -45,52 +45,58 @@ function Profile() {
   const { login, authenticated, ready, user: privyUser } = usePrivy();
   const [isWrongNetwork, setIsWrongNetwork] = useState(false);
 
+  // Handle authentication and user data
+  useEffect(() => {
+    if (!ready) return;
+
+    if (!context?.user) {
+      router.push('/');
+      return;
+    }
+
+    setUser({
+      fid: context.user.fid,
+      username: context.user.username || "",
+      displayName: context.user.displayName || "",
+      pfpUrl: context.user.pfpUrl || ""
+    });
+
+    setIsLoading(false);
+  }, [context?.user, ready, router]);
+
   // Handle clicking outside of dropdown to close it
   useEffect(() => {
+    if (!ready) return;
+
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowWalletDropdown(false);
       }
     }
+    
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [ready]);
 
-  // Check if connected wallet is on Base network
+  // Handle wallet state
   useEffect(() => {
-    if (privyUser?.wallet?.chainId) {
-      const chainId = typeof privyUser.wallet.chainId === 'string' 
-        ? parseInt(privyUser.wallet.chainId) 
-        : privyUser.wallet.chainId;
-      const isBaseNetwork = chainId === 8453 || chainId === 84532; // Base mainnet or testnet
-      setIsWrongNetwork(!isBaseNetwork);
-      
-      // Update wallet connection state
-      if (privyUser.wallet.address) {
-        setWalletConnection({
-          address: privyUser.wallet.address,
-          chainId,
-          connector: 'privy'
-        });
-      }
-    }
-  }, [privyUser]);
+    if (!ready || !privyUser?.wallet) return;
 
-  // Get user data from context or localStorage
-  useEffect(() => {
-    if (context?.user) {
-      setUser({
-        fid: context.user.fid,
-        username: context.user.username || "",
-        displayName: context.user.displayName || "",
-        pfpUrl: context.user.pfpUrl || ""
+    const chainId = privyUser.wallet.chainId;
+    if (!chainId) return;
+
+    const numericChainId = typeof chainId === 'string' ? parseInt(chainId) : chainId;
+    const isBaseNetwork = numericChainId === 8453 || numericChainId === 84532;
+    setIsWrongNetwork(!isBaseNetwork);
+    
+    if (privyUser.wallet.address) {
+      setWalletConnection({
+        address: privyUser.wallet.address,
+        chainId: numericChainId,
+        connector: 'privy'
       });
-      // Get the signer/wallet address
-      if ((context as any).signer?.ethereum?.address) {
-        // Handled by Privy now
-      }
     }
-  }, [context]);
+  }, [ready, privyUser?.wallet]);
 
   // Get seller info
   useEffect(() => {
@@ -99,9 +105,9 @@ function Profile() {
 
       try {
         const { data, error } = await supabase
-          .from('sellers')
-          .select('*')
-          .eq('fid', user.fid)
+          .from('users')
+          .select('seller_handle, seller_category, seller_email, seller_location, seller_description, seller_rating, seller_total_sales, is_seller')
+          .eq('farcaster_id', user.fid.toString())
           .single();
 
         if (error) {
@@ -155,13 +161,16 @@ function Profile() {
     }
   };
 
-  if (!ready || isLoading) {
-    return null;
+  if (!ready || isLoading || !context?.user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-primary relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
@@ -170,53 +179,67 @@ function Profile() {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setShowWalletDropdown(!showWalletDropdown)}
-                  className="flex items-center gap-2 text-white hover:opacity-80 transition-opacity"
+                  className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-primary-dark transition-colors"
                 >
-                  <Image src={Wallet} alt="Wallet" width={24} height={24} />
-                  <span>{walletConnection ? 'Connected' : 'Connect Wallet'}</span>
-                  <Icon icon={ICON.Chevron} className={`transform ${showWalletDropdown ? 'rotate-180' : ''}`} />
+                  <Image src={Wallet} alt="Wallet" width={24} height={24} className="text-white" />
                 </button>
 
                 {showWalletDropdown && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                  <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                    <div className="p-4 border-b border-gray-100">
+                      <h3 className="text-sm font-medium text-gray-900">Wallet</h3>
+                    </div>
+                    
                     {walletConnection ? (
                       <>
                         <div className="p-4">
                           <div className="flex items-center gap-2 mb-2">
                             <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                            <span className="text-sm text-black">Connected with Privy</span>
+                            <span className="text-sm font-medium text-gray-900">Connected to Base</span>
                           </div>
-                          <div className="text-xs text-gray-500 break-all">
-                            {`${walletConnection.address.slice(0, 6)}...${walletConnection.address.slice(-4)}`}
+                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <span className="font-mono">{`${walletConnection.address.slice(0, 6)}...${walletConnection.address.slice(-4)}`}</span>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(walletConnection.address);
+                              }}
+                              className="p-1 hover:text-gray-900"
+                            >
+                              <Icon icon={ICON.COPY} className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
                         {isWrongNetwork && (
-                          <div className="px-4 py-2 border-t border-gray-200">
-                            <div className="flex items-center gap-2 text-yellow-500">
-                              <Icon icon={ICON.Warning} />
+                          <div className="px-4 py-3 bg-yellow-50 border-y border-yellow-100">
+                            <div className="flex items-center gap-2">
+                              <Icon icon={ICON.WARNING} className="text-yellow-500" />
                               <button 
                                 onClick={handleSwitchNetwork}
-                                className="text-sm hover:underline"
+                                className="text-sm text-yellow-700 hover:text-yellow-900"
                               >
                                 Switch to Base Network
                               </button>
                             </div>
                           </div>
                         )}
-                        <button
-                          onClick={handleDisconnectWallet}
-                          className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100 border-t border-gray-200"
-                        >
-                          Disconnect
-                        </button>
+                        <div className="p-4">
+                          <button
+                            onClick={handleDisconnectWallet}
+                            className="w-full px-4 py-2 text-sm text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
+                          >
+                            Disconnect Wallet
+                          </button>
+                        </div>
                       </>
                     ) : (
-                      <button
-                        onClick={handleWalletConnect}
-                        className="w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-100"
-                      >
-                        Connect Wallet
-                      </button>
+                      <div className="p-4">
+                        <button
+                          onClick={handleWalletConnect}
+                          className="w-full px-4 py-2 text-sm text-white bg-primary hover:bg-primary-dark rounded-lg transition-colors"
+                        >
+                          Connect Wallet
+                        </button>
+                      </div>
                     )}
                   </div>
                 )}
@@ -239,40 +262,39 @@ function Profile() {
             </div>
           </div>
         </div>
-        {user && (
-          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2">
-            <div className="relative">
-              {user.pfpUrl ? (
-                <Image
-                  src={user.pfpUrl}
-                  alt={user.displayName || 'User Profile'}
-                  width={96}
-                  height={96}
-                  className="rounded-full border-4 border-white"
-                />
-              ) : (
-                <div className="w-24 h-24 bg-gray-200 rounded-full border-4 border-white flex items-center justify-center">
-                  <Icon icon={ICON.User} className="w-12 h-12 text-gray-400" />
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+      </header>
       </header>
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-white rounded-lg shadow-sm p-6 space-y-8">
           {/* User Profile */}
-          <div className="flex items-start justify-between pt-8">
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-gray-900">{user?.displayName}</h2>
-              <div className="space-y-1">
-                <p className="text-sm text-gray-500">@{user?.username}</p>
-                <p className="text-sm text-gray-500">FID: {user?.fid}</p>
-                {sellerInfo?.seller_since && (
-                  <p className="text-sm text-gray-500">Seller since {sellerInfo.seller_since}</p>
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-6">
+              <div className="relative">
+                {user?.pfpUrl ? (
+                  <Image
+                    src={user.pfpUrl}
+                    alt={user.displayName || 'User Profile'}
+                    width={96}
+                    height={96}
+                    className="rounded-full border-4 border-white shadow-md"
+                  />
+                ) : (
+                  <div className="w-24 h-24 bg-gray-200 rounded-full border-4 border-white shadow-md flex items-center justify-center">
+                    <Icon icon={ICON.USER} className="w-12 h-12 text-gray-400" />
+                  </div>
                 )}
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-2xl font-bold text-gray-900">{user?.displayName}</h2>
+                <div className="space-y-1">
+                  <p className="text-sm text-gray-500">@{user?.username}</p>
+                  <p className="text-sm text-gray-500">FID: {user?.fid}</p>
+                  {sellerInfo?.seller_since && (
+                    <p className="text-sm text-gray-500">Seller since {sellerInfo.seller_since}</p>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex gap-2">
@@ -358,5 +380,7 @@ function Profile() {
     </div>
   );
 }
+
+export default Profile;
 
 export default Profile;
