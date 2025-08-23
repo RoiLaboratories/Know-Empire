@@ -188,18 +188,49 @@ function Profile() {
       // If using Privy wallet and we have a wallet connection
       if (privyUser && privyUser.wallet && walletConnection && 
           privyUser.wallet.address === walletConnection.address) {
-        await privyUser.wallet.switchChain(8453);
         
-        // Update wallet connection after successful switch
-        const newChainId = await privyUser.wallet.chainId;
-        if (walletConnection) {
-          setWalletConnection({
-            address: walletConnection.address,
-            chainId: typeof newChainId === 'string' ? parseInt(newChainId) : newChainId,
-            connector: walletConnection.connector
+        // Use the wallet's provider directly
+        try {
+          // Type assertion for the provider
+          const wallet = privyUser.wallet as any;
+          
+          if (wallet.provider) {
+            await wallet.provider.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: baseChainId }],
+            });
+            
+            // Update wallet connection after successful switch
+            const chainId = await wallet.provider.request({ method: 'eth_chainId' });
+            if (typeof chainId === 'string' && walletConnection) {
+              setWalletConnection({
+                address: walletConnection.address,
+                chainId: parseInt(chainId, 16),
+                connector: walletConnection.connector
+              });
+            }
+            return;
+          }
+          
+          // Fallback to try adding the chain if switching failed
+          await wallet.provider.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: baseChainId,
+              chainName: 'Base Mainnet',
+              nativeCurrency: {
+                name: 'ETH',
+                symbol: 'ETH',
+                decimals: 18
+              },
+              rpcUrls: ['https://mainnet.base.org'],
+              blockExplorerUrls: ['https://basescan.org']
+            }]
           });
+        } catch (error) {
+          console.error('Failed to switch network with Privy wallet:', error);
+          throw error;
         }
-        return;
       }
 
       // Fallback to window.ethereum
@@ -265,16 +296,46 @@ function Profile() {
 
       // For Privy-connected wallets
       if (privyUser && privyUser.wallet && privyUser.wallet.address === walletConnection.address) {
-        await privyUser.wallet.disconnect();
-        setWalletConnection(null);
+        try {
+          // Type assertion for the provider
+          const wallet = privyUser.wallet as any;
+          
+          // Clear the connection in our state first
+          setWalletConnection(null);
+          
+          // Try to disconnect using the provider if available
+          if (wallet.provider) {
+            try {
+              await wallet.provider.request({
+                method: 'wallet_requestPermissions',
+                params: [{ eth_accounts: {} }],
+              });
+            } catch (error) {
+              // Some providers don't support this method, which is fine
+              console.log('Provider does not support wallet_requestPermissions');
+            }
+          }
+        } catch (error) {
+          console.error('Error disconnecting wallet:', error);
+          throw error;
+        }
       } else if (window.ethereum) {
         // For MetaMask or other injected wallets
-        // Get the current selected address
         try {
           const accounts = await window.ethereum.request({ method: 'eth_accounts' }) as string[];
           const currentAddress = accounts[0]?.toLowerCase();
           if (currentAddress === walletConnection.address.toLowerCase()) {
             setWalletConnection(null);
+            // Try to disconnect using standard method
+            try {
+              await window.ethereum.request({
+                method: 'wallet_requestPermissions',
+                params: [{ eth_accounts: {} }],
+              });
+            } catch (error) {
+              // Some providers don't support this method, which is fine
+              console.log('Provider does not support wallet_requestPermissions');
+            }
           }
         } catch (error) {
           console.error('Failed to get ethereum accounts:', error);
