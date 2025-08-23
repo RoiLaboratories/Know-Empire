@@ -99,9 +99,9 @@ function Profile() {
 
       try {
         const { data, error } = await supabase
-          .from('sellers')
-          .select('*')
-          .eq('fid', user.fid)
+          .from('users')
+          .select('seller_handle, seller_category, seller_email, seller_location, seller_description, seller_rating, seller_total_sales, is_seller')
+          .eq('farcaster_id', user.fid.toString())
           .single();
 
         if (error) {
