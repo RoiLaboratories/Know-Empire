@@ -127,23 +127,65 @@ function Profile() {
 
   const handleSwitchNetwork = async () => {
     try {
-      if (privyUser?.wallet?.switchChain) {
-        await privyUser.wallet.switchChain(8453); // Base Mainnet
+      if (!privyUser?.wallet?.switchChain) {
+        throw new Error('Switch chain not supported');
+      }
+      
+      // First try to switch to Base Mainnet
+      try {
+        await privyUser.wallet.switchChain(8453);
+      } catch (switchError) {
+        // If the chain hasn't been added, try to add it
+        if (typeof window !== 'undefined' && window.ethereum?.request) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: '0x2105',  // 8453 in hex
+                chainName: 'Base Mainnet',
+                nativeCurrency: {
+                  name: 'ETH',
+                  symbol: 'ETH',
+                  decimals: 18
+                },
+                rpcUrls: ['https://mainnet.base.org'],
+                blockExplorerUrls: ['https://basescan.org']
+              }]
+            });
+            // Try switching again after adding
+            await privyUser.wallet.switchChain(8453);
+          } catch (addError) {
+            console.error('Failed to add Base network:', addError);
+            throw addError;
+          }
+        } else {
+          console.error('Ethereum provider not available');
+          throw new Error('Ethereum provider not available');
+        }
       }
     } catch (error) {
       console.error('Failed to switch network:', error);
+      throw error;
     }
   };
 
   const handleDisconnectWallet = async () => {
     try {
-      if (authenticated && privyUser?.wallet?.disconnect) {
-        await privyUser.wallet.disconnect();
-        setWalletConnection(null);
-        setShowWalletDropdown(false);
+      if (!authenticated || !privyUser?.wallet?.disconnect) {
+        throw new Error('Wallet disconnection not available');
       }
+
+      // Explicitly disconnect the wallet
+      await privyUser.wallet.disconnect();
+      
+      // Clear the wallet connection state
+      setWalletConnection(null);
+      
+      // Close the dropdown
+      setShowWalletDropdown(false);
     } catch (error) {
       console.error('Failed to disconnect wallet:', error);
+      throw error;
     }
   };
 
@@ -189,10 +231,16 @@ function Profile() {
                       <div className="flex items-center gap-2 text-sm text-gray-500">
                         <span className="font-mono">{`${walletConnection.address.slice(0, 6)}...${walletConnection.address.slice(-4)}`}</span>
                         <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(walletConnection.address);
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(walletConnection.address);
+                              // You might want to show a toast or notification here
+                            } catch (error) {
+                              console.error('Failed to copy address:', error);
+                            }
                           }}
-                          className="p-1 hover:text-gray-900"
+                          className="p-1 hover:text-gray-900 cursor-pointer active:scale-95 transition-transform"
                         >
                           <Icon icon={ICON.COPY} className="w-4 h-4" />
                         </button>
@@ -201,18 +249,32 @@ function Profile() {
                     {walletConnection.chainId !== 8453 && (
                       <div className="px-4 py-3 bg-yellow-50 border-y border-yellow-100">
                         <button 
-                          onClick={handleSwitchNetwork}
-                          className="flex items-center gap-2 w-full text-sm text-yellow-700 hover:text-yellow-900"
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await handleSwitchNetwork();
+                            } catch (error) {
+                              console.error('Failed to switch network:', error);
+                            }
+                          }}
+                          className="flex items-center gap-2 w-full text-sm text-yellow-700 hover:text-yellow-900 active:text-yellow-800 cursor-pointer"
                         >
-                          <Icon icon={ICON.WARNING} className="text-yellow-500" />
-                          Switch to Base Network
+                          <Icon icon={ICON.WARNING} className="text-yellow-500 flex-shrink-0" />
+                          <span className="flex-1">Switch to Base Network</span>
                         </button>
                       </div>
                     )}
                     <div className="p-4">
                       <button
-                        onClick={handleDisconnectWallet}
-                        className="w-full px-4 py-2 text-sm text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await handleDisconnectWallet();
+                          } catch (error) {
+                            console.error('Failed to disconnect wallet:', error);
+                          }
+                        }}
+                        className="w-full px-4 py-2 text-sm text-white bg-red-500 hover:bg-red-600 active:bg-red-700 rounded-lg transition-colors cursor-pointer"
                       >
                         Disconnect Wallet
                       </button>
