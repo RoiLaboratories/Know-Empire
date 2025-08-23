@@ -117,9 +117,8 @@ function Profile() {
 
   const handleWalletConnect = async () => {
     try {
-      if (!authenticated) {
-        await login();
-      }
+      await login();
+      setShowWalletDropdown(false);
     } catch (error) {
       console.error('Failed to connect wallet:', error);
     }
