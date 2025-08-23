@@ -8,10 +8,8 @@ import Verified from "../../assets/icons/verified.svg";
 import ReviewsCard from "../../components/cards/ReviewsCard";
 import BackButton from "../../ui/BackButton";
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
-import { usePrivy } from '@privy-io/react-auth';
-import type { WalletConnection } from '@know-empire/types';
 import { supabase } from '@/utils/supabase';
 import Modal from "../../context/ModalContext";
 import GenericPopup from "../../components/popups/generic-popup";
@@ -37,10 +35,6 @@ function Profile() {
   const [user, setUser] = useState<FarcasterUser | null>(null);
   const [sellerInfo, setSellerInfo] = useState<SellerInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showWalletDropdown, setShowWalletDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [walletConnection, setWalletConnection] = useState<WalletConnection | null>(null);
-  const { login, authenticated, ready, user: privyUser } = usePrivy();
 
   // Get user data from context or localStorage
   useEffect(() => {
@@ -81,57 +75,6 @@ function Profile() {
     loadSellerInfo();
   }, [user?.fid]);
 
-  // Handle clicking outside of dropdown to close it
-  useEffect(() => {
-    if (!ready) return;
-
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowWalletDropdown(false);
-      }
-    }
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [ready]);
-
-  // Handle wallet connection
-  useEffect(() => {
-    if (!ready || !privyUser?.wallet) return;
-    
-    if (privyUser.wallet.address) {
-      setWalletConnection({
-        address: privyUser.wallet.address,
-        chainId: typeof privyUser.wallet.chainId === 'string' ? 
-          parseInt(privyUser.wallet.chainId) : 
-          privyUser.wallet.chainId,
-        connector: 'privy'
-      });
-    }
-  }, [ready, privyUser?.wallet]);
-
-  const handleWalletConnect = async () => {
-    try {
-      if (!authenticated) {
-        await login();
-      }
-    } catch (error) {
-      console.error('Failed to connect wallet:', error);
-    }
-  };
-
-  const handleDisconnectWallet = async () => {
-    try {
-      if (privyUser?.wallet?.disconnect) {
-        await privyUser.wallet.disconnect();
-        setWalletConnection(null);
-        setShowWalletDropdown(false);
-      }
-    } catch (error) {
-      console.error('Failed to disconnect wallet:', error);
-    }
-  };
-
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -148,61 +91,7 @@ function Profile() {
           <BackButton className="text-white" />
         </div>
         <div className="bg-primary h-50 flex justify-between items-center p-5 text-white relative">
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setShowWalletDropdown(!showWalletDropdown)}
-              className="flex items-center justify-center rounded-full hover:opacity-80 transition-opacity"
-            >
-              <Image alt="wallet" src={Wallet} />
-            </button>
-
-            {showWalletDropdown && (
-              <div className="absolute left-0 mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                <div className="p-4 border-b border-gray-100">
-                  <h3 className="text-sm font-medium text-gray-900">Wallet</h3>
-                </div>
-                
-                {walletConnection ? (
-                  <>
-                    <div className="p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                        <span className="text-sm font-medium text-gray-900">Connected to Base</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <span className="font-mono">{`${walletConnection.address.slice(0, 6)}...${walletConnection.address.slice(-4)}`}</span>
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(walletConnection.address);
-                          }}
-                          className="p-1 hover:text-gray-900"
-                        >
-                          <Icon icon={ICON.COPY} className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <button
-                        onClick={handleDisconnectWallet}
-                        className="w-full px-4 py-2 text-sm text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
-                      >
-                        Disconnect Wallet
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="p-4">
-                    <button
-                      onClick={handleWalletConnect}
-                      className="w-full px-4 py-2 text-sm text-white bg-primary hover:bg-primary-dark rounded-lg transition-colors"
-                    >
-                      Connect Wallet
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          <Image alt="wallet" src={Wallet} />
 
           <Modal>
             <Modal.Open opens="share-referral-modal">
