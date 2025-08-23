@@ -170,11 +170,12 @@ function Profile() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-primary relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header with Profile Banner */}
+      <header className="bg-primary pb-16 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Top Navigation */}
+          <div className="py-4 flex items-center justify-between">
             <BackButton className="text-white" />
             <div className="flex items-center gap-4">
               <div className="relative" ref={dropdownRef}>
@@ -284,94 +285,111 @@ function Profile() {
         )}
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-white rounded-lg shadow-sm p-6 space-y-8">
-          {/* User Profile */}
-          <div className="flex items-start justify-between pt-8">
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-gray-900">{user?.displayName}</h2>
-              <div className="space-y-1">
+      {/* Profile Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Profile Info Card */}
+        <div className="min-h-[calc(100vh-4rem)] -mt-16">
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            {/* Profile Header with Avatar */}
+            <div className="relative h-32 bg-gradient-to-b from-primary/20 to-transparent">
+              <div className="absolute -bottom-16 left-8">
+                {user?.pfpUrl ? (
+                  <Image
+                    src={user.pfpUrl}
+                    alt={user.displayName || 'User Profile'}
+                    width={96}
+                    height={96}
+                    className="rounded-full border-4 border-white"
+                  />
+                ) : (
+                  <div className="w-24 h-24 bg-gray-200 rounded-full border-4 border-white flex items-center justify-center">
+                    <Icon icon={ICON.USER} className="w-12 h-12 text-gray-400" />
+                  </div>
+                )}
+              </div>
+              <div className="absolute top-4 right-4">
+                {sellerInfo?.is_seller && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-green-100 rounded-full">
+                    <Image src={Verified} alt="Verified" width={16} height={16} />
+                    <span className="text-sm font-medium text-green-700">Verified Seller</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* User Info */}
+            <div className="pt-20 px-8 pb-8">
+              <div className="space-y-1 mb-8">
+                <h1 className="text-2xl font-bold text-gray-900">{user?.displayName}</h1>
                 <p className="text-sm text-gray-500">@{user?.username}</p>
                 <p className="text-sm text-gray-500">FID: {user?.fid}</p>
                 {sellerInfo?.seller_since && (
                   <p className="text-sm text-gray-500">Seller since {sellerInfo.seller_since}</p>
                 )}
               </div>
-            </div>
-            <div className="flex gap-2">
-              {sellerInfo?.is_seller && (
-                <div className="flex items-center gap-2 px-3 py-1 bg-green-100 rounded-full">
-                  <Image src={Verified} alt="Verified" width={16} height={16} />
-                  <span className="text-sm font-medium text-green-700">Verified Seller</span>
-                </div>
-              )}
-            </div>
-          </div>
 
-          {/* Summary Stats */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Overview</h3>
-            <div className="grid grid-cols-4 gap-4">
-              <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
-                <Icon icon={ICON.PACKAGE} className="text-2xl text-primary mb-2" />
-                <span className="text-sm font-medium text-gray-900">{sellerInfo?.items_sold || 0}</span>
-                <span className="text-xs text-gray-500">Items Sold</span>
+              {/* Stats Overview */}
+              <div className="grid grid-cols-4 gap-6 mb-12">
+                <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
+                  <Icon icon={ICON.PACKAGE} className="text-2xl text-primary mb-2" />
+                  <span className="text-lg font-semibold text-gray-900">{sellerInfo?.items_sold || 0}</span>
+                  <span className="text-sm text-gray-600">Items Sold</span>
+                </div>
+                <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
+                  <Icon icon={ICON.BUY} className="text-2xl text-green-600 mb-2" />
+                  <span className="text-lg font-semibold text-gray-900">{sellerInfo?.items_sold || 0}</span>
+                  <span className="text-sm text-gray-600">Items Bought</span>
+                </div>
+                <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
+                  <Icon icon={ICON.STAR_ROUNDED} className="text-2xl text-yellow-500 mb-2" />
+                  <span className="text-lg font-semibold text-gray-900">{sellerInfo?.rating || 0}/5</span>
+                  <span className="text-sm text-gray-600">Rating</span>
+                </div>
+                <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
+                  <Icon 
+                    icon={ICON.VERIFIED} 
+                    className={`text-2xl mb-2 ${sellerInfo?.is_seller ? 'text-green-600' : 'text-gray-400'}`} 
+                  />
+                  <span className="text-lg font-semibold text-gray-900">{sellerInfo?.is_seller ? 'Verified' : 'Not Verified'}</span>
+                  <span className="text-sm text-gray-600">Seller Status</span>
+                </div>
               </div>
-              <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
-                <Icon icon={ICON.BUY} className="text-2xl text-green-600 mb-2" />
-                <span className="text-sm font-medium text-gray-900">{sellerInfo?.items_sold || 0}</span>
-                <span className="text-xs text-gray-500">Items Bought</span>
-              </div>
-              <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
-                <Icon icon={ICON.STAR_ROUNDED} className="text-2xl text-yellow-500 mb-2" />
-                <span className="text-sm font-medium text-gray-900">{sellerInfo?.rating || 0}/5</span>
-                <span className="text-xs text-gray-500">Rating</span>
-              </div>
-              <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
-                <Icon 
-                  icon={ICON.VERIFIED} 
-                  className={`text-2xl mb-2 ${sellerInfo?.is_seller ? 'text-green-600' : 'text-gray-400'}`} 
-                />
-                <span className="text-sm font-medium text-gray-900">{sellerInfo?.is_seller ? 'Verified' : 'Not'}</span>
-                <span className="text-xs text-gray-500">Seller Status</span>
-              </div>
-            </div>
-          </div>
 
-          {/* Reviews */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Reviews</h3>
-            <ReviewsCard />
-            <div className="mt-4 space-y-4">
-              <div className="border border-gray-100 rounded-lg p-4 space-y-3">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <Icon key={i} icon={ICON.STAR} className="text-yellow-400" />
-                    ))}
-                    {Array.from({ length: 2 }).map((_, i) => (
-                      <Icon key={i} icon={ICON.STAR_EMPTY} className="text-gray-300" />
-                    ))}
-                  </div>
-                  <span className="text-sm text-gray-500">12-06-2025</span>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 text-gray-900">
-                    <span className="font-medium">Mike Rodriguez</span>
-                    <span className="text-sm text-gray-500">@mikecollector</span>
-                  </div>
-                  <span className="inline-flex items-center mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                    NFT Sticker Pack
-                  </span>
-                </div>
-                <div className="flex justify-between items-start text-sm">
-                  <p className="text-gray-600 flex-1">
-                    Good transaction overall. Item condition was great. Packaging could be better
-                  </p>
-                  <div className="flex items-center gap-1 text-green-600 ml-4">
-                    <Icon icon={ICON.ARROW_CHECKED} />
-                    <span className="text-xs whitespace-nowrap">Verified Purchase</span>
+              {/* Reviews Section */}
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-6">Reviews</h2>
+                <ReviewsCard />
+                <div className="mt-6 space-y-4">
+                  <div className="bg-gray-50 rounded-lg p-6 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <Icon key={i} icon={ICON.STAR} className="text-yellow-400" />
+                        ))}
+                        {Array.from({ length: 2 }).map((_, i) => (
+                          <Icon key={i} icon={ICON.STAR_EMPTY} className="text-gray-300" />
+                        ))}
+                      </div>
+                      <span className="text-sm text-gray-500">12-06-2025</span>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-gray-900">Mike Rodriguez</span>
+                        <span className="text-sm text-gray-500">@mikecollector</span>
+                      </div>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-800">
+                        NFT Sticker Pack
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-start gap-4">
+                      <p className="text-sm text-gray-600 flex-1">
+                        Good transaction overall. Item condition was great. Packaging could be better
+                      </p>
+                      <div className="flex items-center gap-1 text-green-600 shrink-0">
+                        <Icon icon={ICON.ARROW_CHECKED} />
+                        <span className="text-xs">Verified Purchase</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
