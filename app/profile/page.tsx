@@ -99,32 +99,53 @@ function Profile() {
   useEffect(() => {
     if (!ready) return;
 
-    // If we have context (user is in Farcaster), try to get their smart wallet
-    // Using type assertion since we know Farcaster users have verified_accounts
-    const verifiedAccounts = (context?.user as any)?.verified_accounts;
-    if (verifiedAccounts?.[0]?.wallet_address) {
-      setWalletConnection({
-        address: verifiedAccounts[0].wallet_address,
-        chainId: 8453, // Base Mainnet
-        connector: 'privy'
-      });
-      return;
-    }
-    
-    // Fallback to any connected Privy wallet
-    if (privyUser?.wallet?.address) {
-      const chainId = typeof privyUser.wallet.chainId === 'string' ? 
-        parseInt(privyUser.wallet.chainId) : 
-        privyUser.wallet.chainId;
+    const updateWalletConnection = async () => {
+      try {
+        // If we have context (user is in Farcaster), try to get their smart wallet
+        const verifiedAccounts = (context?.user as any)?.verified_accounts;
+        if (verifiedAccounts?.[0]?.wallet_address) {
+          setWalletConnection({
+            address: verifiedAccounts[0].wallet_address,
+            chainId: 8453, // Base Mainnet
+            connector: 'privy'
+          });
+          return;
+        }
+        
+        // Fallback to any connected Privy wallet
+        if (privyUser?.wallet?.address) {
+          let chainId: number;
+          
+          try {
+            const wallet = privyUser.wallet as any;
+            if (wallet.provider) {
+              const chainIdHex = await wallet.provider.request({ method: 'eth_chainId' });
+              chainId = typeof chainIdHex === 'string' ? parseInt(chainIdHex, 16) : 1;
+            } else {
+              chainId = typeof wallet.chainId === 'string' ? 
+                parseInt(wallet.chainId) : 
+                wallet.chainId;
+            }
+          } catch (error) {
+            console.error('Failed to get chain ID:', error);
+            chainId = 1; // Default to mainnet on error
+          }
 
-      setWalletConnection({
-        address: privyUser.wallet.address,
-        chainId: chainId,
-        connector: 'privy'
-      });
-    } else {
-      setWalletConnection(null);
-    }
+          setWalletConnection({
+            address: privyUser.wallet.address,
+            chainId: chainId,
+            connector: 'privy'
+          });
+        } else {
+          setWalletConnection(null);
+        }
+      } catch (error) {
+        console.error('Error updating wallet connection:', error);
+        setWalletConnection(null);
+      }
+    };
+
+    updateWalletConnection();
   }, [ready, privyUser?.wallet, context?.user]);
 
   const handleWalletConnect = async () => {
@@ -132,12 +153,13 @@ function Profile() {
       // If we're in Farcaster context and have a verified wallet, use that
       const verifiedAccounts = (context?.user as any)?.verified_accounts;
       if (verifiedAccounts?.[0]?.wallet_address) {
-        setWalletConnection({
+        // Set wallet connection state for Farcaster wallet
+        const farcasterWallet = {
           address: verifiedAccounts[0].wallet_address,
           chainId: 8453, // Base Mainnet
-          connector: 'privy'
-        });
-        setShowWalletDropdown(false);
+          connector: 'privy' as const
+        };
+        setWalletConnection(farcasterWallet);
         
         // Check if we need to switch to Base network
         if (window.ethereum) {
@@ -150,28 +172,47 @@ function Profile() {
             }
           }
         }
-        return;
-      }
+      } else {
+        // If no Farcaster wallet, connect with Privy
+        await connectWallet();
+        
+        // Give Privy state a moment to update
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Check if wallet was connected successfully and update state
+        if (privyUser?.wallet?.address) {
+          const chainId = await (async () => {
+            try {
+              const wallet = privyUser.wallet as any;
+              if (wallet.provider) {
+                const chainIdHex = await wallet.provider.request({ method: 'eth_chainId' });
+                return typeof chainIdHex === 'string' ? parseInt(chainIdHex, 16) : 1; // Default to mainnet if parse fails
+              }
+              return typeof wallet.chainId === 'string' ? parseInt(wallet.chainId) : wallet.chainId;
+            } catch (error) {
+              console.error('Failed to get chain ID:', error);
+              return 1; // Default to mainnet on error
+            }
+          })();
 
-      // If no Farcaster wallet, connect with Privy
-      await connectWallet();
-      
-      // Give Privy state a moment to update
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Check if wallet was connected successfully
-      if (!privyUser || !privyUser.wallet) {
-        console.error('Wallet connection failed');
-        return;
-      }
-      
-      // After connecting, check if we need to switch to Base network
-      const chainId = privyUser.wallet.chainId;
-      if (chainId !== '8453' && chainId !== 8453) {
-        try {
-          await handleSwitchNetwork();
-        } catch (error) {
-          console.error('Failed to switch to Base network:', error);
+          // Set wallet connection state for Privy wallet
+          setWalletConnection({
+            address: privyUser.wallet.address,
+            chainId: chainId,
+            connector: 'privy'
+          });
+
+          // Check if we need to switch to Base network
+          if (chainId !== 8453) {
+            try {
+              await handleSwitchNetwork();
+            } catch (error) {
+              console.error('Failed to switch to Base network:', error);
+            }
+          }
+        } else {
+          console.error('Wallet connection failed');
+          return;
         }
       }
       
