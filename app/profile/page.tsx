@@ -45,82 +45,58 @@ function Profile() {
   const { login, authenticated, ready, user: privyUser } = usePrivy();
   const [isWrongNetwork, setIsWrongNetwork] = useState(false);
 
-  // Handle authentication and loading state
+  // Handle authentication and user data
   useEffect(() => {
-    const checkAuth = async () => {
-      if (!context?.user) {
-        await router.push('/');
-      } else {
-        setUser({
-          fid: context.user.fid,
-          username: context.user.username,
-          displayName: context.user.displayName,
-          pfpUrl: context.user.pfpUrl
-        });
-        setIsLoading(false);
-      }
-    };
-    
-    checkAuth();
-  }, [context?.user, router]);
+    if (!ready) return;
 
-  // Render loading state
-  if (isLoading || !context?.user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
+    if (!context?.user) {
+      router.push('/');
+      return;
+    }
+
+    setUser({
+      fid: context.user.fid,
+      username: context.user.username || "",
+      displayName: context.user.displayName || "",
+      pfpUrl: context.user.pfpUrl || ""
+    });
+
+    setIsLoading(false);
+  }, [context?.user, ready, router]);
 
   // Handle clicking outside of dropdown to close it
   useEffect(() => {
+    if (!ready) return;
+
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowWalletDropdown(false);
       }
     }
+    
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [ready]);
 
-  // Check if connected wallet is on Base network
+  // Handle wallet state
   useEffect(() => {
-    const updateWalletState = () => {
-      const chainId = privyUser?.wallet?.chainId;
-      if (!chainId) return;
+    if (!ready || !privyUser?.wallet) return;
 
-      const numericChainId = typeof chainId === 'string' ? parseInt(chainId) : chainId;
-      const isBaseNetwork = numericChainId === 8453 || numericChainId === 84532; // Base mainnet or testnet
-      setIsWrongNetwork(!isBaseNetwork);
-      
-      if (privyUser?.wallet?.address) {
-        setWalletConnection({
-          address: privyUser.wallet.address,
-          chainId: numericChainId,
-          connector: 'privy'
-        });
-      }
-    };
+    const chainId = privyUser.wallet.chainId;
+    if (!chainId) return;
 
-    updateWalletState();
-  }, [privyUser?.wallet?.chainId, privyUser?.wallet?.address]);
-
-  // Get user data from context or localStorage
-  useEffect(() => {
-    if (context?.user) {
-      setUser({
-        fid: context.user.fid,
-        username: context.user.username || "",
-        displayName: context.user.displayName || "",
-        pfpUrl: context.user.pfpUrl || ""
+    const numericChainId = typeof chainId === 'string' ? parseInt(chainId) : chainId;
+    const isBaseNetwork = numericChainId === 8453 || numericChainId === 84532;
+    setIsWrongNetwork(!isBaseNetwork);
+    
+    if (privyUser.wallet.address) {
+      setWalletConnection({
+        address: privyUser.wallet.address,
+        chainId: numericChainId,
+        connector: 'privy'
       });
-      // Get the signer/wallet address
-      if ((context as any).signer?.ethereum?.address) {
-        // Handled by Privy now
-      }
     }
-  }, [context]);
+  }, [ready, privyUser?.wallet]);
 
   // Get seller info
   useEffect(() => {
@@ -185,8 +161,12 @@ function Profile() {
     }
   };
 
-  if (!ready || isLoading) {
-    return null;
+  if (!ready || isLoading || !context?.user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+      </div>
+    );
   }
 
   return (
