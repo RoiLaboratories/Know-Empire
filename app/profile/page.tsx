@@ -127,41 +127,56 @@ function Profile() {
 
   const handleSwitchNetwork = async () => {
     try {
-      if (!privyUser?.wallet?.switchChain) {
-        throw new Error('Switch chain not supported');
-      }
-      
-      // First try to switch to Base Mainnet
+      const baseChainId = '0x2105'; // 8453 in hex
+
       try {
-        await privyUser.wallet.switchChain(8453);
-      } catch (switchError) {
-        // If the chain hasn't been added, try to add it
-        if (typeof window !== 'undefined' && window.ethereum?.request) {
-          try {
-            await window.ethereum.request({
-              method: 'wallet_addEthereumChain',
-              params: [{
-                chainId: '0x2105',  // 8453 in hex
-                chainName: 'Base Mainnet',
-                nativeCurrency: {
-                  name: 'ETH',
-                  symbol: 'ETH',
-                  decimals: 18
-                },
-                rpcUrls: ['https://mainnet.base.org'],
-                blockExplorerUrls: ['https://basescan.org']
-              }]
-            });
-            // Try switching again after adding
-            await privyUser.wallet.switchChain(8453);
-          } catch (addError) {
-            console.error('Failed to add Base network:', addError);
-            throw addError;
-          }
-        } else {
-          console.error('Ethereum provider not available');
-          throw new Error('Ethereum provider not available');
+        // Try switching first using Privy's switchChain
+        if (privyUser?.wallet?.switchChain) {
+          await privyUser.wallet.switchChain(8453);
+          return;
         }
+
+        // Fallback to window.ethereum if Privy's switchChain is not available
+        if (!window.ethereum) {
+          throw new Error('No provider available');
+        }
+
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: baseChainId }],
+        });
+      } catch (switchError: any) {
+        // This error code indicates that the chain has not been added to MetaMask.
+        if (switchError.code === 4902 || switchError.message?.includes('Unrecognized chain ID')) {
+          if (!window.ethereum) {
+            throw new Error('No provider available');
+          }
+
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: baseChainId,
+              chainName: 'Base Mainnet',
+              nativeCurrency: {
+                name: 'ETH',
+                symbol: 'ETH',
+                decimals: 18
+              },
+              rpcUrls: ['https://mainnet.base.org'],
+              blockExplorerUrls: ['https://basescan.org']
+            }]
+          });
+        } else {
+          throw switchError;
+        }
+      }
+
+      // Update wallet connection state with new chain
+      if (walletConnection) {
+        setWalletConnection({
+          ...walletConnection,
+          chainId: 8453
+        });
       }
     } catch (error) {
       console.error('Failed to switch network:', error);
@@ -171,21 +186,21 @@ function Profile() {
 
   const handleDisconnectWallet = async () => {
     try {
-      if (!authenticated || !privyUser?.wallet?.disconnect) {
-        throw new Error('Wallet disconnection not available');
+      // Try Privy disconnect if available
+      if (privyUser?.wallet?.disconnect) {
+        await privyUser.wallet.disconnect();
       }
-
-      // Explicitly disconnect the wallet
-      await privyUser.wallet.disconnect();
       
-      // Clear the wallet connection state
+      // Clear the wallet connection state regardless
       setWalletConnection(null);
       
       // Close the dropdown
       setShowWalletDropdown(false);
     } catch (error) {
+      // Even if disconnect fails, we should clear the local state
+      setWalletConnection(null);
+      setShowWalletDropdown(false);
       console.error('Failed to disconnect wallet:', error);
-      throw error;
     }
   };
 
