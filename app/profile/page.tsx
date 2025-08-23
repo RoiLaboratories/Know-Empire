@@ -177,57 +177,41 @@ function Profile() {
 
   const handleWalletConnect = async () => {
     try {
-      // Clear any existing wallet connection first
-      if (privyUser?.wallet) {
-        try {
-          const wallet = privyUser.wallet as any;
-          if (wallet.provider) {
-            await wallet.provider.request({
-              method: 'wallet_requestPermissions',
-              params: [{ eth_accounts: {} }],
-            });
-          }
-        } catch (error) {
-          console.log('Failed to disconnect existing wallet:', error);
-        }
-      }
-
-      // If we're in Farcaster context, always use the Farcaster wallet
+      // If we're in Farcaster context, use the Farcaster wallet
       const verifiedAccounts = (context?.user as any)?.verified_accounts;
       if (context?.user && verifiedAccounts?.[0]?.wallet_address) {
-        // Set wallet connection state for Farcaster wallet
-        const farcasterWallet = {
+        setWalletConnection({
           address: verifiedAccounts[0].wallet_address,
           chainId: 8453, // Base Mainnet
-          connector: 'privy' as const
-        };
-        setWalletConnection(farcasterWallet);
+          connector: 'privy'
+        });
         return;
       }
-      
-      // If not in Farcaster context, connect with Privy
-      if (!context?.user) {
-        await connectWallet();
+
+      // For non-Farcaster context, use Privy
+      try {
+        const result = await connectWallet();
+        console.log('Wallet connection result:', result);
         
-        // Give Privy state a moment to update
+        // Wait briefly for Privy state to update
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Check if wallet was connected successfully and update state
         if (privyUser?.wallet?.address) {
-          const chainId = await (async () => {
-            try {
-              const wallet = privyUser.wallet as any;
-              if (wallet.provider) {
-                const chainIdHex = await wallet.provider.request({ method: 'eth_chainId' });
-                return typeof chainIdHex === 'string' ? parseInt(chainIdHex, 16) : 1;
-              }
-              return typeof wallet.chainId === 'string' ? parseInt(wallet.chainId) : wallet.chainId;
-            } catch (error) {
-              console.error('Failed to get chain ID:', error);
-              return 1;
+          // Get chain ID
+          let chainId = 1; // default to mainnet
+          try {
+            const wallet = privyUser.wallet as any;
+            if (wallet.provider) {
+              const chainIdHex = await wallet.provider.request({ method: 'eth_chainId' });
+              chainId = parseInt(chainIdHex, 16);
+            } else if (wallet.chainId) {
+              chainId = typeof wallet.chainId === 'string' ? parseInt(wallet.chainId) : wallet.chainId;
             }
-          })();
+          } catch (error) {
+            console.error('Failed to get chain ID:', error);
+          }
 
+          // Update wallet connection state
           setWalletConnection({
             address: privyUser.wallet.address,
             chainId: chainId,
@@ -242,10 +226,9 @@ function Profile() {
               console.error('Failed to switch to Base network:', error);
             }
           }
-        } else {
-          console.error('Wallet connection failed');
-          return;
         }
+      } catch (error) {
+        console.error('Failed to connect wallet:', error);
       }
       
       setShowWalletDropdown(false);
@@ -519,10 +502,15 @@ function Profile() {
                 ) : (
                   <div className="p-4">
                     <button
-                      onClick={async (e) => {
+                      type="button"
+                      onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        await handleWalletConnect();
+                        try {
+                          connectWallet();
+                        } catch (error) {
+                          console.error('Failed to open wallet modal:', error);
+                        }
                       }}
                       className="w-full px-4 py-2 text-sm text-white bg-primary hover:bg-primary-dark rounded-lg transition-colors"
                     >
