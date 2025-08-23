@@ -97,12 +97,22 @@ function Profile() {
 
   // Handle wallet connection and network check
   useEffect(() => {
-    if (!ready || !privyUser?.wallet) {
-      setWalletConnection(null);
+    if (!ready) return;
+
+    // If we have context (user is in Farcaster), try to get their smart wallet
+    // Using type assertion since we know Farcaster users have verified_accounts
+    const verifiedAccounts = (context?.user as any)?.verified_accounts;
+    if (verifiedAccounts?.[0]?.wallet_address) {
+      setWalletConnection({
+        address: verifiedAccounts[0].wallet_address,
+        chainId: 8453, // Base Mainnet
+        connector: 'privy'
+      });
       return;
     }
     
-    if (privyUser.wallet.address) {
+    // Fallback to any connected Privy wallet
+    if (privyUser?.wallet?.address) {
       const chainId = typeof privyUser.wallet.chainId === 'string' ? 
         parseInt(privyUser.wallet.chainId) : 
         privyUser.wallet.chainId;
@@ -112,12 +122,49 @@ function Profile() {
         chainId: chainId,
         connector: 'privy'
       });
+    } else {
+      setWalletConnection(null);
     }
-  }, [ready, privyUser?.wallet]);
+  }, [ready, privyUser?.wallet, context?.user]);
 
   const handleWalletConnect = async () => {
     try {
+      // If we're in Farcaster context and have a verified wallet, use that
+      const verifiedAccounts = (context?.user as any)?.verified_accounts;
+      if (verifiedAccounts?.[0]?.wallet_address) {
+        setWalletConnection({
+          address: verifiedAccounts[0].wallet_address,
+          chainId: 8453, // Base Mainnet
+          connector: 'privy'
+        });
+        setShowWalletDropdown(false);
+        
+        // Check if we need to switch to Base network
+        if (window.ethereum) {
+          const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+          if (currentChainId !== '0x2105') { // 8453 in hex
+            try {
+              await handleSwitchNetwork();
+            } catch (error) {
+              console.error('Failed to switch to Base network:', error);
+            }
+          }
+        }
+        return;
+      }
+
+      // If no Farcaster wallet, connect with Privy
       await connectWallet();
+      
+      // After connecting, check if we need to switch to Base network
+      if (privyUser?.wallet?.chainId !== '8453' && privyUser?.wallet?.chainId !== 8453) {
+        try {
+          await handleSwitchNetwork();
+        } catch (error) {
+          console.error('Failed to switch to Base network:', error);
+        }
+      }
+      
       setShowWalletDropdown(false);
     } catch (error) {
       console.error('Failed to connect wallet:', error);
@@ -185,20 +232,21 @@ function Profile() {
 
   const handleDisconnectWallet = async () => {
     try {
-      // Try Privy disconnect if available
+      // If it's a Farcaster wallet, we can't disconnect it
+      const verifiedAccounts = (context?.user as any)?.verified_accounts;
+      if (verifiedAccounts?.[0]?.wallet_address === walletConnection?.address) {
+        setShowWalletDropdown(false);
+        return;
+      }
+
+      // For external wallets, try to disconnect
       if (privyUser?.wallet?.disconnect) {
         await privyUser.wallet.disconnect();
+        setWalletConnection(null);
       }
       
-      // Clear the wallet connection state regardless
-      setWalletConnection(null);
-      
-      // Close the dropdown
       setShowWalletDropdown(false);
     } catch (error) {
-      // Even if disconnect fails, we should clear the local state
-      setWalletConnection(null);
-      setShowWalletDropdown(false);
       console.error('Failed to disconnect wallet:', error);
     }
   };
