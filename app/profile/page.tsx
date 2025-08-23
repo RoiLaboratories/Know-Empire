@@ -10,7 +10,7 @@ import BackButton from "../../ui/BackButton";
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
-import { usePrivy } from '@privy-io/react-auth';
+import { usePrivy, WalletWithMetadata } from '@privy-io/react-auth';
 import type { WalletConnection } from '@know-empire/types';
 import { supabase } from '@/utils/supabase';
 import Modal from "../../context/ModalContext";
@@ -40,7 +40,7 @@ function Profile() {
   const [showWalletDropdown, setShowWalletDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [walletConnection, setWalletConnection] = useState<WalletConnection | null>(null);
-  const { login, authenticated, ready, user: privyUser } = usePrivy();
+  const { connectWallet, ready, user: privyUser } = usePrivy();
 
   // Get user data from context or localStorage
   useEffect(() => {
@@ -117,7 +117,7 @@ function Profile() {
 
   const handleWalletConnect = async () => {
     try {
-      await login();
+      await connectWallet();
       setShowWalletDropdown(false);
     } catch (error) {
       console.error('Failed to connect wallet:', error);
