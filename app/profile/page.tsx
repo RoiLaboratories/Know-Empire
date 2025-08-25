@@ -1,5 +1,4 @@
-'use client';
-
+"use client";
 import Image from "next/image";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
@@ -62,7 +61,7 @@ function Profile() {
         fid: context.user.fid,
         username: context.user.username || "",
         displayName: context.user.displayName || "",
-        pfpUrl: context.user.pfpUrl || ""
+        pfpUrl: context.user.pfpUrl || "",
       });
 
       // If we have a verified Farcaster wallet and connectors are available,
@@ -72,11 +71,11 @@ function Profile() {
         connect({ connector: connectors[0] });
       }
     } else {
-      const storedUser = localStorage.getItem('farcaster_user');
+      const storedUser = localStorage.getItem("farcaster_user");
       if (storedUser) {
         setUser(JSON.parse(storedUser));
       } else {
-        router.push('/onboarding');
+        router.push("/onboarding");
       }
     }
   }, [context, router, connectors, connect, isConnected]);
@@ -86,9 +85,9 @@ function Profile() {
       if (user?.fid) {
         // Only check for seller info in Supabase
         const { data, error } = await supabase
-          .from('sellers')
-          .select('*')
-          .eq('fid', user.fid)
+          .from("sellers")
+          .select("*")
+          .eq("fid", user.fid)
           .single();
 
         if (!error) {
@@ -137,7 +136,7 @@ function Profile() {
   }
 
   if (!user) {
-    router.push('/');
+    router.push("/");
     return null;
   }
 
@@ -284,12 +283,16 @@ function Profile() {
           <div className="grid grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
               <Icon icon={ICON.PACKAGE} fontSize={26} className="text-orange" />
-              <p className="text-[10px] font-medium">{sellerInfo?.items_sold || 0}</p>
+              <p className="text-[10px] font-medium">
+                {sellerInfo?.items_sold || 0}
+              </p>
               <p className="text-[7px] text-nowrap">items sold</p>
             </div>
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
               <Icon icon={ICON.BUY} fontSize={26} className="text-green-500" />
-              <p className="text-[10px] font-medium">{sellerInfo?.items_sold || 0}</p>
+              <p className="text-[10px] font-medium">
+                {sellerInfo?.items_sold || 0}
+              </p>
               <p className="text-[7px] text-nowrap">items Bought</p>
             </div>
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
@@ -298,16 +301,22 @@ function Profile() {
                 fontSize={26}
                 className="text-yellow-500"
               />
-              <p className="text-[10px] font-medium">{sellerInfo?.rating || 0}</p>
+              <p className="text-[10px] font-medium">
+                {sellerInfo?.rating || 0}
+              </p>
               <p className="text-[7px]">Rating</p>
             </div>
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
               <Icon
                 icon={ICON.VERIFIED}
                 fontSize={26}
-                className={sellerInfo?.is_seller ? "text-green-500" : "text-gray-400"}
+                className={
+                  sellerInfo?.is_seller ? "text-green-500" : "text-gray-400"
+                }
               />
-              <p className="text-[10px] font-medium">{sellerInfo?.is_seller ? "Verified" : "Not"}</p>
+              <p className="text-[10px] font-medium">
+                {sellerInfo?.is_seller ? "Verified" : "Not"}
+              </p>
               <p className="text-[7px]">Seller</p>
             </div>
           </div>
