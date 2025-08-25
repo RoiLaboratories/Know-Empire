@@ -17,6 +17,18 @@ import Modal from "../../context/ModalContext";
 import GenericPopup from "../../components/popups/generic-popup";
 import ReferralPopup from "../../components/popups/referral-link-popup";
 
+interface SuiteContext {
+  user?: {
+    fid: number;
+    username?: string;
+    displayName?: string;
+    pfpUrl?: string;
+    verified_accounts?: Array<{ wallet_address: string }>;
+  };
+  getSigner?: () => Promise<any>;
+  isTestnet?: boolean;
+}
+
 interface SellerInfo {
   is_seller: boolean;
   seller_since?: string;
@@ -33,7 +45,7 @@ interface FarcasterUser {
 
 function Profile() {
   const router = useRouter();
-  const { context } = useMiniKit();
+  const { context } = useMiniKit() as { context: SuiteContext };
   const [user, setUser] = useState<FarcasterUser | null>(null);
   const [sellerInfo, setSellerInfo] = useState<SellerInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -95,16 +107,56 @@ function Profile() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [ready]);
 
-  // Close dropdown when wallet is connected
+  // Update wallet state when Privy or Farcaster state changes
   useEffect(() => {
-    if (walletConnection) {
-      // Give the UI a moment to update before closing
-      const timer = setTimeout(() => {
-        setShowWalletDropdown(false);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [walletConnection]);
+    if (!ready) return;
+
+    const updateWalletState = async () => {
+      // Check if we have a Privy wallet connection
+      if (privyUser?.wallet?.address) {
+        const verifiedAccounts = (context?.user as any)?.verified_accounts;
+        const isFarcasterWallet = verifiedAccounts?.[0]?.wallet_address === privyUser.wallet.address;
+        
+        let chainId = isFarcasterWallet ? 8453 : 1;
+        
+        if (!isFarcasterWallet) {
+          try {
+            const wallet = privyUser.wallet as any;
+            if (wallet.provider) {
+              const chainIdHex = await wallet.provider.request({ method: 'eth_chainId' });
+              chainId = parseInt(chainIdHex, 16);
+            } else if (wallet.chainId) {
+              chainId = typeof wallet.chainId === 'string' ? parseInt(wallet.chainId) : wallet.chainId;
+            }
+          } catch (error) {
+            console.error('Failed to get chain ID:', error);
+          }
+        }
+
+        setWalletConnection({
+          address: privyUser.wallet.address,
+          chainId: chainId,
+          connector: 'privy'
+        });
+      } else if (context?.user) {
+        // Check for Farcaster wallet if no Privy wallet
+        const verifiedAccounts = (context.user as any)?.verified_accounts;
+        if (verifiedAccounts?.[0]?.wallet_address) {
+          setWalletConnection({
+            address: verifiedAccounts[0].wallet_address,
+            chainId: 8453,
+            connector: 'privy'
+          });
+        } else {
+          setWalletConnection(null);
+        }
+      } else {
+        setWalletConnection(null);
+      }
+    };
+
+    updateWalletState();
+  }, [ready, privyUser?.wallet, context?.user]);
 
   // Handle wallet connection and network check
   useEffect(() => {
@@ -177,28 +229,24 @@ function Profile() {
 
   const handleWalletConnect = async () => {
     try {
-      // If we're in Farcaster context, use the Farcaster wallet
-      const verifiedAccounts = (context?.user as any)?.verified_accounts;
-      if (context?.user && verifiedAccounts?.[0]?.wallet_address) {
-        setWalletConnection({
-          address: verifiedAccounts[0].wallet_address,
-          chainId: 8453, // Base Mainnet
-          connector: 'privy'
-        });
-        return;
-      }
+      // Always use direct connectWallet to show Privy modal
+      await connectWallet();
+      
+      // Wait briefly for Privy state to update
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-      // For non-Farcaster context, use Privy
-      try {
-        const result = await connectWallet();
-        console.log('Wallet connection result:', result);
-        
-        // Wait briefly for Privy state to update
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        if (privyUser?.wallet?.address) {
-          // Get chain ID
-          let chainId = 1; // default to mainnet
+      // After connection, check what type of wallet we have
+      const verifiedAccounts = (context?.user as any)?.verified_accounts;
+      const isFarcasterWallet = verifiedAccounts?.[0]?.wallet_address === privyUser?.wallet?.address;
+
+      if (privyUser?.wallet?.address) {
+        let chainId = 1; // default to mainnet
+
+        // If it's a Farcaster wallet, always use Base chain
+        if (isFarcasterWallet) {
+          chainId = 8453;
+        } else {
+          // For external wallets, get the actual chain ID
           try {
             const wallet = privyUser.wallet as any;
             if (wallet.provider) {
@@ -210,30 +258,30 @@ function Profile() {
           } catch (error) {
             console.error('Failed to get chain ID:', error);
           }
+        }
 
-          // Update wallet connection state
-          setWalletConnection({
-            address: privyUser.wallet.address,
-            chainId: chainId,
-            connector: 'privy'
-          });
+        // Update wallet connection state
+        setWalletConnection({
+          address: privyUser.wallet.address,
+          chainId: chainId,
+          connector: 'privy'
+        });
 
-          // Switch to Base network if needed
-          if (chainId !== 8453) {
-            try {
-              await handleSwitchNetwork();
-            } catch (error) {
-              console.error('Failed to switch to Base network:', error);
-            }
+        // For external wallets, switch to Base if needed
+        if (!isFarcasterWallet && chainId !== 8453) {
+          try {
+            await handleSwitchNetwork();
+          } catch (error) {
+            console.error('Failed to switch to Base network:', error);
           }
         }
-      } catch (error) {
-        console.error('Failed to connect wallet:', error);
+
+        // Close the dropdown after successful connection
+        setShowWalletDropdown(false);
       }
-      
-      setShowWalletDropdown(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to connect wallet:', error);
+      setShowWalletDropdown(false);
     }
   };
 
@@ -506,9 +554,10 @@ function Profile() {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        // Call connectWallet and handle any errors
                         try {
                           connectWallet();
-                        } catch (error) {
+                        } catch (error: any) {
                           console.error('Failed to open wallet modal:', error);
                         }
                       }}
