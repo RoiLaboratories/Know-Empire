@@ -1,5 +1,4 @@
-'use client';
-
+"use client";
 import Image from "next/image";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
@@ -7,10 +6,10 @@ import Wallet from "../../assets/icons/wallet.svg";
 import Verified from "../../assets/icons/verified.svg";
 import ReviewsCard from "../../components/cards/ReviewsCard";
 import BackButton from "../../ui/BackButton";
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { useMiniKit } from '@coinbase/onchainkit/minikit';
-import { supabase } from '@/utils/supabase';
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { supabase } from "@/utils/supabase";
 import Modal from "../../context/ModalContext";
 import GenericPopup from "../../components/popups/generic-popup";
 import ReferralPopup from "../../components/popups/referral-link-popup";
@@ -43,14 +42,14 @@ function Profile() {
         fid: context.user.fid,
         username: context.user.username || "",
         displayName: context.user.displayName || "",
-        pfpUrl: context.user.pfpUrl || ""
+        pfpUrl: context.user.pfpUrl || "",
       });
     } else {
-      const storedUser = localStorage.getItem('farcaster_user');
+      const storedUser = localStorage.getItem("farcaster_user");
       if (storedUser) {
         setUser(JSON.parse(storedUser));
       } else {
-        router.push('/onboarding');
+        router.push("/onboarding");
       }
     }
   }, [context, router]);
@@ -60,9 +59,9 @@ function Profile() {
       if (user?.fid) {
         // Only check for seller info in Supabase
         const { data, error } = await supabase
-          .from('sellers')
-          .select('*')
-          .eq('fid', user.fid)
+          .from("sellers")
+          .select("*")
+          .eq("fid", user.fid)
           .single();
 
         if (!error) {
@@ -80,7 +79,7 @@ function Profile() {
   }
 
   if (!user) {
-    router.push('/');
+    router.push("/");
     return null;
   }
 
@@ -156,12 +155,16 @@ function Profile() {
           <div className="grid grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
               <Icon icon={ICON.PACKAGE} fontSize={26} className="text-orange" />
-              <p className="text-[10px] font-medium">{sellerInfo?.items_sold || 0}</p>
+              <p className="text-[10px] font-medium">
+                {sellerInfo?.items_sold || 0}
+              </p>
               <p className="text-[7px] text-nowrap">items sold</p>
             </div>
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
               <Icon icon={ICON.BUY} fontSize={26} className="text-green-500" />
-              <p className="text-[10px] font-medium">{sellerInfo?.items_sold || 0}</p>
+              <p className="text-[10px] font-medium">
+                {sellerInfo?.items_sold || 0}
+              </p>
               <p className="text-[7px] text-nowrap">items Bought</p>
             </div>
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
@@ -170,16 +173,22 @@ function Profile() {
                 fontSize={26}
                 className="text-yellow-500"
               />
-              <p className="text-[10px] font-medium">{sellerInfo?.rating || 0}</p>
+              <p className="text-[10px] font-medium">
+                {sellerInfo?.rating || 0}
+              </p>
               <p className="text-[7px]">Rating</p>
             </div>
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
               <Icon
                 icon={ICON.VERIFIED}
                 fontSize={26}
-                className={sellerInfo?.is_seller ? "text-green-500" : "text-gray-400"}
+                className={
+                  sellerInfo?.is_seller ? "text-green-500" : "text-gray-400"
+                }
               />
-              <p className="text-[10px] font-medium">{sellerInfo?.is_seller ? "Verified" : "Not"}</p>
+              <p className="text-[10px] font-medium">
+                {sellerInfo?.is_seller ? "Verified" : "Not"}
+              </p>
               <p className="text-[7px]">Seller</p>
             </div>
           </div>

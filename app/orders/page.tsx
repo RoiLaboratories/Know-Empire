@@ -37,8 +37,8 @@ function Orders() {
           {orders.length !== 0 && <Search />}
         </div>
 
-        {/*main content */}
-        {orders.length !== 0 ? (
+        {/*main content   orders.length !== 0*/}
+        {false ? (
           <ul className="grid grid-cols-1 gap-5 mt-2.5">
             {orders.map((order, i) => (
               <OrdersCard
@@ -56,14 +56,24 @@ function Orders() {
           <div className="flex flex-col gap-10 items-center justify-between">
             <Image alt="empty orders" src={Empty} className="" />
 
+            {/*sellers */}
             <p className="text-xs font-medium text-center">
-              You have no{" "}
-              <span className="text-primary font-bold">orders </span>
-              placed yet, place an order to see your order list
-              <span className="text-primary font-bold"> here</span>
+              You have no pending
+              <span className="text-primary font-bold"> orders, </span>your
+              orders will appear
+              <span className="text-primary font-bold"> here </span>
+              when they are placed
             </p>
 
-            <Button 
+            {/*buyers */}
+            {/* <p className="text-xs font-medium text-center">
+              You have no
+              <span className="text-primary font-bold"> orders, </span>placed
+              yet, place an order to see your order list
+              <span className="text-primary font-bold"> here </span>
+            </p> */}
+
+            <Button
               className="text-white rounded bg-primary flex justify-center gap-x-1 items-center text-xs font-bold py-2 px-5 drop-shadow-dark btn w-fit"
               onClick={() => router.push("/marketplace")}
             >
