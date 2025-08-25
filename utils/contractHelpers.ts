@@ -9,12 +9,12 @@ import { config } from "../providers/wagmi";
 // Initialize public client
 const publicClient = createPublicClient({
   chain: base,
-  transport: http()
+  transport: http('https://mainnet.base.org')
 });
 
 export async function approveUSDC(amount: string) {
   try {
-    const walletClient = await getWalletClient(config);
+    const walletClient = await getWalletClient(config, { chainId: base.id });
     if (!walletClient) throw new Error("Wallet not connected");
 
     // Convert amount to USDC decimals
@@ -41,7 +41,7 @@ export async function approveUSDC(amount: string) {
 
 export async function createEscrow(seller: string, amount: string, orderId: string) {
   try {
-    const walletClient = await getWalletClient(config);
+    const walletClient = await getWalletClient(config, { chainId: base.id });
     if (!walletClient) throw new Error("Wallet not connected");
 
     // Convert amount to USDC decimals
@@ -78,7 +78,7 @@ export async function createEscrow(seller: string, amount: string, orderId: stri
 
 export async function confirmDelivery(escrowId: string) {
   try {
-    const walletClient = await getWalletClient(config);
+    const walletClient = await getWalletClient(config, { chainId: base.id });
     if (!walletClient) throw new Error("Wallet not connected");
 
     const hash = await walletClient.writeContract({
@@ -101,7 +101,7 @@ export async function confirmDelivery(escrowId: string) {
 
 export async function initiateDispute(escrowId: string) {
   try {
-    const walletClient = await getWalletClient(config);
+    const walletClient = await getWalletClient(config, { chainId: base.id });
     if (!walletClient) throw new Error("Wallet not connected");
 
     const hash = await walletClient.writeContract({
@@ -124,7 +124,7 @@ export async function initiateDispute(escrowId: string) {
 
 export async function confirmDeliveryBySeller(escrowId: string) {
   try {
-    const walletClient = await getWalletClient(config);
+    const walletClient = await getWalletClient(config, { chainId: base.id });
     if (!walletClient) throw new Error("Wallet not connected");
 
     const hash = await walletClient.writeContract({
@@ -165,7 +165,7 @@ export async function isEligibleForAutoRelease(escrowId: string) {
 
 export async function checkAndAutoRelease(escrowId: string) {
   try {
-    const walletClient = await getWalletClient(config);
+    const walletClient = await getWalletClient(config, { chainId: base.id });
     if (!walletClient) throw new Error("Wallet not connected");
 
     const hash = await walletClient.writeContract({
