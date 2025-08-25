@@ -26,7 +26,7 @@ export const ModalContext = createContext<ModalContextType | undefined>(
 /**
  * Modal component that provides context for managing modal windows
  */
-export default function Modal({ children }: { children: React.ReactNode }) {
+const Modal = ({ children }: { children: React.ReactNode }) => {
   const [openNames, setOpenNames] = useState<string[]>([]);
 
   const close = (name?: string) => {
@@ -182,3 +182,5 @@ export function Button({ children, onClick, 'aria-label': ariaLabel }: ButtonPro
 
 Modal.Open = Open;
 Modal.Window = Window;
+
+export default Modal;

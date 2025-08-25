@@ -6,13 +6,27 @@ import Wallet from "../../assets/icons/wallet.svg";
 import Verified from "../../assets/icons/verified.svg";
 import ReviewsCard from "../../components/cards/ReviewsCard";
 import BackButton from "../../ui/BackButton";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { supabase } from "@/utils/supabase";
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
+import { usePrivy, WalletWithMetadata } from '@privy-io/react-auth';
+import type { WalletConnection } from '@know-empire/types';
+import { supabase } from '@/utils/supabase';
 import Modal from "../../context/ModalContext";
 import GenericPopup from "../../components/popups/generic-popup";
 import ReferralPopup from "../../components/popups/referral-link-popup";
+
+interface SuiteContext {
+  user?: {
+    fid: number;
+    username?: string;
+    displayName?: string;
+    pfpUrl?: string;
+    verified_accounts?: Array<{ wallet_address: string }>;
+  };
+  getSigner?: () => Promise<any>;
+  isTestnet?: boolean;
+}
 
 interface SellerInfo {
   is_seller: boolean;
@@ -30,10 +44,14 @@ interface FarcasterUser {
 
 function Profile() {
   const router = useRouter();
-  const { context } = useMiniKit();
+  const { context } = useMiniKit() as { context: SuiteContext };
   const [user, setUser] = useState<FarcasterUser | null>(null);
   const [sellerInfo, setSellerInfo] = useState<SellerInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showWalletDropdown, setShowWalletDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [walletConnection, setWalletConnection] = useState<WalletConnection | null>(null);
+  const { connectWallet, ready, user: privyUser } = usePrivy();
 
   // Get user data from context or localStorage
   useEffect(() => {
@@ -74,6 +92,365 @@ function Profile() {
     loadSellerInfo();
   }, [user?.fid]);
 
+  // Handle clicking outside of dropdown to close it
+  useEffect(() => {
+    if (!ready) return;
+
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowWalletDropdown(false);
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [ready]);
+
+  // Update wallet state when Privy or Farcaster state changes
+  useEffect(() => {
+    if (!ready) return;
+
+    const updateWalletState = async () => {
+      // Check if we have a Privy wallet connection
+      if (privyUser?.wallet?.address) {
+        const verifiedAccounts = (context?.user as any)?.verified_accounts;
+        const isFarcasterWallet = verifiedAccounts?.[0]?.wallet_address === privyUser.wallet.address;
+        
+        let chainId = isFarcasterWallet ? 8453 : 1;
+        
+        if (!isFarcasterWallet) {
+          try {
+            const wallet = privyUser.wallet as any;
+            if (wallet.provider) {
+              const chainIdHex = await wallet.provider.request({ method: 'eth_chainId' });
+              chainId = parseInt(chainIdHex, 16);
+            } else if (wallet.chainId) {
+              chainId = typeof wallet.chainId === 'string' ? parseInt(wallet.chainId) : wallet.chainId;
+            }
+          } catch (error) {
+            console.error('Failed to get chain ID:', error);
+          }
+        }
+
+        setWalletConnection({
+          address: privyUser.wallet.address,
+          chainId: chainId,
+          connector: 'privy'
+        });
+      } else if (context?.user) {
+        // Check for Farcaster wallet if no Privy wallet
+        const verifiedAccounts = (context.user as any)?.verified_accounts;
+        if (verifiedAccounts?.[0]?.wallet_address) {
+          setWalletConnection({
+            address: verifiedAccounts[0].wallet_address,
+            chainId: 8453,
+            connector: 'privy'
+          });
+        } else {
+          setWalletConnection(null);
+        }
+      } else {
+        setWalletConnection(null);
+      }
+    };
+
+    updateWalletState();
+  }, [ready, privyUser?.wallet, context?.user]);
+
+  // Handle wallet connection and network check
+  useEffect(() => {
+    if (!ready) return;
+
+    const updateWalletConnection = async () => {
+      try {
+        // Always check for Farcaster context first
+        const verifiedAccounts = (context?.user as any)?.verified_accounts;
+        if (context?.user && verifiedAccounts?.[0]?.wallet_address) {
+          // If we're in Farcaster context, always use the Farcaster wallet
+          setWalletConnection({
+            address: verifiedAccounts[0].wallet_address,
+            chainId: 8453, // Base Mainnet
+            connector: 'privy'
+          });
+          
+          // If there's another wallet connected, disconnect it
+          if (privyUser?.wallet?.address !== verifiedAccounts[0].wallet_address) {
+            try {
+              const wallet = privyUser?.wallet as any;
+              if (wallet?.provider) {
+                await wallet.provider.request({
+                  method: 'wallet_requestPermissions',
+                  params: [{ eth_accounts: {} }],
+                });
+              }
+            } catch (error) {
+              console.log('Failed to disconnect external wallet:', error);
+            }
+          }
+          return;
+        }
+        
+        // Only use Privy wallet if we're not in Farcaster context
+        if (!context?.user && privyUser?.wallet?.address) {
+          let chainId: number;
+          
+          try {
+            const wallet = privyUser.wallet as any;
+            if (wallet.provider) {
+              const chainIdHex = await wallet.provider.request({ method: 'eth_chainId' });
+              chainId = typeof chainIdHex === 'string' ? parseInt(chainIdHex, 16) : 1;
+            } else {
+              chainId = typeof wallet.chainId === 'string' ? 
+                parseInt(wallet.chainId) : 
+                wallet.chainId;
+            }
+          } catch (error) {
+            console.error('Failed to get chain ID:', error);
+            chainId = 1; // Default to mainnet on error
+          }
+
+          setWalletConnection({
+            address: privyUser.wallet.address,
+            chainId: chainId,
+            connector: 'privy'
+          });
+        } else {
+          setWalletConnection(null);
+        }
+      } catch (error) {
+        console.error('Error updating wallet connection:', error);
+        setWalletConnection(null);
+      }
+    };
+
+    updateWalletConnection();
+  }, [ready, privyUser?.wallet, context?.user]);
+
+  const handleWalletConnect = async () => {
+    try {
+      // Always use direct connectWallet to show Privy modal
+      await connectWallet();
+      
+      // Wait briefly for Privy state to update
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // After connection, check what type of wallet we have
+      const verifiedAccounts = (context?.user as any)?.verified_accounts;
+      const isFarcasterWallet = verifiedAccounts?.[0]?.wallet_address === privyUser?.wallet?.address;
+
+      if (privyUser?.wallet?.address) {
+        let chainId = 1; // default to mainnet
+
+        // If it's a Farcaster wallet, always use Base chain
+        if (isFarcasterWallet) {
+          chainId = 8453;
+        } else {
+          // For external wallets, get the actual chain ID
+          try {
+            const wallet = privyUser.wallet as any;
+            if (wallet.provider) {
+              const chainIdHex = await wallet.provider.request({ method: 'eth_chainId' });
+              chainId = parseInt(chainIdHex, 16);
+            } else if (wallet.chainId) {
+              chainId = typeof wallet.chainId === 'string' ? parseInt(wallet.chainId) : wallet.chainId;
+            }
+          } catch (error) {
+            console.error('Failed to get chain ID:', error);
+          }
+        }
+
+        // Update wallet connection state
+        setWalletConnection({
+          address: privyUser.wallet.address,
+          chainId: chainId,
+          connector: 'privy'
+        });
+
+        // For external wallets, switch to Base if needed
+        if (!isFarcasterWallet && chainId !== 8453) {
+          try {
+            await handleSwitchNetwork();
+          } catch (error) {
+            console.error('Failed to switch to Base network:', error);
+          }
+        }
+
+        // Close the dropdown after successful connection
+        setShowWalletDropdown(false);
+      }
+    } catch (error: any) {
+      console.error('Failed to connect wallet:', error);
+      setShowWalletDropdown(false);
+    }
+  };
+
+  const handleSwitchNetwork = async () => {
+    try {
+      const baseChainId = '0x2105'; // 8453 in hex
+
+      // If using Privy wallet and we have a wallet connection
+      if (privyUser && privyUser.wallet && walletConnection && 
+          privyUser.wallet.address === walletConnection.address) {
+        
+        // Use the wallet's provider directly
+        try {
+          // Type assertion for the provider
+          const wallet = privyUser.wallet as any;
+          
+          if (wallet.provider) {
+            await wallet.provider.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: baseChainId }],
+            });
+            
+            // Update wallet connection after successful switch
+            const chainId = await wallet.provider.request({ method: 'eth_chainId' });
+            if (typeof chainId === 'string' && walletConnection) {
+              setWalletConnection({
+                address: walletConnection.address,
+                chainId: parseInt(chainId, 16),
+                connector: walletConnection.connector
+              });
+            }
+            return;
+          }
+          
+          // Fallback to try adding the chain if switching failed
+          await wallet.provider.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: baseChainId,
+              chainName: 'Base Mainnet',
+              nativeCurrency: {
+                name: 'ETH',
+                symbol: 'ETH',
+                decimals: 18
+              },
+              rpcUrls: ['https://mainnet.base.org'],
+              blockExplorerUrls: ['https://basescan.org']
+            }]
+          });
+        } catch (error) {
+          console.error('Failed to switch network with Privy wallet:', error);
+          throw error;
+        }
+      }
+
+      // Fallback to window.ethereum
+      if (!window.ethereum) {
+        throw new Error('No provider available');
+      }
+
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: baseChainId }],
+        });
+      } catch (switchError: any) {
+        // This error code indicates that the chain has not been added
+        if (switchError.code === 4902 || switchError.message?.includes('Unrecognized chain ID')) {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: baseChainId,
+              chainName: 'Base Mainnet',
+              nativeCurrency: {
+                name: 'ETH',
+                symbol: 'ETH',
+                decimals: 18
+              },
+              rpcUrls: ['https://mainnet.base.org'],
+              blockExplorerUrls: ['https://basescan.org']
+            }]
+          });
+        } else {
+          throw switchError;
+        }
+      }
+
+      // Get the new chain ID and update state
+      const newChainId = await window.ethereum.request({ method: 'eth_chainId' });
+      if (walletConnection && typeof newChainId === 'string') {
+        setWalletConnection({
+          address: walletConnection.address,
+          chainId: parseInt(newChainId, 16),
+          connector: walletConnection.connector
+        });
+      }
+    } catch (error) {
+      console.error('Failed to switch network:', error);
+      throw error;
+    }
+  };
+
+  const handleDisconnectWallet = async () => {
+    try {
+      if (!walletConnection) {
+        setShowWalletDropdown(false);
+        return;
+      }
+
+      // If it's a Farcaster wallet, we can't disconnect it
+      const verifiedAccounts = (context?.user as any)?.verified_accounts;
+      if (verifiedAccounts?.[0]?.wallet_address === walletConnection.address) {
+        setShowWalletDropdown(false);
+        return;
+      }
+
+      // For Privy-connected wallets
+      if (privyUser && privyUser.wallet && privyUser.wallet.address === walletConnection.address) {
+        try {
+          // Type assertion for the provider
+          const wallet = privyUser.wallet as any;
+          
+          // Clear the connection in our state first
+          setWalletConnection(null);
+          
+          // Try to disconnect using the provider if available
+          if (wallet.provider) {
+            try {
+              await wallet.provider.request({
+                method: 'wallet_requestPermissions',
+                params: [{ eth_accounts: {} }],
+              });
+            } catch (error) {
+              // Some providers don't support this method, which is fine
+              console.log('Provider does not support wallet_requestPermissions');
+            }
+          }
+        } catch (error) {
+          console.error('Error disconnecting wallet:', error);
+          throw error;
+        }
+      } else if (window.ethereum) {
+        // For MetaMask or other injected wallets
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' }) as string[];
+          const currentAddress = accounts[0]?.toLowerCase();
+          if (currentAddress === walletConnection.address.toLowerCase()) {
+            setWalletConnection(null);
+            // Try to disconnect using standard method
+            try {
+              await window.ethereum.request({
+                method: 'wallet_requestPermissions',
+                params: [{ eth_accounts: {} }],
+              });
+            } catch (error) {
+              // Some providers don't support this method, which is fine
+              console.log('Provider does not support wallet_requestPermissions');
+            }
+          }
+        } catch (error) {
+          console.error('Failed to get ethereum accounts:', error);
+        }
+      }
+      
+      setShowWalletDropdown(false);
+    } catch (error) {
+      console.error('Failed to disconnect wallet:', error);
+    }
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -90,7 +467,108 @@ function Profile() {
           <BackButton className="text-white" />
         </div>
         <div className="bg-primary h-50 flex justify-between items-center p-5 text-white relative">
-          <Image alt="wallet" src={Wallet} />
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowWalletDropdown(!showWalletDropdown);
+              }}
+              className="flex items-center justify-center rounded-full hover:opacity-80 transition-opacity"
+            >
+              <Image alt="wallet" src={Wallet} />
+            </button>
+
+            {showWalletDropdown && (
+              <div className="absolute left-0 mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                <div className="p-4 border-b border-gray-100">
+                  <h3 className="text-sm font-medium text-gray-900">Wallet</h3>
+                </div>
+                
+                {walletConnection ? (
+                  <>
+                    <div className="p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className={`w-2 h-2 rounded-full ${walletConnection.chainId === 8453 ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                        <span className="text-sm font-medium text-gray-900">
+                          {walletConnection.chainId === 8453 ? 'Connected to Base' : 'Wrong Network'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <span className="font-mono">{`${walletConnection.address.slice(0, 6)}...${walletConnection.address.slice(-4)}`}</span>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(walletConnection.address);
+                              // You might want to show a toast or notification here
+                            } catch (error) {
+                              console.error('Failed to copy address:', error);
+                            }
+                          }}
+                          className="p-1 hover:text-gray-900 cursor-pointer active:scale-95 transition-transform"
+                        >
+                          <Icon icon={ICON.COPY} className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    {walletConnection.chainId !== 8453 && (
+                      <div className="px-4 py-3 bg-yellow-50 border-y border-yellow-100">
+                        <button 
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await handleSwitchNetwork();
+                            } catch (error) {
+                              console.error('Failed to switch network:', error);
+                            }
+                          }}
+                          className="flex items-center gap-2 w-full text-sm text-yellow-700 hover:text-yellow-900 active:text-yellow-800 cursor-pointer"
+                        >
+                          <Icon icon={ICON.WARNING} className="text-yellow-500 flex-shrink-0" />
+                          <span className="flex-1">Switch to Base Network</span>
+                        </button>
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await handleDisconnectWallet();
+                          } catch (error) {
+                            console.error('Failed to disconnect wallet:', error);
+                          }
+                        }}
+                        className="w-full px-4 py-2 text-sm text-white bg-red-500 hover:bg-red-600 active:bg-red-700 rounded-lg transition-colors cursor-pointer"
+                      >
+                        Disconnect Wallet
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-4">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Call connectWallet and handle any errors
+                        try {
+                          connectWallet();
+                        } catch (error: any) {
+                          console.error('Failed to open wallet modal:', error);
+                        }
+                      }}
+                      className="w-full px-4 py-2 text-sm text-white bg-primary hover:bg-primary-dark rounded-lg transition-colors"
+                    >
+                      Connect Wallet
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           <Modal>
             <Modal.Open opens="share-referral-modal">
@@ -207,7 +685,6 @@ function Profile() {
                   {Array.from({ length: 3 }).map((_, i) => (
                     <Icon
                       icon={ICON.STAR}
-                      // fontSize={26}
                       key={i}
                     />
                   ))}

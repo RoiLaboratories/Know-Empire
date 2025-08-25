@@ -8,6 +8,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import toast from "react-hot-toast";
 
 interface CartItem {
   name: string;
@@ -36,12 +37,35 @@ interface CartProviderProps {
   children: ReactNode;
 }
 
-export const CartProvider = ({ children }: CartProviderProps) => {
+const CartProvider = ({ children }: CartProviderProps) => {
   const [cart, setCart] = useState<CartItem[]>([]);
 
   //save cart to localstorage if any changes occur
   const saveCartToLocalStorage = (cart: CartItem[]) => {
     localStorage.setItem("cart", JSON.stringify(cart));
+  };
+
+  // Create a function to show toast with proper styling
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    toast.dismiss();  // Dismiss any existing toasts
+    toast[type](message, {
+      duration: 1500,
+      position: 'top-center',
+      style: {
+        background: type === 'success' ? '#b400f7' : '#dc2626',
+        color: 'white',
+        padding: '8px 12px',
+        borderRadius: '6px',
+        fontSize: '0.875rem',
+        maxWidth: '260px',
+        textAlign: 'center',
+      },
+      icon: type === 'success' ? '✓' : '✕',
+      iconTheme: {
+        primary: '#ffffff',
+        secondary: type === 'success' ? '#b400f7' : '#dc2626',
+      },
+    });
   };
 
   //add item to cart or update quantity if item exists
@@ -62,11 +86,13 @@ export const CartProvider = ({ children }: CartProviderProps) => {
               }
             : item
         );
+        showToast(`${newItem.name} × ${existingItem.quantity + newItem.quantity}`);
       } else {
         updatedCart = [
           ...prevCart,
           { ...newItem, totalPrice: newItem.unitPrice * newItem.quantity },
         ];
+        showToast(`Item added to cart`);
       }
 
       saveCartToLocalStorage(updatedCart);
@@ -77,6 +103,11 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   //remove item from cart
   const removeFromCart = (productId: string) => {
     setCart((prevCart) => {
+      const targetItem = prevCart.find(item => item.productId === productId);
+      if (targetItem) {
+        showToast(`Item removed from cart`, 'error');
+      }
+
       const updatedCart = prevCart.filter(
         (item) => item.productId !== productId
       );
@@ -89,6 +120,9 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   //update quantity of item in cart
   const incQuantity = (productId: string) => {
     setCart((prevCart) => {
+      const targetItem = prevCart.find(item => item.productId === productId);
+      if (!targetItem) return prevCart;
+
       const updatedCart = prevCart.map((item) =>
         item.productId === productId
           ? {
@@ -99,6 +133,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
           : item
       );
 
+      showToast(`Qty: ${targetItem.quantity + 1}`);
       saveCartToLocalStorage(updatedCart);
       return updatedCart;
     });
@@ -106,6 +141,15 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
   const decQuantity = (productId: string) => {
     setCart((prevCart) => {
+      const targetItem = prevCart.find(item => item.productId === productId);
+      if (!targetItem) return prevCart;
+
+      if (targetItem.quantity === 1) {
+        showToast(`Item removed from cart`, 'error');
+      } else {
+        showToast(`Qty: ${targetItem.quantity - 1}`);
+      }
+
       const updatedCart = prevCart
         .map((item) =>
           item.productId === productId
@@ -165,3 +209,5 @@ export const useCart = () => {
   }
   return context;
 };
+
+export default CartProvider;

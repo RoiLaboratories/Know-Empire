@@ -56,7 +56,7 @@ function DeliveryInformationPopup({ onNext, onBack, product }: IDProps) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <p className="font-semibold text-gray text-sm">Delivery notes*</p>
+        <p className="font-semibold text-gray text-sm">Delivery Notes</p>
         <textarea
           className="border border-[#989898] text-gray-700 bg-white h-36 rounded-[10px] p-3 text-xs w-full resize-none focus:outline-none focus:ring-1 focus:ring-primary"
           placeholder="Add any special delivery instructions or address details"

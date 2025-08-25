@@ -4,7 +4,7 @@ import { MiniKitProvider } from '@coinbase/onchainkit/minikit';
 import { ReactNode } from 'react';
 import { optimism } from 'viem/chains';
 
-export function MiniKitContextProvider({ children }: { children: ReactNode }) {
+const MiniKitContextProvider = ({ children }: { children: ReactNode }) => {
   return (
     <MiniKitProvider
       chain={optimism}
@@ -13,4 +13,6 @@ export function MiniKitContextProvider({ children }: { children: ReactNode }) {
       {children}
     </MiniKitProvider>
   );
-}
+};
+
+export default MiniKitContextProvider;

@@ -1,9 +1,6 @@
-import { CartProvider } from "../providers/cart";
 import "../styles/global.css";
-import AuthProvider from "../components/auth/AuthProvider";
-import { MiniKitContextProvider } from "../providers/MiniKitProvider";
-import { FarcasterAuthProvider } from "../context/FarcasterAuthContext";
 import { Metadata } from "next";
+import ClientProviders from "../components/providers/ClientProviders";
 
 export async function generateMetadata(): Promise<Metadata> {
   const URL = process.env.NEXT_PUBLIC_URL as string;
@@ -38,13 +35,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`antialiased min-h-screen`}>
-        <CartProvider>
-          <MiniKitContextProvider>
-            <AuthProvider>
-              <FarcasterAuthProvider>{children}</FarcasterAuthProvider>
-            </AuthProvider>
-          </MiniKitContextProvider>
-        </CartProvider>
+        <ClientProviders>
+          {children}
+        </ClientProviders>
+        <div id="modal-root" />
       </body>
     </html>
   );
