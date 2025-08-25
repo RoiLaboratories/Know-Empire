@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title KnowEmpireEscrow
@@ -83,6 +83,8 @@ contract KnowEmpireEscrow is ReentrancyGuard, Ownable, Pausable {
         emit PlatformWalletUpdated(_newWallet);
     }
 
+
+
     /**
      * @dev Updates the escrow fee percentage
      * @param _newFeeBasisPoints New fee in basis points (1% = 100, 5% = 500)
@@ -146,31 +148,30 @@ contract KnowEmpireEscrow is ReentrancyGuard, Ownable, Pausable {
      * @dev Confirms delivery and releases funds to seller
      * @param escrowId ID of the escrow
      */
-    function confirmDelivery(bytes32 escrowId) external nonReentrant {
+    function confirmDelivery(bytes32 escrowId) external nonReentrant whenNotPaused {
+        // Checks
         Escrow storage escrow = escrows[escrowId];
         require(escrow.isActive, "Escrow not found");
         require(escrow.buyer == msg.sender, "Only buyer can confirm");
         require(escrow.state == EscrowState.FUNDED, "Invalid escrow state");
 
-        escrow.state = EscrowState.CONFIRMED;
-        
-        // Calculate escrow fee based on current fee percentage
+        // Calculate amounts
         uint256 escrowFee = (escrow.amount * escrowFeeBasisPoints) / 10000;
+        uint256 sellerAmount = escrow.amount - escrowFee;
         
-        // Transfer amount minus escrow fee to seller
+        // Effects
+        escrow.state = EscrowState.COMPLETED;
+        escrow.isActive = false;
+        
+        // Interactions
         require(
-            USDC.transfer(escrow.seller, escrow.amount - escrowFee),
+            USDC.transfer(escrow.seller, sellerAmount),
             "Transfer to seller failed"
         );
-
-        // Transfer escrow fee to platform wallet
         require(
             USDC.transfer(platformWallet, escrowFee),
             "Fee transfer failed"
         );
-
-        escrow.state = EscrowState.COMPLETED;
-        escrow.isActive = false;
 
         emit EscrowConfirmed(escrowId);
         emit EscrowCompleted(escrowId);
@@ -198,6 +199,7 @@ contract KnowEmpireEscrow is ReentrancyGuard, Ownable, Pausable {
      * @param escrowId ID of the escrow
      */
     function refundBuyer(bytes32 escrowId) external onlyOwner nonReentrant {
+        // Checks
         Escrow storage escrow = escrows[escrowId];
         require(escrow.isActive, "Escrow not found");
         require(
@@ -205,12 +207,14 @@ contract KnowEmpireEscrow is ReentrancyGuard, Ownable, Pausable {
             "Escrow must be disputed"
         );
 
+        // Store amount before state changes
+        uint256 totalAmount = escrow.amount;
+        
+        // Effects
         escrow.state = EscrowState.REFUNDED;
         escrow.isActive = false;
-        
-        // Refund the full amount
-        uint256 totalAmount = escrow.amount;
 
+        // Interactions
         require(
             USDC.transfer(escrow.buyer, totalAmount),
             "Refund transfer failed"
@@ -224,6 +228,7 @@ contract KnowEmpireEscrow is ReentrancyGuard, Ownable, Pausable {
      * @param escrowId ID of the escrow
      */
     function checkAndAutoRelease(bytes32 escrowId) external nonReentrant {
+        // Checks
         Escrow storage escrow = escrows[escrowId];
         require(escrow.isActive, "Escrow not found");
         require(escrow.state == EscrowState.FUNDED, "Invalid escrow state");
@@ -232,18 +237,19 @@ contract KnowEmpireEscrow is ReentrancyGuard, Ownable, Pausable {
             "Auto-release delay not met"
         );
 
-        escrow.state = EscrowState.CONFIRMED;
-        
-        // Calculate escrow fee based on current fee percentage
+        // Calculate amounts
         uint256 escrowFee = (escrow.amount * escrowFeeBasisPoints) / 10000;
+        uint256 sellerAmount = escrow.amount - escrowFee;
         
-        // Transfer amount minus escrow fee to seller
+        // Effects
+        escrow.state = EscrowState.COMPLETED;
+        escrow.isActive = false;
+        
+        // Interactions
         require(
-            USDC.transfer(escrow.seller, escrow.amount - escrowFee),
+            USDC.transfer(escrow.seller, sellerAmount),
             "Transfer to seller failed"
         );
-
-        // Transfer escrow fee to platform wallet
         require(
             USDC.transfer(platformWallet, escrowFee),
             "Fee transfer failed"
