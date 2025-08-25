@@ -1,6 +1,7 @@
 import "../styles/global.css";
 import { Metadata } from "next";
 import ClientProviders from "../components/providers/ClientProviders";
+import { WagmiProviderWrapper } from "../providers/wagmi";
 
 export async function generateMetadata(): Promise<Metadata> {
   const URL = process.env.NEXT_PUBLIC_URL as string;
@@ -35,9 +36,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`antialiased min-h-screen`}>
-        <ClientProviders>
-          {children}
-        </ClientProviders>
+        <WagmiProviderWrapper>
+          <ClientProviders>
+            {children}
+          </ClientProviders>
+        </WagmiProviderWrapper>
         <div id="modal-root" />
       </body>
     </html>
