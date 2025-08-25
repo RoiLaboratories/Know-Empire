@@ -42,7 +42,9 @@ const CartProvider = ({ children }: CartProviderProps) => {
 
   //save cart to localstorage if any changes occur
   const saveCartToLocalStorage = (cart: CartItem[]) => {
-    localStorage.setItem("cart", JSON.stringify(cart));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("cart", JSON.stringify(cart));
+    }
   };
 
   // Create a function to show toast with proper styling
@@ -178,10 +180,12 @@ const CartProvider = ({ children }: CartProviderProps) => {
   };
 
   useEffect(() => {
-    const _localCart = localStorage.getItem("cart");
-    if (_localCart) {
-      const item = JSON.parse(_localCart);
-      setCart(item);
+    if (typeof window !== 'undefined') {
+      const _localCart = localStorage.getItem("cart");
+      if (_localCart) {
+        const item = JSON.parse(_localCart);
+        setCart(item);
+      }
     }
   }, []);
 
