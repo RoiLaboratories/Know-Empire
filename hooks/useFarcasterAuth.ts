@@ -15,6 +15,17 @@ export function useFarcasterAuth() {
   const [user, setUser] = useState<FarcasterUser | null>(null);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedUser = localStorage.getItem('farcaster_user');
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        setLoading(false);
+      }
+    }
+  }, []);
+
   const { signIn: initiateSignIn, isSuccess, data } = useSignIn({
     onSuccess: async (data) => {
       if (data.fid && data.username && data.displayName && data.pfpUrl) {
@@ -103,8 +114,8 @@ export function useFarcasterAuth() {
   return {
     user,
     loading,
+    isAuthenticated: !!user,
     signIn,
-    signOut,
-    isAuthenticated: !!user
+    signOut
   };
 }
