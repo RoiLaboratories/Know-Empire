@@ -200,7 +200,9 @@ const CartProvider = ({ children }: CartProviderProps) => {
       {children}
     </CartContext.Provider>
   );
-};
+}
+
+export default CartProvider;
 
 export const useCart = () => {
   const context = useContext(CartContext);
@@ -209,5 +211,3 @@ export const useCart = () => {
   }
   return context;
 };
-
-export default CartProvider;

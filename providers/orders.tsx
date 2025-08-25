@@ -68,7 +68,9 @@ const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
       {children}
     </OrdersContext.Provider>
   );
-};
+}
+
+export default OrdersProvider;
 
 export const useOrders = () => {
   const context = useContext(OrdersContext);
@@ -77,5 +79,3 @@ export const useOrders = () => {
   }
   return context;
 }
-
-export default OrdersProvider;

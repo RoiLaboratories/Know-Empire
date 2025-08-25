@@ -1,11 +1,32 @@
 'use client';
 
-import { PrivyAuthProvider } from './PrivyAuthProvider';
+import { ReactNode } from 'react';
+import { MiniKitProvider } from '@coinbase/onchainkit/minikit';
+import CartProvider from './cart';
+import OrdersProvider from './orders';
+import { WagmiProvider } from 'wagmi';
+import { base } from 'wagmi/chains';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { config } from './wagmi';
 
-export function Providers({ children }: { children: React.ReactNode }) {
+interface ProvidersProps {
+  children: ReactNode;
+}
+
+export function Providers({ children }: ProvidersProps) {
+  const queryClient = new QueryClient();
+
   return (
-    <PrivyAuthProvider>
-      {children}
-    </PrivyAuthProvider>
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
+        <MiniKitProvider chain={base}>
+          <CartProvider>
+            <OrdersProvider>
+              {children}
+            </OrdersProvider>
+          </CartProvider>
+        </MiniKitProvider>
+      </QueryClientProvider>
+    </WagmiProvider>
   );
 }
