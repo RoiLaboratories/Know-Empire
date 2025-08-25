@@ -20,6 +20,7 @@ type DatabaseOrder = {
   buyer_id: string;
   seller_id: string;
   product_id: string;
+  escrow_id: string;
   status: 'pending' | 'completed' | 'cancelled';
   total_amount: number;
   created_at: string;
@@ -114,23 +115,48 @@ export async function POST(request: Request) {
   const supabaseAdmin = createServiceClient();
   try {
     const body = await request.json();
-    const { buyer_id, seller_id, product_id, total_amount } = body;
+    const { product_id, total_amount, escrow_id, status } = body;
 
-    if (!buyer_id || !seller_id || !product_id || !total_amount) {
+    if (!product_id || !total_amount || !escrow_id) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
+    // Get the product to get the seller_id
+    const { data: product, error: productError } = await supabaseAdmin
+      .from("products")
+      .select("seller_id")
+      .eq("id", product_id)
+      .single();
+
+    if (productError || !product) {
+      return NextResponse.json(
+        { error: "Product not found" },
+        { status: 404 }
+      );
+    }
+
+    // Get the current user
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser();
+    
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const { data: order, error } = await supabaseAdmin
       .from("orders")
       .insert({
-        buyer_id,
-        seller_id,
+        buyer_id: user.id,
+        seller_id: product.seller_id,
         product_id,
         total_amount,
-        status: "pending"
+        escrow_id,
+        status: status || "pending"
       })
       .select(`
         id,

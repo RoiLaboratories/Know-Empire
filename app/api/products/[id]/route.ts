@@ -15,7 +15,8 @@ export async function GET(request: Request) {
           display_name,
           avatar_url,
           rating,
-          review_count
+          review_count,
+          wallet_address
         )
       `)
       .eq('id', id)

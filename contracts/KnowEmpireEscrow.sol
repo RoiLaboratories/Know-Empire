@@ -26,11 +26,13 @@ contract KnowEmpireEscrow is ReentrancyGuard, Ownable, Pausable {
 
     event PlatformWalletUpdated(address indexed newWallet);
     event EscrowFeeUpdated(uint256 newFeeBasisPoints);
+    event DeliveryConfirmedBySeller(bytes32 indexed escrowId, uint256 deliveredAt);
     
     // Escrow states
     enum EscrowState { 
         CREATED,      // Escrow has been created
         FUNDED,       // Buyer has deposited funds
+        SHIPPED,      // Seller has marked as shipped/delivered
         CONFIRMED,    // Buyer has confirmed receipt
         REFUNDED,     // Funds have been refunded to buyer
         COMPLETED,    // Funds have been released to seller
@@ -42,6 +44,7 @@ contract KnowEmpireEscrow is ReentrancyGuard, Ownable, Pausable {
         address seller;
         uint256 amount;      // Product price in USDC (includes delivery)
         uint256 createdAt;
+        uint256 deliveredAt; // Timestamp when seller marks as delivered
         EscrowState state;
         string orderId;      // Reference to off-chain order
         bool isActive;
@@ -133,6 +136,7 @@ contract KnowEmpireEscrow is ReentrancyGuard, Ownable, Pausable {
             seller: _seller,
             amount: _amount,
             createdAt: block.timestamp,
+            deliveredAt: 0,
             state: EscrowState.FUNDED,
             orderId: _orderId,
             isActive: true
@@ -224,6 +228,24 @@ contract KnowEmpireEscrow is ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
+     * @dev Called by seller to confirm delivery/shipment
+     * @param escrowId ID of the escrow
+     */
+    function confirmDeliveryBySeller(bytes32 escrowId) external nonReentrant whenNotPaused {
+        // Checks
+        Escrow storage escrow = escrows[escrowId];
+        require(escrow.isActive, "Escrow not found");
+        require(escrow.seller == msg.sender, "Only seller can confirm delivery");
+        require(escrow.state == EscrowState.FUNDED, "Invalid escrow state");
+        
+        // Effects
+        escrow.state = EscrowState.SHIPPED;
+        escrow.deliveredAt = block.timestamp;
+        
+        emit DeliveryConfirmedBySeller(escrowId, block.timestamp);
+    }
+
+    /**
      * @dev Checks if an escrow is eligible for auto-release and releases funds if conditions are met
      * @param escrowId ID of the escrow
      */
@@ -231,9 +253,10 @@ contract KnowEmpireEscrow is ReentrancyGuard, Ownable, Pausable {
         // Checks
         Escrow storage escrow = escrows[escrowId];
         require(escrow.isActive, "Escrow not found");
-        require(escrow.state == EscrowState.FUNDED, "Invalid escrow state");
+        require(escrow.state == EscrowState.SHIPPED, "Delivery not confirmed by seller");
+        require(escrow.deliveredAt > 0, "Delivery timestamp not set");
         require(
-            block.timestamp >= escrow.createdAt + AUTO_RELEASE_DELAY,
+            block.timestamp >= escrow.deliveredAt + AUTO_RELEASE_DELAY,
             "Auto-release delay not met"
         );
 
@@ -270,8 +293,9 @@ contract KnowEmpireEscrow is ReentrancyGuard, Ownable, Pausable {
         Escrow memory escrow = escrows[escrowId];
         return (
             escrow.isActive &&
-            escrow.state == EscrowState.FUNDED &&
-            block.timestamp >= escrow.createdAt + AUTO_RELEASE_DELAY
+            escrow.state == EscrowState.SHIPPED &&
+            escrow.deliveredAt > 0 &&
+            block.timestamp >= escrow.deliveredAt + AUTO_RELEASE_DELAY
         );
     }
 

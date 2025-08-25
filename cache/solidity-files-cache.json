@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "C:\\Users\\USER\\Documents\\GitHub\\Know-Empire\\contracts\\KnowEmpireEscrow.sol": {
-      "lastModificationDate": 1756141713889,
-      "contentHash": "f7b007e9534a7dae82df5151fb232687",
+      "lastModificationDate": 1756158753305,
+      "contentHash": "cd48852553b9fd99596d14580c764076",
       "sourceName": "contracts/KnowEmpireEscrow.sol",
       "solcConfig": {
         "version": "0.8.20",
@@ -76,42 +76,6 @@
       ],
       "artifacts": [
         "ReentrancyGuard"
-      ]
-    },
-    "C:\\Users\\USER\\Documents\\GitHub\\Know-Empire\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\IERC20.sol": {
-      "lastModificationDate": 1756141016576,
-      "contentHash": "5517c8678c18eb1a8ba58810e7ca39ca",
-      "sourceName": "@openzeppelin/contracts/token/ERC20/IERC20.sol",
-      "solcConfig": {
-        "version": "0.8.20",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "IERC20"
       ]
     },
     "C:\\Users\\USER\\Documents\\GitHub\\Know-Empire\\node_modules\\@openzeppelin\\contracts\\access\\Ownable.sol": {
@@ -188,6 +152,42 @@
       ],
       "artifacts": [
         "Pausable"
+      ]
+    },
+    "C:\\Users\\USER\\Documents\\GitHub\\Know-Empire\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\IERC20.sol": {
+      "lastModificationDate": 1756141016576,
+      "contentHash": "5517c8678c18eb1a8ba58810e7ca39ca",
+      "sourceName": "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "IERC20"
       ]
     },
     "C:\\Users\\USER\\Documents\\GitHub\\Know-Empire\\node_modules\\@openzeppelin\\contracts\\utils\\Context.sol": {

@@ -10,6 +10,7 @@ import { useFarcasterAuth } from "../../hooks/useFarcasterAuth";
 import { ProductWithSeller } from "../../types/product";
 import toast from "react-hot-toast";
 import { formatCurrency } from "../../utils/helpers";
+import { approveUSDC, createEscrow } from "../../utils/contractHelpers";
 
 interface Props {
   onNext: () => void;
@@ -25,35 +26,49 @@ function SecurePaymentPopup({ onNext, onBack, product }: Props) {
   // Total is just the product price as it includes delivery
   const total = parseFloat(product.price);
 
-  const simulateWalletCheck = async () => {
-    // This is a placeholder for actual wallet balance check
-    // Will be replaced with real implementation once smart contract is deployed
-    const mockBalance = 1000; // Mock balance for testing
-    return mockBalance >= total;
-  };
-
   const handleSecurePayment = async () => {
     setIsLoading(true);
     try {
-      // Simulate balance check
-      const hasBalance = await simulateWalletCheck();
-      if (!hasBalance) {
-        toast.error("Insufficient funds, top up your wallet to continue");
+      // First approve USDC spending
+      const approved = await approveUSDC(total.toString());
+      if (!approved) {
+        toast.error("Failed to approve USDC spending");
         return;
       }
 
-      // TODO: Once smart contract is deployed:
-      // 1. Get contract instance
-      // 2. Call deposit function with product seller and amount
-      // 3. Handle transaction approval and confirmation
+      // Create escrow with the product seller and amount
+      const { escrowId } = await createEscrow(
+        product.seller.wallet_address,
+        total.toString(),
+        product.id // Using product ID as order ID
+      );
 
-      // For now, simulate the process
+      // Create order with escrow ID
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'pending',
+          product_id: product.id,
+          escrow_id: escrowId,
+          total_amount: total,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create order');
+      }
+
+      toast.success("Payment secured in escrow!");
       await sleep(2000);
       modalContext?.open("payment-successful-popup");
-      onNext();
-    } catch (error) {
-      console.error("Error processing payment:", error);
-      toast.error("Transaction failed. Please try again.");
+      onNext(); // Move to next step
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to process payment");
     } finally {
       setIsLoading(false);
     }
