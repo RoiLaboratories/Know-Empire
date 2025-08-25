@@ -36,6 +36,11 @@ function SecurePaymentPopup({ onNext, onBack, product }: Props) {
         return;
       }
 
+      // Check if seller wallet address exists
+      if (!product.seller.wallet_address) {
+        throw new Error("Seller wallet address not found");
+      }
+
       // Create escrow with the product seller and amount
       const { escrowId } = await createEscrow(
         product.seller.wallet_address,
