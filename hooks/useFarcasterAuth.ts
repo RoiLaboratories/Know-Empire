@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useConnect, useAccount, useDisconnect } from 'wagmi';
-import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector';
 import { supabase } from '@/utils/supabase';
 
 export interface FarcasterUser {
@@ -17,14 +16,14 @@ export function useFarcasterAuth() {
   const [loading, setLoading] = useState(true);
 
   const { address, isConnected } = useAccount();
-  const { connectAsync } = useConnect();
+  const { connectAsync, connectors } = useConnect();
   const { disconnectAsync } = useDisconnect();
 
   const signIn = useCallback(async (): Promise<boolean> => {
     try {
-      const result = await connectAsync({
-        connector: farcasterMiniApp()
-      });
+      if (!isConnected && connectors[0]) {
+        await connectAsync({ connector: connectors[0] });
+      }
       
       if (isConnected && address) {
         // Create basic user data
