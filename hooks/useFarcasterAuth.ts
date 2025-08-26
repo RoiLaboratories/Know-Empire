@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useSignIn } from '@farcaster/auth-kit';
+import { useConnect, useAccount, useDisconnect } from 'wagmi';
+import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector';
 import { supabase } from '@/utils/supabase';
-import { useAccount } from 'wagmi';
 
 export interface FarcasterUser {
   fid: number;
@@ -16,38 +16,34 @@ export function useFarcasterAuth() {
   const [user, setUser] = useState<FarcasterUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedUser = localStorage.getItem('farcaster_user');
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        setLoading(false);
-      }
-    }
-  }, []);
+  const { address, isConnected } = useAccount();
+  const { connectAsync } = useConnect();
+  const { disconnectAsync } = useDisconnect();
 
-  const { isConnected } = useAccount();
-  const { signIn: initiateSignIn, isSuccess, data } = useSignIn({
-    onSuccess: async (data) => {
-      if (data.fid && data.username && data.displayName && data.pfpUrl) {
+  const signIn = useCallback(async (): Promise<boolean> => {
+    try {
+      const result = await connectAsync({
+        connector: farcasterMiniApp()
+      });
+      
+      if (isConnected && address) {
+        // Create basic user data
         const userData: FarcasterUser = {
-          fid: data.fid,
-          username: data.username,
-          displayName: data.displayName,
-          pfp: data.pfpUrl,
+          fid: Date.now(), // Temporary FID until we get the real one
+          username: `user_${address.slice(2, 8)}`,
+          displayName: `Farcaster User`,
+          pfp: '/assets/images/user.png',
           isAuthenticated: true
         };
 
-        // Upsert user data to Supabase
         try {
           const { data: dbUser, error } = await supabase
             .from('users')
             .upsert({
-              fid: data.fid.toString(),
-              username: data.username,
-              display_name: data.displayName,
-              avatar_url: data.pfpUrl
+              address,
+              username: userData.username,
+              display_name: userData.displayName,
+              avatar_url: userData.pfp
             })
             .select()
             .single();
@@ -56,62 +52,48 @@ export function useFarcasterAuth() {
           
           userData.id = dbUser.id;
           setUser(userData);
-          localStorage.setItem('farcaster_user', JSON.stringify(userData));
+          localStorage.setItem(`farcaster_user_${address}`, JSON.stringify(userData));
+          return true;
         } catch (error) {
           console.error('Error storing user data in Supabase:', error);
-          // Still set the user data even if Supabase storage fails
           setUser(userData);
-          localStorage.setItem('farcaster_user', JSON.stringify(userData));
+          localStorage.setItem(`farcaster_user_${address}`, JSON.stringify(userData));
+          return true;
         }
       }
-    },
-    onError: (error) => {
-      console.error('Farcaster authentication error:', error);
-      setUser(null);
-    }
-  });
-
-  const signIn = useCallback(async (): Promise<boolean> => {
-    try {
-      return new Promise<boolean>((resolve) => {
-        initiateSignIn();
-        // Resolve once we get successful auth
-        const checkAuth = setInterval(() => {
-          if (data && data.fid) {
-            clearInterval(checkAuth);
-            resolve(true);
-          }
-        }, 500); // Check every 500ms
-        
-        // Timeout after 30 seconds
-        setTimeout(() => {
-          clearInterval(checkAuth);
-          resolve(false);
-        }, 30000);
-      });
+      return false;
     } catch (error) {
       console.error('Farcaster authentication error:', error);
       return false;
     }
-  }, []);
+  }, [connectAsync]);
 
-  const signOut = useCallback(() => {
-    setUser(null);
-    localStorage.removeItem('farcaster_user');
-  }, []);
+  const signOut = useCallback(async () => {
+    try {
+      await disconnectAsync();
+      setUser(null);
+      if (address) {
+        localStorage.removeItem(`farcaster_user_${address}`);
+      }
+    } catch (error) {
+      console.error('Error during sign out:', error);
+    }
+  }, [address, disconnectAsync]);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('farcaster_user');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('farcaster_user');
+    if (isConnected && address) {
+      const savedUser = localStorage.getItem(`farcaster_user_${address}`);
+      if (savedUser) {
+        try {
+          setUser(JSON.parse(savedUser));
+        } catch (error) {
+          console.error('Error parsing saved user:', error);
+          localStorage.removeItem(`farcaster_user_${address}`);
+        }
       }
     }
     setLoading(false);
-  }, []);
+  }, [isConnected, address]);
 
   return {
     user,
