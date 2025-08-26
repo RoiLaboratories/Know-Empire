@@ -230,9 +230,13 @@ function Profile() {
                             }
                             
                             console.log('Starting connection with:', farcasterConnector);
+                            
+                            setShowWalletDropdown(false); // Close dropdown immediately
+                            
                             await connect({
                               connector: farcasterConnector,
                             });
+
                             console.log('Connected successfully');
 
                           } catch (error: any) {
