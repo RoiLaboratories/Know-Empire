@@ -48,6 +48,7 @@ function Profile() {
   const [sellerInfo, setSellerInfo] = useState<SellerInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showWalletDropdown, setShowWalletDropdown] = useState(false);
+  const [walletError, setWalletError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
   const { address, isConnecting, isConnected } = useAccount();
@@ -182,8 +183,13 @@ function Profile() {
                 <div className="p-4 border-b border-gray-100">
                   <h3 className="text-sm font-medium text-gray-900">Farcaster Wallet</h3>
                 </div>
+                {walletError && (
+                  <div className="p-4 text-sm text-red-500 text-center">
+                    {walletError}
+                  </div>
+                )}
                 
-                {isConnected && address ? (
+                {isConnected && address && !walletError ? (
                   <>
                     <div className="p-4">
                       <div className="flex flex-col gap-2">
@@ -225,21 +231,23 @@ function Profile() {
                             // Find the Farcaster connector specifically
                             const farcasterConnector = connectors.find(c => c.id === 'farcaster');
                             if (!farcasterConnector) {
+                              setWalletError('Farcaster connector not found');
                               console.error('Farcaster connector not found');
                               return;
                             }
-                            
                             console.log('Starting connection with:', farcasterConnector);
-                            
                             setShowWalletDropdown(false); // Close dropdown immediately
-                            
-                            await connect({
-                              connector: farcasterConnector,
-                            });
-
+                            await connect({ connector: farcasterConnector });
+                            setWalletError(null);
+                            setTimeout(() => {
+                              console.log('isConnected:', isConnected, 'address:', address);
+                              if (!isConnected || !address) {
+                                setWalletError('Farcaster wallet did not connect. Please make sure you are in Warpcast and have a verified wallet.');
+                              }
+                            }, 1000);
                             console.log('Connected successfully');
-
                           } catch (error: any) {
+                            setWalletError('Connection error: ' + (error?.message || 'Unknown error'));
                             console.error('Detailed connection error:', {
                               message: error.message,
                               name: error.name,
@@ -248,6 +256,7 @@ function Profile() {
                             });
                           }
                         } else {
+                          setWalletError('No connectors available');
                           console.log('No connectors available');
                         }
                       }}
