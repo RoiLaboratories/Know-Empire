@@ -69,9 +69,23 @@ function Profile() {
       // automatically connect using the Farcaster connector
       const verifiedWallet = context.user.verified_accounts?.[0]?.wallet_address;
       if (verifiedWallet && connectors.length > 0 && !isConnected) {
-        connect({ connector: connectors[0] });
+        const farcasterConnector = connectors.find(c => c.id === 'farcaster');
+        if (farcasterConnector) {
+          console.log('Auto-connecting with Farcaster wallet:', verifiedWallet);
+          (async () => {
+            try {
+              await connect({ 
+                connector: farcasterConnector,
+                chainId: base.id 
+              });
+            } catch (error) {
+              console.error('Auto-connection error:', error);
+            }
+          })();
+        }
       }
     } else {
+      console.log('No minikit context user found');
       const storedUser = localStorage.getItem("farcaster_user");
       if (storedUser) {
         setUser(JSON.parse(storedUser));
@@ -205,9 +219,16 @@ function Profile() {
                         e.stopPropagation();
                         if (connectors.length > 0) {
                           try {
-                            console.log('Available connectors:', connectors);
+                            // Find the Farcaster connector specifically
+                            const farcasterConnector = connectors.find(c => c.id === 'farcaster');
+                            if (!farcasterConnector) {
+                              console.error('Farcaster connector not found');
+                              return;
+                            }
+                            
+                            console.log('Using Farcaster connector:', farcasterConnector);
                             const result = await connect({ 
-                              connector: connectors[0],
+                              connector: farcasterConnector,
                               chainId: base.id 
                             });
                             console.log('Connection result:', result);
