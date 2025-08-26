@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { base } from 'wagmi/chains';
 import { supabase } from '@/utils/supabase';
 import Modal from "../../context/ModalContext";
 import GenericPopup from "../../components/popups/generic-popup";
@@ -199,11 +200,22 @@ function Profile() {
                   <div className="p-4">
                     <button
                       type="button"
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         if (connectors.length > 0) {
-                          connect({ connector: connectors[0] });
+                          try {
+                            console.log('Available connectors:', connectors);
+                            const result = await connect({ 
+                              connector: connectors[0],
+                              chainId: base.id 
+                            });
+                            console.log('Connection result:', result);
+                          } catch (error) {
+                            console.error('Connection error:', error);
+                          }
+                        } else {
+                          console.log('No connectors available');
                         }
                       }}
                       className="w-full px-4 py-2 text-sm text-white bg-primary hover:bg-primary-dark rounded-lg transition-colors"
