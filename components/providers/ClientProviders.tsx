@@ -13,13 +13,13 @@ const ClientProviders = ({ children }: { children: React.ReactNode }) => {
     <>
       <WagmiProviderWrapper>
         <MiniKitProvider chain={base}>
-          <FarcasterAuthProvider>
-            <CartProvider>
-              <OrdersProvider>
+          <CartProvider>
+            <OrdersProvider>
+              <FarcasterAuthProvider>
                 {children}
-              </OrdersProvider>
-            </CartProvider>
-          </FarcasterAuthProvider>
+              </FarcasterAuthProvider>
+            </OrdersProvider>
+          </CartProvider>
         </MiniKitProvider>
       </WagmiProviderWrapper>
       <Toaster 
