@@ -6,7 +6,7 @@ import { useContext, useState } from "react";
 import { sleep } from "../../utils/helpers";
 import Modal, { ModalContext } from "../../context/ModalContext";
 import GenericPopup from "./generic-popup";
-import { useFarcasterAuth } from "../../hooks/useFarcasterAuth";
+import { useAccount } from "wagmi";
 import { ProductWithSeller } from "../../types/product";
 import toast from "react-hot-toast";
 import { formatCurrency } from "../../utils/helpers";
@@ -21,7 +21,7 @@ interface Props {
 function SecurePaymentPopup({ onNext, onBack, product }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const modalContext = useContext(ModalContext);
-  const { user } = useFarcasterAuth();
+  const { address, isConnected } = useAccount();
 
   // Total is just the product price as it includes delivery
   const total = parseFloat(product.price);
