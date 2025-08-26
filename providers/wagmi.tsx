@@ -2,7 +2,7 @@
 
 import { http, createConfig } from 'wagmi';
 import { base } from 'wagmi/chains';
-import { farcasterMiniApp as miniAppConnector } from '@farcaster/miniapp-wagmi-connector';
+import miniAppConnector from '@farcaster/miniapp-wagmi-connector';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 
