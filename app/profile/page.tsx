@@ -57,45 +57,71 @@ function Profile() {
 
   // Get user data and connect Farcaster wallet
   useEffect(() => {
-    if (context?.user) {
-      setUser({
-        fid: context.user.fid,
-        username: context.user.username || "",
-        displayName: context.user.displayName || "",
-        pfpUrl: context.user.pfpUrl || "",
-      });
-
-      // If we have a verified Farcaster wallet and connectors are available,
-      // automatically connect using the Farcaster connector
-      const verifiedWallet = context.user.verified_accounts?.[0]?.wallet_address;
-      if (verifiedWallet && connectors.length > 0 && !isConnected) {
-        const farcasterConnector = connectors.find(c => c.id === 'farcaster');
-        if (farcasterConnector) {
-          console.log('Starting auto-connect for wallet:', verifiedWallet);
-          (async () => {
-            try {
-              await connect({
-                connector: farcasterConnector
-              });
-              console.log('Auto-connected successfully');
-            } catch (error: any) {
-              console.error('Auto-connection error details:', {
-                message: error.message,
-                name: error.name,
-                details: error.details
-              });
-            }
-          })();
+    const connectWallet = async () => {
+      try {
+        if (!context?.user) {
+          console.log('No minikit context user found');
+          const storedUser = localStorage.getItem("farcaster_user");
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+          } else {
+            router.push("/onboarding");
+          }
+          return;
         }
+
+        // Set user data
+        setUser({
+          fid: context.user.fid,
+          username: context.user.username || "",
+          displayName: context.user.displayName || "",
+          pfpUrl: context.user.pfpUrl || "",
+        });
+
+        // Clear any previous errors
+        setWalletError(null);
+
+        // Check if already connected
+        if (isConnected && address) {
+          console.log('Wallet already connected:', address);
+          return;
+        }
+
+        // Verify we have the necessary components for connection
+        const verifiedWallet = context.user.verified_accounts?.[0]?.wallet_address;
+        const farcasterConnector = connectors.find(c => c.id === 'farcaster');
+
+        if (!verifiedWallet) {
+          setWalletError('No verified Farcaster wallet found');
+          return;
+        }
+
+        if (!farcasterConnector) {
+          setWalletError('Farcaster connector not available');
+          return;
+        }
+
+        // Attempt connection
+        console.log('Starting wallet connection for:', verifiedWallet);
+        await connect({
+          connector: farcasterConnector
+        });
+
+        // Verify connection was successful
+        if (!address) {
+          throw new Error('Wallet connected but address not available');
+        }
+
+        console.log('Wallet connected successfully:', address);
+      } catch (error: any) {
+        console.error('Wallet connection error:', error);
+        setWalletError(error.message || 'Failed to connect wallet. Please try again.');
       }
-    } else {
-      console.log('No minikit context user found');
-      const storedUser = localStorage.getItem("farcaster_user");
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      } else {
-        router.push("/onboarding");
-      }
+    };
+
+    // Only attempt connection if we're not already connecting
+    if (!isConnecting) {
+      connectWallet();
     }
   }, [context, router, connectors, connect, isConnected]);
 
