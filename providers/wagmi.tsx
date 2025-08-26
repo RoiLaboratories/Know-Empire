@@ -2,7 +2,7 @@
 
 import { http, createConfig } from 'wagmi';
 import { base } from 'wagmi/chains';
-import miniAppConnector from '@farcaster/miniapp-wagmi-connector';
+import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 
@@ -12,7 +12,7 @@ export const config = createConfig({
   transports: {
     [base.id]: http()
   },
-  connectors: [miniAppConnector()]
+  connectors: [farcasterMiniApp()]
 });
 
 // Create a client for managing cache

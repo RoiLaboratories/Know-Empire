@@ -9,8 +9,7 @@ import BackButton from "../../ui/BackButton";
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
-import { base } from 'wagmi/chains';
+import { useAccount, useConnect, useDisconnect, type GetAccountReturnType } from 'wagmi';
 import { supabase } from '@/utils/supabase';
 import Modal from "../../context/ModalContext";
 import GenericPopup from "../../components/popups/generic-popup";
@@ -66,21 +65,24 @@ function Profile() {
       });
 
       // If we have a verified Farcaster wallet and connectors are available,
-      // automatically connect using the Farcaster miniapp connector
+      // automatically connect using the Farcaster connector
       const verifiedWallet = context.user.verified_accounts?.[0]?.wallet_address;
       if (verifiedWallet && connectors.length > 0 && !isConnected) {
-        console.log('Available connectors for auto-connect:', connectors.map(c => ({ id: c.id, name: c.name, type: c.type })));
-        const farcasterConnector = connectors.find(c => c.type === 'farcasterFrame');
+        const farcasterConnector = connectors.find(c => c.id === 'farcaster');
         if (farcasterConnector) {
-          console.log('Auto-connecting with Farcaster wallet:', verifiedWallet);
+          console.log('Starting auto-connect for wallet:', verifiedWallet);
           (async () => {
             try {
-              await connect({ 
-                connector: farcasterConnector,
-                chainId: base.id 
+              await connect({
+                connector: farcasterConnector
               });
-            } catch (error) {
-              console.error('Auto-connection error:', error);
+              console.log('Auto-connected successfully');
+            } catch (error: any) {
+              console.error('Auto-connection error details:', {
+                message: error.message,
+                name: error.name,
+                details: error.details
+              });
             }
           })();
         }
@@ -220,22 +222,26 @@ function Profile() {
                         e.stopPropagation();
                         if (connectors.length > 0) {
                           try {
-                            console.log('Available connectors:', connectors.map(c => ({ id: c.id, name: c.name })));
-                            // Find the Farcaster miniapp connector specifically
-                            const farcasterConnector = connectors.find(c => c.type === 'farcasterFrame');
+                            // Find the Farcaster connector specifically
+                            const farcasterConnector = connectors.find(c => c.id === 'farcaster');
                             if (!farcasterConnector) {
-                              console.error('Farcaster miniapp connector not found - Available types:', connectors.map(c => c.type));
+                              console.error('Farcaster connector not found');
                               return;
                             }
                             
-                            console.log('Using Farcaster connector:', farcasterConnector);
-                            const result = await connect({ 
+                            console.log('Starting connection with:', farcasterConnector);
+                            await connect({
                               connector: farcasterConnector,
-                              chainId: base.id 
                             });
-                            console.log('Connection result:', result);
-                          } catch (error) {
-                            console.error('Connection error:', error);
+                            console.log('Connected successfully');
+
+                          } catch (error: any) {
+                            console.error('Detailed connection error:', {
+                              message: error.message,
+                              name: error.name,
+                              details: error.details,
+                              stack: error.stack
+                            });
                           }
                         } else {
                           console.log('No connectors available');
