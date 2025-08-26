@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { useConnect, useAccount, useDisconnect } from 'wagmi';
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
 
@@ -8,36 +8,27 @@ interface SuiteContext {
     username?: string;
     displayName?: string;
     pfpUrl?: string;
+    verified_accounts?: Array<{ wallet_address: string }>;
   };
+  getSigner?: () => Promise<any>;
+  isTestnet?: boolean;
 }
 
 export function useFarcasterAuth() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { context } = useMiniKit() as { context: SuiteContext };
   const { address, isConnected } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
-
-  useEffect(() => {
-    // Check if user is authenticated in MiniKit context
-    if (context?.user?.fid) {
-      setIsAuthenticated(true);
-    } else {
-      // Check local storage as fallback
-      const storedUser = localStorage.getItem('farcaster_user');
-      setIsAuthenticated(!!storedUser);
-    }
-  }, [context]);
-
-  const connectWallet = useCallback(() => {
+  const connectWallet = useCallback(async () => {
     try {
-      if (connectors[0]) {
-        connect({ connector: connectors[0] });
+      const connector = connectors[0]; // Using the first available connector
+      if (connector) {
+        await connect({ connector });
         return true;
       }
       return false;
     } catch (error) {
-      console.error('Failed to connect wallet:', error);
+      console.error('Wallet connection error:', error);
       return false;
     }
   }, [connect, connectors]);
@@ -47,10 +38,10 @@ export function useFarcasterAuth() {
   }, [disconnect]);
 
   return {
+    isAuthenticated: !!context?.user,
+    signIn: connectWallet,
+    signOut: disconnectWallet,
     address,
     isConnected,
-    isAuthenticated,
-    connectWallet,
-    disconnectWallet
   };
 }
