@@ -10,11 +10,9 @@ import { WagmiProvider } from 'wagmi';
 export const config = createConfig({
   chains: [base],
   transports: {
-    [base.id]: http(),
+    [base.id]: http()
   },
-  connectors: [
-    miniAppConnector()
-  ]
+  connectors: [miniAppConnector()]
 });
 
 // Create a client for managing cache

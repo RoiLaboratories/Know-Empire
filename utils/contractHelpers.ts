@@ -1,9 +1,9 @@
-import { BaseError, parseUnits } from "viem";
+import { BaseError, parseUnits, createWalletClient, custom } from "viem";
 import { ESCROW_CONTRACT_ADDRESS, USDC_CONTRACT_ADDRESS, USDC_DECIMALS } from "./constants";
-import { getWalletClient } from "@wagmi/core";
 import { base } from "viem/chains";
 import { escrowABI, usdcABI } from "./contractABIs";
 import { createPublicClient, http } from "viem";
+import { getAccount } from "wagmi/actions";
 import { config } from "../providers/wagmi";
 
 // Initialize public client
@@ -12,10 +12,23 @@ const publicClient = createPublicClient({
   transport: http('https://mainnet.base.org')
 });
 
+async function getViemWalletClient() {
+  if (typeof window === 'undefined') throw new Error('Not in browser environment');
+  if (!window.ethereum) throw new Error('No ethereum provider found');
+  
+  const account = getAccount(config);
+  if (!account?.address) throw new Error('No account connected');
+
+  return createWalletClient({
+    account: account.address,
+    chain: base,
+    transport: custom(window.ethereum)
+  });
+}
+
 export async function approveUSDC(amount: string) {
   try {
-    const walletClient = await getWalletClient(config);
-    if (!walletClient) throw new Error("Wallet not connected");
+    const walletClient = await getViemWalletClient();
 
     // Convert amount to USDC decimals
     const usdcAmount = parseUnits(amount, USDC_DECIMALS);
@@ -41,8 +54,7 @@ export async function approveUSDC(amount: string) {
 
 export async function createEscrow(seller: string, amount: string, orderId: string) {
   try {
-    const walletClient = await getWalletClient(config);
-    if (!walletClient) throw new Error("Wallet not connected");
+    const walletClient = await getViemWalletClient();
 
     // Convert amount to USDC decimals
     const usdcAmount = parseUnits(amount, USDC_DECIMALS);
@@ -78,8 +90,7 @@ export async function createEscrow(seller: string, amount: string, orderId: stri
 
 export async function confirmDelivery(escrowId: string) {
   try {
-    const walletClient = await getWalletClient(config);
-    if (!walletClient) throw new Error("Wallet not connected");
+    const walletClient = await getViemWalletClient();
 
     const hash = await walletClient.writeContract({
       address: ESCROW_CONTRACT_ADDRESS,
@@ -101,8 +112,7 @@ export async function confirmDelivery(escrowId: string) {
 
 export async function initiateDispute(escrowId: string) {
   try {
-    const walletClient = await getWalletClient(config);
-    if (!walletClient) throw new Error("Wallet not connected");
+    const walletClient = await getViemWalletClient();
 
     const hash = await walletClient.writeContract({
       address: ESCROW_CONTRACT_ADDRESS,
@@ -124,8 +134,7 @@ export async function initiateDispute(escrowId: string) {
 
 export async function confirmDeliveryBySeller(escrowId: string) {
   try {
-    const walletClient = await getWalletClient(config);
-    if (!walletClient) throw new Error("Wallet not connected");
+    const walletClient = await getViemWalletClient();
 
     const hash = await walletClient.writeContract({
       address: ESCROW_CONTRACT_ADDRESS,
@@ -165,8 +174,7 @@ export async function isEligibleForAutoRelease(escrowId: string) {
 
 export async function checkAndAutoRelease(escrowId: string) {
   try {
-    const walletClient = await getWalletClient(config);
-    if (!walletClient) throw new Error("Wallet not connected");
+    const walletClient = await getViemWalletClient();
 
     const hash = await walletClient.writeContract({
       address: ESCROW_CONTRACT_ADDRESS,
