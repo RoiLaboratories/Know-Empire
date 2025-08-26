@@ -9,7 +9,7 @@ import BackButton from "../../ui/BackButton";
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
-import { useAccount, useConnect, useDisconnect, type GetAccountReturnType } from 'wagmi';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { supabase } from '@/utils/supabase';
 import Modal from "../../context/ModalContext";
 import GenericPopup from "../../components/popups/generic-popup";
