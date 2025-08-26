@@ -66,10 +66,10 @@ function Profile() {
       });
 
       // If we have a verified Farcaster wallet and connectors are available,
-      // automatically connect using the Farcaster connector
+      // automatically connect using the Farcaster miniapp connector
       const verifiedWallet = context.user.verified_accounts?.[0]?.wallet_address;
       if (verifiedWallet && connectors.length > 0 && !isConnected) {
-        const farcasterConnector = connectors.find(c => c.id === 'farcaster');
+        const farcasterConnector = connectors.find(c => c.id === 'com.farcaster.frame');
         if (farcasterConnector) {
           console.log('Auto-connecting with Farcaster wallet:', verifiedWallet);
           (async () => {
@@ -219,10 +219,10 @@ function Profile() {
                         e.stopPropagation();
                         if (connectors.length > 0) {
                           try {
-                            // Find the Farcaster connector specifically
-                            const farcasterConnector = connectors.find(c => c.id === 'farcaster');
+                            // Find the Farcaster miniapp connector specifically
+                            const farcasterConnector = connectors.find(c => c.id === 'com.farcaster.frame');
                             if (!farcasterConnector) {
-                              console.error('Farcaster connector not found');
+                              console.error('Farcaster miniapp connector not found');
                               return;
                             }
                             
