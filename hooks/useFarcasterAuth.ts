@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSignIn } from '@farcaster/auth-kit';
 import { supabase } from '@/utils/supabase';
+import { useAccount } from 'wagmi';
 
 export interface FarcasterUser {
   fid: number;
@@ -26,6 +27,7 @@ export function useFarcasterAuth() {
     }
   }, []);
 
+  const { isConnected } = useAccount();
   const { signIn: initiateSignIn, isSuccess, data } = useSignIn({
     onSuccess: async (data) => {
       if (data.fid && data.username && data.displayName && data.pfpUrl) {

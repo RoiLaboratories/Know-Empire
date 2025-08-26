@@ -3,22 +3,21 @@
 import CartProvider from "@/providers/cart";
 import OrdersProvider from "@/providers/orders";
 import { Toaster } from 'react-hot-toast';
-import { MiniKitProvider } from '@coinbase/onchainkit/minikit';
-import { base } from 'wagmi/chains';
+import { WagmiProviderWrapper } from "@/providers/wagmi";
 import { FarcasterAuthProvider } from "@/context/FarcasterAuthContext";
 
 const ClientProviders = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
-      <FarcasterAuthProvider>
-        <MiniKitProvider chain={base}>
+      <WagmiProviderWrapper>
+        <FarcasterAuthProvider>
           <CartProvider>
             <OrdersProvider>
               {children}
             </OrdersProvider>
           </CartProvider>
-        </MiniKitProvider>
-      </FarcasterAuthProvider>
+        </FarcasterAuthProvider>
+      </WagmiProviderWrapper>
       <Toaster 
         toastOptions={{
           style: {
