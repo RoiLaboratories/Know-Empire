@@ -1,9 +1,29 @@
 "use client";
 import { useFormik } from "formik";
 import { useContext, useEffect, useState } from "react";
+import { Icon } from "@iconify/react";
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { SELLER_SCHEMA } from "../../schema/seller.schema";
+import { ICON } from "../../utils/icon-export";
 import FormInput from "./FormInput";
-import { supabase } from "../../utils/supabase";
+import InputField from "./InputField";
+import InputTextArea from "./InputTextArea";
+import Button from "../../ui/Button";
+import Modal, { ModalContext } from "../../context/ModalContext";
+import LoadingCard from "../popups/loading-card";
+import SellerCongratsPopup from "../popups/seller-congrats-popup";
+
+interface VerifiedAccount {
+  wallet_address: string;
+}
+
+interface FarcasterUser {
+  fid: number;
+  username?: string;
+  displayName?: string;
+  pfpUrl?: string;
+  verified_accounts?: VerifiedAccount[];
+}
 
 interface SellerInput {
   category: string;
@@ -11,15 +31,6 @@ interface SellerInput {
   location: string;
   description: string;
 }
-import InputField from "./InputField";
-import { useMiniKit } from '@coinbase/onchainkit/minikit';
-import Button from "../../ui/Button";
-import { Icon } from "@iconify/react";
-import { ICON } from "../../utils/icon-export";
-import Modal, { ModalContext } from "../../context/ModalContext";
-import LoadingCard from "../popups/loading-card";
-import SellerCongratsPopup from "../popups/seller-congrats-popup";
-import InputTextArea from "./InputTextArea";
 
 function SellerForm() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -29,15 +40,33 @@ function SellerForm() {
 
 
   const { context } = useMiniKit();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<FarcasterUser | null>(null);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
   useEffect(() => {
     if (context?.user) {
-      setUser(context.user);
+      const contextUser = context.user as any; // temporary type assertion to access verified_accounts
+      const farcasterUser: FarcasterUser = {
+        fid: contextUser.fid,
+        username: contextUser.username,
+        displayName: contextUser.displayName,
+        pfpUrl: contextUser.pfpUrl,
+        verified_accounts: contextUser.verified_accounts?.map((account: { wallet_address: string }) => ({
+          wallet_address: account.wallet_address
+        }))
+      };
+      setUser(farcasterUser);
+      // Get the first verified wallet address
+      const verifiedWallet = farcasterUser.verified_accounts?.[0]?.wallet_address;
+      setWalletAddress(verifiedWallet || null);
     } else {
       const storedUser = localStorage.getItem('farcaster_user');
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser) as FarcasterUser;
+        setUser(parsedUser);
+        // Get the first verified wallet address from stored user
+        const verifiedWallet = parsedUser.verified_accounts?.[0]?.wallet_address;
+        setWalletAddress(verifiedWallet || null);
       }
     }
   }, [context]);
@@ -62,6 +91,10 @@ function SellerForm() {
           throw new Error('Please make sure you are connected with Farcaster');
         }
 
+        if (!walletAddress) {
+          throw new Error('Please make sure you have a verified wallet connected to your Farcaster account');
+        }
+
         // Open loading modal first
         modalContext?.open("loading-modal");
 
@@ -75,7 +108,8 @@ function SellerForm() {
             fid: user.fid,
             username: user.username,
             displayName: user.displayName,
-            pfpUrl: user.pfpUrl
+            pfpUrl: user.pfpUrl,
+            walletAddress: walletAddress
           }),
         });
 
