@@ -33,6 +33,14 @@ export async function GET(request: Request) {
       );
     }
 
+    // Check if seller has a wallet address
+    if (!product.seller.wallet_address) {
+      return NextResponse.json(
+        { error: 'Seller wallet address not found. The seller may need to update their profile.' },
+        { status: 400 }
+      );
+    }
+
     // Transform the data to match the frontend's expected format
     const transformedProduct = {
       ...product,
