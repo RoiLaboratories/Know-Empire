@@ -13,8 +13,21 @@ import Modal, { ModalContext } from "../../context/ModalContext";
 import LoadingCard from "../popups/loading-card";
 import SellerCongratsPopup from "../popups/seller-congrats-popup";
 
+interface MiniKitAccount {
+  address: string;
+  chain: string;
+}
+
+interface MiniKitUser {
+  fid: number;
+  username?: string;
+  displayName?: string;
+  pfpUrl?: string;
+  verified_accounts?: MiniKitAccount[];
+}
+
 interface VerifiedAccount {
-  wallet_address: string;
+  address: string;
 }
 
 interface FarcasterUser {
@@ -22,7 +35,7 @@ interface FarcasterUser {
   username?: string;
   displayName?: string;
   pfpUrl?: string;
-  verified_accounts?: VerifiedAccount[];
+  verifiedAccounts?: VerifiedAccount[];
 }
 
 interface SellerInput {
@@ -45,19 +58,25 @@ function SellerForm() {
 
   useEffect(() => {
     if (context?.user) {
-      const contextUser = context.user as any; // temporary type assertion to access verified_accounts
+      const contextUser = context.user as MiniKitUser;
+      console.log('Raw context user data:', contextUser);
+      console.log('Verified accounts from context:', contextUser.verified_accounts);
+
       const farcasterUser: FarcasterUser = {
         fid: contextUser.fid,
         username: contextUser.username,
         displayName: contextUser.displayName,
         pfpUrl: contextUser.pfpUrl,
-        verified_accounts: contextUser.verified_accounts?.map((account: { wallet_address: string }) => ({
-          wallet_address: account.wallet_address
+        verifiedAccounts: contextUser.verified_accounts?.map((account: MiniKitAccount) => ({
+          address: account.address
         }))
       };
+      console.log('Processed farcaster user:', farcasterUser);
       setUser(farcasterUser);
+
       // Get the first verified wallet address
-      const verifiedWallet = farcasterUser.verified_accounts?.[0]?.wallet_address;
+      const verifiedWallet = contextUser.verified_accounts?.[0]?.address;
+      console.log('Selected wallet address:', verifiedWallet);
       setWalletAddress(verifiedWallet || null);
     } else {
       const storedUser = localStorage.getItem('farcaster_user');
@@ -65,7 +84,7 @@ function SellerForm() {
         const parsedUser = JSON.parse(storedUser) as FarcasterUser;
         setUser(parsedUser);
         // Get the first verified wallet address from stored user
-        const verifiedWallet = parsedUser.verified_accounts?.[0]?.wallet_address;
+        const verifiedWallet = parsedUser.verifiedAccounts?.[0]?.address;
         setWalletAddress(verifiedWallet || null);
       }
     }
@@ -91,7 +110,11 @@ function SellerForm() {
           throw new Error('Please make sure you are connected with Farcaster');
         }
 
+        console.log('Submitting form with wallet address:', walletAddress);
+        console.log('Current user context:', context?.user);
+        
         if (!walletAddress) {
+          console.log('Connected addresses:', (context?.user as MiniKitUser)?.verified_accounts);
           throw new Error('Please make sure you have a verified wallet connected to your Farcaster account');
         }
 
