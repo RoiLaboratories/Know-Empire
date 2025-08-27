@@ -5,6 +5,9 @@ export const SELLER_SCHEMA = Yup.object({
   email: Yup.string().email("Invalid email").required("Email is required"),
   location: Yup.string().required("location is required"),
   description: Yup.string().required("description is required"),
+  walletAddress: Yup.string()
+    .required("Wallet address is required")
+    .matches(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum wallet address"),
 });
 
 export const LIST_SCHEMA = Yup.object({

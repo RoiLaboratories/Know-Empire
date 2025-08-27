@@ -43,6 +43,7 @@ interface SellerInput {
   email: string;
   location: string;
   description: string;
+  walletAddress: string;
 }
 
 function SellerForm() {
@@ -54,38 +55,22 @@ function SellerForm() {
 
   const { context } = useMiniKit();
   const [user, setUser] = useState<FarcasterUser | null>(null);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
   useEffect(() => {
     if (context?.user) {
       const contextUser = context.user as MiniKitUser;
-      console.log('Raw context user data:', contextUser);
-      console.log('Verified accounts from context:', contextUser.verified_accounts);
-
       const farcasterUser: FarcasterUser = {
         fid: contextUser.fid,
         username: contextUser.username,
         displayName: contextUser.displayName,
-        pfpUrl: contextUser.pfpUrl,
-        verifiedAccounts: contextUser.verified_accounts?.map((account: MiniKitAccount) => ({
-          address: account.address
-        }))
+        pfpUrl: contextUser.pfpUrl
       };
-      console.log('Processed farcaster user:', farcasterUser);
       setUser(farcasterUser);
-
-      // Get the first verified wallet address
-      const verifiedWallet = contextUser.verified_accounts?.[0]?.address;
-      console.log('Selected wallet address:', verifiedWallet);
-      setWalletAddress(verifiedWallet || null);
     } else {
       const storedUser = localStorage.getItem('farcaster_user');
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser) as FarcasterUser;
         setUser(parsedUser);
-        // Get the first verified wallet address from stored user
-        const verifiedWallet = parsedUser.verifiedAccounts?.[0]?.address;
-        setWalletAddress(verifiedWallet || null);
       }
     }
   }, [context]);
@@ -99,6 +84,7 @@ function SellerForm() {
       email: "",
       location: "",
       description: "",
+      walletAddress: "",
     },
     onSubmit: async (values) => {
       if (!formik.isValid) {
@@ -108,14 +94,6 @@ function SellerForm() {
       try {
         if (!user) {
           throw new Error('Please make sure you are connected with Farcaster');
-        }
-
-        console.log('Submitting form with wallet address:', walletAddress);
-        console.log('Current user context:', context?.user);
-        
-        if (!walletAddress) {
-          console.log('Connected addresses:', (context?.user as MiniKitUser)?.verified_accounts);
-          throw new Error('Please make sure you have a verified wallet connected to your Farcaster account');
         }
 
         // Open loading modal first
@@ -132,7 +110,7 @@ function SellerForm() {
             username: user.username,
             displayName: user.displayName,
             pfpUrl: user.pfpUrl,
-            walletAddress: walletAddress
+            walletAddress: values.walletAddress
           }),
         });
 
@@ -240,6 +218,20 @@ function SellerForm() {
               formik.errors.description && formik.touched.description
             )}
             errorMessage={formik.errors.description}
+          />
+
+          <InputField
+            config={{
+              placeholder: "Your Farcaster wallet address",
+              type: "text",
+              name: "walletAddress",
+              value: formik.values.walletAddress,
+              onChange: formik.handleChange,
+              onBlur: formik.handleBlur,
+            }}
+            label="Payment Address*"
+            error={Boolean(formik.errors.walletAddress && formik.touched.walletAddress)}
+            errorMessage={formik.errors.walletAddress}
           />
 
           <span className="flex gap-2 mt-1 items-center">
