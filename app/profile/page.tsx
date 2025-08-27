@@ -1,5 +1,4 @@
-'use client';
-
+"use client";
 import Image from "next/image";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
@@ -8,12 +7,25 @@ import Verified from "../../assets/icons/verified.svg";
 import ReviewsCard from "../../components/cards/ReviewsCard";
 import BackButton from "../../ui/BackButton";
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { supabase } from '@/utils/supabase';
 import Modal from "../../context/ModalContext";
 import GenericPopup from "../../components/popups/generic-popup";
 import ReferralPopup from "../../components/popups/referral-link-popup";
+
+interface SuiteContext {
+  user?: {
+    fid: number;
+    username?: string;
+    displayName?: string;
+    pfpUrl?: string;
+    verified_accounts?: Array<{ wallet_address: string }>;
+  };
+  getSigner?: () => Promise<any>;
+  isTestnet?: boolean;
+}
 
 interface SellerInfo {
   is_seller: boolean;
@@ -31,38 +43,96 @@ interface FarcasterUser {
 
 function Profile() {
   const router = useRouter();
-  const { context } = useMiniKit();
+  const { context } = useMiniKit() as { context: SuiteContext };
   const [user, setUser] = useState<FarcasterUser | null>(null);
   const [sellerInfo, setSellerInfo] = useState<SellerInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showWalletDropdown, setShowWalletDropdown] = useState(false);
+  const [walletError, setWalletError] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  const { address, isConnecting, isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
 
-  // Get user data from context or localStorage
+  // Get user data and connect Farcaster wallet
   useEffect(() => {
-    if (context?.user) {
-      setUser({
-        fid: context.user.fid,
-        username: context.user.username || "",
-        displayName: context.user.displayName || "",
-        pfpUrl: context.user.pfpUrl || ""
-      });
-    } else {
-      const storedUser = localStorage.getItem('farcaster_user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      } else {
-        router.push('/onboarding');
+    const connectWallet = async () => {
+      try {
+        if (!context?.user) {
+          console.log('No minikit context user found');
+          const storedUser = localStorage.getItem("farcaster_user");
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+          } else {
+            router.push("/onboarding");
+          }
+          return;
+        }
+
+        // Set user data
+        setUser({
+          fid: context.user.fid,
+          username: context.user.username || "",
+          displayName: context.user.displayName || "",
+          pfpUrl: context.user.pfpUrl || "",
+        });
+
+        // Clear any previous errors
+        setWalletError(null);
+
+        // Check if already connected
+        if (isConnected && address) {
+          console.log('Wallet already connected:', address);
+          return;
+        }
+
+        // Verify we have the necessary components for connection
+        const verifiedWallet = context.user.verified_accounts?.[0]?.wallet_address;
+        const farcasterConnector = connectors.find(c => c.id === 'farcaster');
+
+        if (!verifiedWallet) {
+          setWalletError('No verified Farcaster wallet found');
+          return;
+        }
+
+        if (!farcasterConnector) {
+          setWalletError('Farcaster connector not available');
+          return;
+        }
+
+        // Attempt connection
+        console.log('Starting wallet connection for:', verifiedWallet);
+        await connect({
+          connector: farcasterConnector
+        });
+
+        // Verify connection was successful
+        if (!address) {
+          throw new Error('Wallet connected but address not available');
+        }
+
+        console.log('Wallet connected successfully:', address);
+      } catch (error: any) {
+        console.error('Wallet connection error:', error);
+        setWalletError(error.message || 'Failed to connect wallet. Please try again.');
       }
+    };
+
+    // Only attempt connection if we're not already connecting
+    if (!isConnecting) {
+      connectWallet();
     }
-  }, [context, router]);
+  }, [context, router, connectors, connect, isConnected]);
 
   useEffect(() => {
     const loadSellerInfo = async () => {
       if (user?.fid) {
         // Only check for seller info in Supabase
         const { data, error } = await supabase
-          .from('sellers')
-          .select('*')
-          .eq('fid', user.fid)
+          .from("sellers")
+          .select("*")
+          .eq("fid", user.fid)
           .single();
 
         if (!error) {
@@ -75,12 +145,43 @@ function Profile() {
     loadSellerInfo();
   }, [user?.fid]);
 
+  // Handle clicking outside of dropdown to close it
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowWalletDropdown(false);
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleDisconnectWallet = async () => {
+    try {
+      // Inside a miniapp, users can't disconnect their Farcaster wallet
+      if (context?.user) {
+        const verifiedWallet = context.user.verified_accounts?.[0]?.wallet_address;
+        if (verifiedWallet === address) {
+          setShowWalletDropdown(false);
+          return;
+        }
+      }
+
+      // Only disconnect non-Farcaster wallets
+      disconnect();
+      setShowWalletDropdown(false);
+    } catch (error) {
+      console.error('Failed to disconnect wallet:', error);
+    }
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
   if (!user) {
-    router.push('/');
+    router.push("/");
     return null;
   }
 
@@ -91,7 +192,113 @@ function Profile() {
           <BackButton className="text-white" />
         </div>
         <div className="bg-primary h-50 flex justify-between items-center p-5 text-white relative">
-          <Image alt="wallet" src={Wallet} />
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowWalletDropdown(!showWalletDropdown);
+              }}
+              className="flex items-center justify-center rounded-full hover:opacity-80 transition-opacity"
+            >
+              <Image alt="wallet" src={Wallet} />
+            </button>
+
+            {showWalletDropdown && (
+              <div className="absolute left-0 mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                <div className="p-4 border-b border-gray-100">
+                  <h3 className="text-sm font-medium text-gray-900">Farcaster Wallet</h3>
+                </div>
+                {walletError && (
+                  <div className="p-4 text-sm text-red-500 text-center">
+                    {walletError}
+                  </div>
+                )}
+                
+                {isConnected && address && !walletError ? (
+                  <>
+                    <div className="p-4">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Image src={Verified} alt="Verified" width={16} height={16} />
+                            <span className="text-sm text-gray-700">Verified Farcaster Wallet</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 p-2 rounded">
+                          <span className="font-mono">{`${address.slice(0, 6)}...${address.slice(-4)}`}</span>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(address);
+                                // You might want to show a toast or notification here
+                              } catch (error) {
+                                console.error('Failed to copy address:', error);
+                              }
+                            }}
+                            className="p-1 hover:text-gray-900 cursor-pointer active:scale-95 transition-transform"
+                          >
+                            <Icon icon={ICON.COPY} className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : context?.user ? (
+                  <div className="p-4">
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (connectors.length > 0) {
+                          try {
+                            // Find the Farcaster connector specifically
+                            const farcasterConnector = connectors.find(c => c.id === 'farcaster');
+                            if (!farcasterConnector) {
+                              setWalletError('Farcaster connector not found');
+                              console.error('Farcaster connector not found');
+                              return;
+                            }
+                            console.log('Starting connection with:', farcasterConnector);
+                            setShowWalletDropdown(false); // Close dropdown immediately
+                            await connect({ connector: farcasterConnector });
+                            setWalletError(null);
+                            setTimeout(() => {
+                              console.log('isConnected:', isConnected, 'address:', address);
+                              if (!isConnected || !address) {
+                                setWalletError('Farcaster wallet did not connect. Please make sure you are in Warpcast and have a verified wallet.');
+                              }
+                            }, 1000);
+                            console.log('Connected successfully');
+                          } catch (error: any) {
+                            setWalletError('Connection error: ' + (error?.message || 'Unknown error'));
+                            console.error('Detailed connection error:', {
+                              message: error.message,
+                              name: error.name,
+                              details: error.details,
+                              stack: error.stack
+                            });
+                          }
+                        } else {
+                          setWalletError('No connectors available');
+                          console.log('No connectors available');
+                        }
+                      }}
+                      className="w-full px-4 py-2 text-sm text-white bg-primary hover:bg-primary-dark rounded-lg transition-colors"
+                    >
+                      {isConnecting ? 'Connecting...' : 'Connect Farcaster Wallet'}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-4 text-sm text-gray-500 text-center">
+                    Please open this app in Warpcast to use your Farcaster wallet
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           <Modal>
             <Modal.Open opens="share-referral-modal">
@@ -156,12 +363,16 @@ function Profile() {
           <div className="grid grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
               <Icon icon={ICON.PACKAGE} fontSize={26} className="text-orange" />
-              <p className="text-[10px] font-medium">{sellerInfo?.items_sold || 0}</p>
+              <p className="text-[10px] font-medium">
+                {sellerInfo?.items_sold || 0}
+              </p>
               <p className="text-[7px] text-nowrap">items sold</p>
             </div>
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
               <Icon icon={ICON.BUY} fontSize={26} className="text-green-500" />
-              <p className="text-[10px] font-medium">{sellerInfo?.items_sold || 0}</p>
+              <p className="text-[10px] font-medium">
+                {sellerInfo?.items_sold || 0}
+              </p>
               <p className="text-[7px] text-nowrap">items Bought</p>
             </div>
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
@@ -170,16 +381,22 @@ function Profile() {
                 fontSize={26}
                 className="text-yellow-500"
               />
-              <p className="text-[10px] font-medium">{sellerInfo?.rating || 0}</p>
+              <p className="text-[10px] font-medium">
+                {sellerInfo?.rating || 0}
+              </p>
               <p className="text-[7px]">Rating</p>
             </div>
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
               <Icon
                 icon={ICON.VERIFIED}
                 fontSize={26}
-                className={sellerInfo?.is_seller ? "text-green-500" : "text-gray-400"}
+                className={
+                  sellerInfo?.is_seller ? "text-green-500" : "text-gray-400"
+                }
               />
-              <p className="text-[10px] font-medium">{sellerInfo?.is_seller ? "Verified" : "Not"}</p>
+              <p className="text-[10px] font-medium">
+                {sellerInfo?.is_seller ? "Verified" : "Not"}
+              </p>
               <p className="text-[7px]">Seller</p>
             </div>
           </div>
@@ -198,7 +415,6 @@ function Profile() {
                   {Array.from({ length: 3 }).map((_, i) => (
                     <Icon
                       icon={ICON.STAR}
-                      // fontSize={26}
                       key={i}
                     />
                   ))}

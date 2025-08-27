@@ -14,24 +14,30 @@ interface CProps {
 
 function CartItem({ item }: { item: CProps }) {
   return (
-    <li className="flex gap-x-4">
-      <div className="bg-[#d9d9d9] rounded-lg grid place-items-center size-24 shrink-0">
+    <li className="flex gap-x-4 w-full items-start py-4 border-b border-gray-200">
+      <div className="bg-[#d9d9d9] rounded-lg relative w-24 h-24 shrink-0 overflow-hidden">
         <Image
-          alt="phone"
+          alt={item.name}
           src={item.img}
           placeholder="blur"
-          className="w-full h-full object-contain"
+          fill
+          className="object-contain"
         />
       </div>
-      <div className="flex flex-col justify-between">
-        <p className="font-semibold text-gray-light line-clamp-2">
+      <div className="flex flex-col justify-between flex-1 min-h-24">
+        <p className="font-semibold text-gray-700 line-clamp-2 mb-2">
           {item.name}
         </p>
-        <div className="space-y-1">
-          <p className="text-[#5b5b5b] text-xs md:text-sm">
-            {formatCurrency(item.unitPrice)}
+        <div className="flex justify-between items-end">
+          <div className="space-y-2">
+            <p className="text-primary font-semibold">
+              {formatCurrency(item.unitPrice)}
+            </p>
+            <UpdateQuantity quantity={item.quantity} itemId={item.productId} />
+          </div>
+          <p className="text-primary font-bold">
+            {formatCurrency(item.unitPrice * item.quantity)}
           </p>
-          <UpdateQuantity quantity={item.quantity} itemId={item.productId} />
         </div>
       </div>
     </li>

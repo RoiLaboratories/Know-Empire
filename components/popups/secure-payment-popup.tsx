@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Phone from "../../assets/images/prod1.png";
 import Button from "../../ui/Button";
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
@@ -7,34 +6,77 @@ import { useContext, useState } from "react";
 import { sleep } from "../../utils/helpers";
 import Modal, { ModalContext } from "../../context/ModalContext";
 import GenericPopup from "./generic-popup";
+import { useAccount } from "wagmi";
+import { ProductWithSeller } from "../../types/product";
+import toast from "react-hot-toast";
+import { formatCurrency } from "../../utils/helpers";
+import { approveUSDC, createEscrow } from "../../utils/contractHelpers";
 
 interface Props {
   onNext: () => void;
   onBack: () => void;
+  product: ProductWithSeller;
 }
 
-function SecurePaymentPopup({ onNext, onBack }: Props) {
+function SecurePaymentPopup({ onNext, onBack, product }: Props) {
   const [isLoading, setIsLoading] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
   const modalContext = useContext(ModalContext);
+  const { address, isConnected } = useAccount();
 
-  const handleNext = async () => {
+  // Total is just the product price as it includes delivery
+  const total = parseFloat(product.price);
+
+  const handleSecurePayment = async () => {
     setIsLoading(true);
-    await sleep(2000);
-    setIsLoading(false);
-    setIsConnected(true);
-    modalContext?.open("wallet-connected-popup");
-    // onNext();
-  };
+    try {
+      // First approve USDC spending
+      const approved = await approveUSDC(total.toString());
+      if (!approved) {
+        toast.error("Failed to approve USDC spending");
+        return;
+      }
 
-  const handleProcessPayment = async () => {
-    setIsConnecting(true);
-    await sleep(2000);
-    setIsConnecting(false);
-    setIsConnected(false);
-    modalContext?.open("payment-successful-popup");
-    // onNext();
+      // Check if seller wallet address exists
+      if (!product.seller.wallet_address) {
+        throw new Error("Seller wallet address not found");
+      }
+
+      // Create escrow with the product seller and amount
+      const { escrowId } = await createEscrow(
+        product.seller.wallet_address,
+        total.toString(),
+        product.id // Using product ID as order ID
+      );
+
+      // Create order with escrow ID
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'pending',
+          product_id: product.id,
+          escrow_id: escrowId,
+          total_amount: total,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create order');
+      }
+
+      toast.success("Payment secured in escrow!");
+      await sleep(2000);
+      modalContext?.open("payment-successful-popup");
+      onNext(); // Move to next step
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to process payment");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -44,90 +86,63 @@ function SecurePaymentPopup({ onNext, onBack }: Props) {
         <div className="border-b border-[#989898] pb-5 space-y-3">
           <p className="font-medium text-gray text-sm">Order summary</p>
 
-          <div className="flex gap-x-2 ">
-            <div className="w-9 h-10">
+          <div className="flex gap-x-2">
+            <div className="w-9 h-10 relative">
               <Image
-                alt="phone"
-                src={Phone}
-                placeholder="blur"
-                className="w-full h-full object-cover"
+                alt={product.title}
+                src={product.photos[0]}
+                fill
+                className="object-cover rounded-lg"
               />
             </div>
             <p className="font-semibold text-gray-light text-sm line-clamp-2">
-              Iphone 15 Pro max Black | 1TB
+              {product.title}
             </p>
           </div>
         </div>
 
-        <p className="flex items-center justify-between">
-          <span className="font-medium text-gray text-sm">
-            Total ( Including fees)
-          </span>
-          <span className="font-semibold text-[#16a34a] text-sm">$999</span>
-        </p>
+        <div className="space-y-2">
+          <div className="border-t border-[#989898] pt-2">
+            <p className="flex items-center justify-between">
+              <span className="font-medium text-gray text-sm">
+                Total Amount
+              </span>
+              <span className="font-semibold text-[#16a34a] text-sm">{formatCurrency(total)}</span>
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">
-        <p className="font-semibold text-gray text-sm">Delivery notes*</p>
-        <div
-          className={`border  h-36 rounded-[10px] items-center text-xs justify-center flex flex-col gap-2.5 p-5 ${
-            isConnected
-              ? "border-green-500 text-green-600 bg-green-100"
-              : "border-blue-500 text-blue-600 bg-blue-100"
-          }`}
-        >
+        <p className="font-semibold text-gray text-sm">Payment Authorization</p>
+        <div className="border border-blue-500 text-blue-600 bg-blue-100 h-36 rounded-[10px] items-center text-xs justify-center flex flex-col gap-2.5 p-5">
           <Icon
-            icon={!isConnected ? ICON.WALLET : ICON.PADLOCK}
+            icon={ICON.WALLET}
             fontSize={30}
           />
           <p className="text-center text-[10px]">
-            {!isConnected
-              ? "Connect Your Wallet to proceed with secure payment"
-              : "Connect Your Wallet to proceed with secure payment"}
+            Authorize payment from your Farcaster wallet to our secure escrow contract
           </p>
-          {!isConnected ? (
-            <Button
-              variant="secondary"
-              size="xs"
-              className="rounded-[10px] font-medium"
-              onClick={handleNext}
-              disabled={isLoading}
-            >
-              {!isLoading ? (
-                "Continue to Escrow"
-              ) : (
-                <>
-                  <Icon
-                    icon={ICON.SPINNER}
-                    fontSize={15}
-                    className="animate-spin"
-                  />
-                  Loading...
-                </>
-              )}
-            </Button>
-          ) : (
-            <Button
-              variant="success"
-              size="xs"
-              className="rounded-[10px] font-medium"
-              onClick={handleProcessPayment}
-              disabled={isConnecting}
-            >
-              {!isConnecting ? (
-                "Pay $999 (Escrow)"
-              ) : (
-                <>
-                  <Icon
-                    icon={ICON.SPINNER}
-                    fontSize={15}
-                    className="animate-spin"
-                  />
-                  Processing payment...
-                </>
-              )}
-            </Button>
-          )}
+          <Button
+            variant="secondary"
+            size="xs"
+            className="rounded-[10px] font-medium"
+            onClick={handleSecurePayment}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Icon 
+                  icon={ICON.SPINNER} 
+                  fontSize={15} 
+                  className="animate-spin mr-2"
+                />
+                Processing...
+              </>
+            ) : (
+              "Authorize Payment"
+            )}
+          </Button>
         </div>
 
         <Button

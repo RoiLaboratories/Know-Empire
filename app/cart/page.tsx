@@ -2,8 +2,6 @@
 import CartItem from "../../components/cart/CartItem";
 import Tab from "../../components/layout/Tab";
 import BackButton from "../../ui/BackButton";
-import Phone from "../../assets/images/prod1.png";
-import Pc from "../../assets/images/prod2.png";
 import Invite from "../../assets/images/invite.png";
 import Image from "next/image";
 import Button from "../../ui/Button";
@@ -11,18 +9,20 @@ import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import { useCart } from "../../providers/cart";
 import { formatCurrency } from "../../utils/helpers";
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { ProductWithSeller } from "../../types/product";
 import Link from "next/link";
-import Modal from "../../context/ModalContext";
+import Modal, { ModalContext } from "../../context/ModalContext";
 import CartSummaryPopup from "../../components/popups/cart-summary-popup";
 import PurchasePopup from "../../components/popups/purchase-popup";
+import EmptyCart from "../../components/cart/EmptyCart";
 
 function Cart() {
   const {
     cart,
     costBreakDown: { total },
   } = useCart();
+  const modalContext = useContext(ModalContext);
   const taxesAndFees = 10;
   const deliveryFee = 5;
   const [selectedProduct, setSelectedProduct] = useState<ProductWithSeller | null>(null);
@@ -41,7 +41,6 @@ function Cart() {
               showRoutes={false}
             />
           </div>
-
           {cart.length !== 0 ? (
             <>
               {/*main content */}
@@ -105,24 +104,25 @@ function Cart() {
               </div>
             </>
           ) : (
-            <div className="flex flex-col items-center gap-3">
-              <p className="font-semibold text-center">Your cart is empty :)</p>
-              <Button className="w-fit" to="/marketplace">
-                Visit market
-              </Button>
-            </div>
+            <EmptyCart />
           )}
         </div>
 
         {/*all purchase modals */}
-        <Modal.Window name="cart-summary-popup" showBg={false}>
-          <CartSummaryPopup setSelectedProduct={setSelectedProduct} />
+        <Modal.Window name="purchase-product-popup" showBg={false}>
+          {selectedProduct ? (
+            <PurchasePopup 
+              product={selectedProduct}
+              onCloseModal={() => {
+                setSelectedProduct(null);
+                modalContext?.close("purchase-product-popup");
+              }} 
+            />
+          ) : undefined}
         </Modal.Window>
-        {selectedProduct && (
-          <Modal.Window name="purchase-product-popup" showBg={false}>
-            <PurchasePopup product={selectedProduct} />
-          </Modal.Window>
-        )}
+        <Modal.Window name="cart-summary-popup" showBg={false}>
+          <CartSummaryPopup setSelectedProduct={setSelectedProduct} onCloseModal={() => modalContext?.close("cart-summary-popup")} />
+        </Modal.Window>
       </section>
     </Modal>
   );

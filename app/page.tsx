@@ -7,7 +7,7 @@ import { useMiniKit } from '@coinbase/onchainkit/minikit';
 export default function Page() {
   const router = useRouter();
   const { setFrameReady, context } = useMiniKit();
-
+  
   useEffect(() => {
     setFrameReady();
 

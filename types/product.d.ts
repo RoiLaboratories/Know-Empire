@@ -16,5 +16,6 @@ export interface ProductWithSeller extends Product {
     username: string;
     rating?: number;
     review_count?: number;
+    wallet_address?: string;
   };
 }

@@ -16,6 +16,7 @@ interface Order {
   price: number;
   created_at: string;
   tracking_number: string | null;
+  escrow_id: string;
   product: Product;
   seller: Seller;
 }

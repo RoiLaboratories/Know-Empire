@@ -37,7 +37,7 @@ export default function ListingForm() {
   useEffect(() => {
     if (context?.user) {
       setUser(context.user);
-    } else {
+    } else if (typeof window !== 'undefined') {
       const storedUser = localStorage.getItem('farcaster_user');
       if (storedUser) {
         setUser(JSON.parse(storedUser));

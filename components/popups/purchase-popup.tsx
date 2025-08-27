@@ -58,6 +58,7 @@ function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
           <DeliveryInformationPopup
             onNext={handleNextStep}
             onBack={handleBack}
+            product={product}
           />
         )}
 
@@ -66,7 +67,7 @@ function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
         )}
 
         {purchaseStep === 4 && (
-          <SecurePaymentPopup onNext={handleNextStep} onBack={handleBack} />
+          <SecurePaymentPopup onNext={handleNextStep} onBack={handleBack} product={product} />
         )}
 
         {purchaseStep === 5 && (
