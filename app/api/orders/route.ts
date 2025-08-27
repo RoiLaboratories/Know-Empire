@@ -138,12 +138,25 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get the current user
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser();
-    
+    // Get the Farcaster ID from the request
+    const { fid } = body;
+    if (!fid) {
+      return NextResponse.json(
+        { error: "Farcaster ID is required" },
+        { status: 401 }
+      );
+    }
+
+    // Get the user from our database using Farcaster ID
+    const { data: user, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('farcaster_id', fid)
+      .single();
+
     if (userError || !user) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "User not found" },
         { status: 401 }
       );
     }
