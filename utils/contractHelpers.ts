@@ -3,7 +3,7 @@ import { ESCROW_CONTRACT_ADDRESS, USDC_CONTRACT_ADDRESS, USDC_DECIMALS } from ".
 import { base } from "viem/chains";
 import { escrowABI, usdcABI } from "./contractABIs";
 import { createPublicClient, http } from "viem";
-import { getWalletClient, getAccount } from "wagmi/actions";
+import { getWalletClient } from "wagmi/actions";
 import { config } from "../providers/wagmi";
 
 // Initialize public client
@@ -13,13 +13,13 @@ const publicClient = createPublicClient({
 });
 
 async function getWallet() {
-  const account = getAccount(config);
-  if (!account?.address) throw new Error('No account connected');
+  const walletClient = await getWalletClient(config);
+  if (!walletClient?.account) throw new Error('No account connected');
 
-  const client = await getWalletClient(config);
-  if (!client) throw new Error('Could not get wallet client');
-
-  return { address: account.address, client };
+  return { 
+    address: walletClient.account.address, 
+    client: walletClient 
+  };
 }
 
 export async function approveUSDC(amount: string) {

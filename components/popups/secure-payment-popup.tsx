@@ -29,6 +29,10 @@ function SecurePaymentPopup({ onNext, onBack, product }: Props) {
   const handleSecurePayment = async () => {
     setIsLoading(true);
     try {
+      if (!isConnected || !address) {
+        throw new Error("Please connect your wallet first");
+      }
+
       // First approve USDC spending
       const approved = await approveUSDC(total.toString());
       if (!approved) {

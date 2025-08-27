@@ -10,7 +10,7 @@ import { WagmiProvider } from 'wagmi';
 export const config = createConfig({
   chains: [base],
   transports: {
-    [base.id]: http()
+    [base.id]: http('https://mainnet.base.org')
   },
   connectors: [farcasterMiniApp()]
 });
