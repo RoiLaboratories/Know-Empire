@@ -2,9 +2,9 @@
 
 import { http, createConfig } from 'wagmi';
 import { base } from 'wagmi/chains';
-import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
+import { customFarcasterConnector } from '../utils/farcasterConnector';
 
 // Create wagmi config for Farcaster wallet interaction
 export const config = createConfig({
@@ -12,7 +12,7 @@ export const config = createConfig({
   transports: {
     [base.id]: http('https://mainnet.base.org')
   },
-  connectors: [farcasterMiniApp()]
+  connectors: [customFarcasterConnector()]
 });
 
 // Create a client for managing cache
