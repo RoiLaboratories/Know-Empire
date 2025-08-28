@@ -2,9 +2,15 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "../../../../../utils/supabase";
 import { generateTrackingId, isValidTrackingId } from "../../../../../utils/tracking";
 
+interface RequestContext {
+  params: {
+    id: string;
+  };
+}
+
 export async function PATCH(
   request: Request,
-  context: { params: { id: string } }
+  context: RequestContext
 ) {
   try {
     const { status, tracking_number } = await request.json();
