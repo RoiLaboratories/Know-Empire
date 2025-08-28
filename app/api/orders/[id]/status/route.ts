@@ -2,17 +2,10 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "../../../../../utils/supabase";
 import { generateTrackingId, isValidTrackingId } from "../../../../../utils/tracking";
 
-interface RequestContext {
-  params: {
-    id: string;
-  };
-}
-
-export async function PATCH(
-  request: Request,
-  context: RequestContext
-) {
+export async function PATCH(request: Request) {
   try {
+    const { pathname } = new URL(request.url);
+    const id = pathname.split('/').pop();
     const { status, tracking_number } = await request.json();
     const supabase = createServiceClient();
 
@@ -45,7 +38,7 @@ export async function PATCH(
     const { data: order, error } = await supabase
       .from("orders")
       .update(updates)
-      .eq("id", context.params.id)
+      .eq("id", id)
       .select()
       .single();
 
