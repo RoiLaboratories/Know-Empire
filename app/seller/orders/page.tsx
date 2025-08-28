@@ -249,99 +249,15 @@ const SellerOrderManagement: NextPage = () => {
             ) : (
               <div className="w-full space-y-4">
                 {filteredOrders.map((order) => (
-                  <div key={order.id} className="border rounded-lg p-4">
-                    <h4 className="font-semibold">{order.product.title}</h4>
-                    <p className="text-sm text-gray-600">Order ID: {order.id}</p>
-                    <p className="text-sm text-gray-600">
-                      Amount: {formatCurrency(order.total_amount)}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Status: {order.status}
-                    </p>
-                    {order.tracking_number && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <p className="text-sm">
-                          Tracking ID: {order.tracking_number}
-                        </p>
-                        <button
-                          onClick={() => {
-                            copyTrackingId(order.tracking_number!);
-                            toast.success('Tracking ID copied to clipboard');
-                          }}
-                          className="text-blue-600 text-sm"
-                        >
-                          Copy
-                        </button>
-                      </div>
-                    )}
-                    <div className="mt-4">
-                      {order.status === 'pending' && (
-                        <Button
-                          onClick={async () => {
-                            try {
-                              await updateOrderStatus(order.id, 'shipped');
-                              const updatedOrders = orders.map(o =>
-                                o.id === order.id
-                                  ? { ...o, status: 'shipped' as const }
-                                  : o
-                              );
-                              setOrders(updatedOrders);
-                              toast.success('Order marked as shipped');
-                            } catch (error) {
-                              toast.error('Failed to update order status');
-                              console.error(error);
-                            }
-                          }}
-                        >
-                          Mark as Shipped
-                        </Button>
-                      )}
-                      {order.status === 'shipped' && (
-                        <Button
-                          onClick={async () => {
-                            try {
-                              setLoading(true);
-                              await updateOrderStatus(order.id, 'delivered');
-                              await confirmDeliveryBySeller(order.escrow_id);
-                              const updatedOrders = orders.map(o =>
-                                o.id === order.id
-                                  ? { ...o, status: 'delivered' as const }
-                                  : o
-                              );
-                              setOrders(updatedOrders);
-                              toast.success('Order marked as delivered');
-                            } catch (error) {
-                              toast.error('Failed to confirm delivery');
-                              console.error(error);
-                            } finally {
-                              setLoading(false);
-                            }
-                          }}
-                        >
-                          Mark as Delivered
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {loading ? (
-              <div className="text-center">Loading orders...</div>
-            ) : filteredOrders.length === 0 ? (
-              <div className="text-center">No orders found</div>
-            ) : (
-              filteredOrders.map((order) => (
-                <div key={order.id} className="self-stretch rounded-[10px] bg-[#fff] border-[#989898] border-solid border-[1px] overflow-hidden flex flex-col items-start justify-start py-[18px] px-[19px] gap-5">
-                  <div className="flex flex-col items-start justify-start gap-[9px]">
-                    <div className="w-[322px] h-[120px] relative">
-                      <Image
-                        className="absolute top-[119px] left-[0px] w-[322px] h-px"
-                        width={322}
-                        height={1}
-                        alt=""
-                        src="/Vector-1.svg"
+                  <div key={order.id} className="self-stretch rounded-[10px] bg-[#fff] border-[#989898] border-solid border-[1px] overflow-hidden flex flex-col items-start justify-start py-[18px] px-[19px] gap-5">
+                    <div className="flex flex-col items-start justify-start gap-[9px]">
+                      <div className="w-[322px] h-[120px] relative">
+                        <Image
+                          className="absolute top-[119px] left-[0px] w-[322px] h-px"
+                          width={322}
+                          height={1}
+                          alt=""
+                          src="/Vector-1.svg"
                       />
                       <div className="absolute top-[59px] left-[0px] w-[189px] flex flex-row items-center justify-between gap-5">
                         <div className="w-20 flex flex-col items-start justify-start gap-0.5">
@@ -437,10 +353,11 @@ const SellerOrderManagement: NextPage = () => {
                     </>
                   )}
                 </div>
-              ))
+                ))}
+              </div>
             )}
-          </div>
-        )}
+          </section>
+        </div>
       </section>
     </div>
   );
