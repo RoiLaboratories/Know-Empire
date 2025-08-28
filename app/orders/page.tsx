@@ -37,8 +37,8 @@ function Orders() {
           {orders.length !== 0 && <Search />}
         </div>
 
-        {/*main content   orders.length !== 0*/}
-        {false ? (
+        {/*main content*/}
+        {orders.length !== 0 ? (
           <ul className="grid grid-cols-1 gap-5 mt-2.5">
             {orders.map((order, i) => (
               <OrdersCard

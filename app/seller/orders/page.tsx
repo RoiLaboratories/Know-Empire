@@ -178,6 +178,29 @@ const SellerOrderManagement: NextPage = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center w-full h-full min-h-screen">
+        <p>Loading orders...</p>
+      </div>
+    );
+  }
+
+  if (orders.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full h-full min-h-screen">
+        <Image
+          src="/empty.svg"
+          alt="No orders"
+          width={200}
+          height={200}
+        />
+        <h3 className="mt-4 text-xl font-semibold">No Orders Yet</h3>
+        <p className="mt-2 text-gray-600">Wait for your first order to start managing them here.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full relative flex flex-row items-center justify-start leading-[normal] tracking-[normal]">
       <section className="h-[874px] flex-1 bg-[#fff] overflow-hidden flex flex-row items-start justify-start py-[71px] px-5 box-border text-left text-[17px] text-[#1a1a1a] font-[Poppins]">
@@ -416,8 +439,8 @@ const SellerOrderManagement: NextPage = () => {
                 </div>
               ))
             )}
-          </section>
-        </div>
+          </div>
+        )}
       </section>
     </div>
   );
