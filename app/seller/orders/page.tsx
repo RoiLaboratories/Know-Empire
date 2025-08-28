@@ -44,10 +44,12 @@ const SellerOrderManagement: NextPage = () => {
           return;
         }
 
+        setLoading(true);
         const response = await fetch(`/api/seller/orders?fid=${context.user.fid}`);
         if (!response.ok) throw new Error('Failed to fetch orders');
         const data = await response.json();
-        setOrders(data);
+        console.log('Fetched orders:', data); // For debugging
+        setOrders(data || []);
       } catch (error) {
         console.error('Error fetching orders:', error);
         toast.error('Failed to load orders');
@@ -57,7 +59,12 @@ const SellerOrderManagement: NextPage = () => {
     };
 
     fetchOrders();
-  }, []);
+    
+    // Set up periodic refresh
+    const refreshInterval = setInterval(refreshOrders, 30000); // Refresh every 30 seconds
+    
+    return () => clearInterval(refreshInterval);
+  }, [context?.user?.fid]); // Re-run when FID changes
 
   // Update tracking number
   const updateTrackingNumber = async (orderId: string, trackingNumber: string) => {
@@ -150,9 +157,26 @@ const SellerOrderManagement: NextPage = () => {
 
   // Filter orders based on search term
   const filteredOrders = orders.filter(order => 
-    order.product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.id.toLowerCase().includes(searchTerm.toLowerCase())
+    order.product?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Add refresh function
+  const refreshOrders = async () => {
+    if (!context?.user?.fid) return;
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/seller/orders?fid=${context.user.fid}`);
+      if (!response.ok) throw new Error('Failed to fetch orders');
+      const data = await response.json();
+      setOrders(data || []);
+    } catch (error) {
+      console.error('Error refreshing orders:', error);
+      toast.error('Failed to refresh orders');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="w-full relative flex flex-row items-center justify-start leading-[normal] tracking-[normal]">

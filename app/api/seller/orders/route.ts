@@ -15,14 +15,29 @@ export async function GET(request: Request) {
     const { data: orders, error } = await supabaseAdmin
       .from('orders')
       .select(`
-        *,
-        product:products(
-          *,
-          seller:users(*)
+        id,
+        created_at,
+        status,
+        total_amount,
+        escrow_id,
+        tracking_number,
+        shipped_at,
+        delivered_at,
+        product:products!inner (
+          id,
+          title,
+          photos,
+          seller:users!inner (
+            fid,
+            farcaster_username,
+            wallet_address
+          )
         )
       `)
       .eq('product.seller.fid', fid)
       .order('created_at', { ascending: false });
+    
+    console.log('Orders query result:', { orders, error }); // For debugging
 
     if (error) throw error;
 
