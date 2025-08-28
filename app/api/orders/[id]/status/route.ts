@@ -4,7 +4,7 @@ import { generateTrackingId, isValidTrackingId } from "../../../../../utils/trac
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const { status, tracking_number } = await request.json();
@@ -39,7 +39,7 @@ export async function PATCH(
     const { data: order, error } = await supabase
       .from("orders")
       .update(updates)
-      .eq("id", params.id)
+      .eq("id", context.params.id)
       .select()
       .single();
 
