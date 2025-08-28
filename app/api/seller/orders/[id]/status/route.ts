@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '../../../../../../utils/supabase';
 
-export async function POST(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: Request) {
   try {
+    const { pathname } = new URL(request.url);
+    const id = pathname.split('/').pop();
     const { status, tracking_number, fid } = await request.json();
     const supabaseAdmin = createServiceClient();
 
@@ -21,7 +20,7 @@ export async function POST(
         tracking_number: tracking_number || null,
         shipped_at: status === 'shipped' ? new Date().toISOString() : null
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('product.seller.fid', fid)
       .select()
       .single();
