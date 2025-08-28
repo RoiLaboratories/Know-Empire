@@ -107,8 +107,10 @@ function Header() {
             </span>
           </span>
           <Link
-            href={"/profile"}
+            href="/profile"
+            scroll={false}
             className="size-[33px] rounded-full bg-gray-300 relative"
+            prefetch={true}
           >
             <Image
               loading="lazy"
