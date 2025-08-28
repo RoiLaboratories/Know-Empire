@@ -3,7 +3,7 @@ import { Icon } from "@iconify/react";
 import Image from "next/image";
 import { ICON } from "../../utils/icon-export";
 import User from "../../assets/images/user.svg";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "../../providers/cart";
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
@@ -23,6 +23,7 @@ interface FarcasterUser {
 }
 
 function Header() {
+  const router = useRouter();
   const pathname = usePathname();
   const { cart } = useCart();
   const { context } = useMiniKit();
@@ -106,11 +107,13 @@ function Header() {
               {cart.length}
             </span>
           </span>
-          <Link
-            href="/profile"
-            scroll={false}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              router.push('/profile');
+            }}
             className="size-[33px] rounded-full bg-gray-300 relative"
-            prefetch={true}
           >
             <Image
               loading="lazy"
@@ -119,7 +122,7 @@ function Header() {
               src={user?.pfpUrl || User}
               className="rounded-full object-cover"
             />
-          </Link>
+          </button>
         </div>
       </div>
 
