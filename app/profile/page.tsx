@@ -63,7 +63,8 @@ function Profile() {
         const storedUser = localStorage.getItem("farcaster_user");
         if (storedUser) {
           setUser(JSON.parse(storedUser));
-        } else {
+        } else if (!isLoading) {
+          // Only redirect if we're sure the context is done loading
           router.push("/onboarding");
         }
         return;

@@ -147,15 +147,17 @@ export async function POST(request: Request) {
     }
 
     // Get the user from our database using Farcaster ID
+    // First verify the farcaster_id from the request matches a valid user
     const { data: user, error: userError } = await supabaseAdmin
       .from('users')
-      .select('id')
+      .select('id, farcaster_id')
       .eq('farcaster_id', fid)
       .single();
 
     if (userError || !user) {
+      console.error('User verification failed:', userError);
       return NextResponse.json(
-        { error: "User not found" },
+        { error: "Unauthorized: Invalid user" },
         { status: 401 }
       );
     }
