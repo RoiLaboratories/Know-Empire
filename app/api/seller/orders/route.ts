@@ -11,6 +11,27 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Farcaster ID is required' }, { status: 400 });
     }
 
+    console.log('Fetching orders for seller FID:', fid);
+    
+    // First get the seller's products
+    const { data: products, error: productsError } = await supabaseAdmin
+      .from('products')
+      .select('id')
+      .eq('seller_fid', fid);
+
+    if (productsError) {
+      console.error('Error fetching seller products:', productsError);
+      throw productsError;
+    }
+
+    console.log('Seller products:', products);
+
+    if (!products || products.length === 0) {
+      return NextResponse.json([]);
+    }
+
+    const productIds = products.map(p => p.id);
+    
     // Get seller's orders
     const { data: orders, error } = await supabaseAdmin
       .from('orders')
@@ -34,7 +55,7 @@ export async function GET(request: Request) {
           )
         )
       `)
-      .eq('product.seller.fid', fid)
+      .in('product_id', productIds)
       .order('created_at', { ascending: false });
     
     console.log('Orders query result:', { orders, error }); // For debugging

@@ -42,9 +42,17 @@ function Header() {
           
           // Only update routes if user is a seller
           if (data) {
+            // Seller routes
             setRoutes([
               { title: "Buy Products", icon: ICON.BUY, path: "/marketplace" },
-              { title: "List Product", icon: ICON.SELL, path: "/list_product" }
+              { title: "List Product", icon: ICON.SELL, path: "/list_product" },
+              { title: "Seller Orders", icon: ICON.ORDER, path: "/seller/orders" }
+            ]);
+          } else {
+            // Buyer routes
+            setRoutes([
+              { title: "Buy Products", icon: ICON.BUY, path: "/marketplace" },
+              { title: "My Orders", icon: ICON.ORDER, path: "/order_management" }
             ]);
           }
         }
