@@ -36,7 +36,16 @@ const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/orders");
+      // Get user from localStorage if context is not available
+      const storedUser = localStorage.getItem('farcaster_user');
+      const user = storedUser ? JSON.parse(storedUser) : null;
+      
+      if (!user?.fid) {
+        console.error('No user FID found');
+        return;
+      }
+
+      const response = await fetch(`/api/orders?fid=${user.fid}`);
       if (!response.ok) {
         throw new Error("Failed to fetch orders");
       }

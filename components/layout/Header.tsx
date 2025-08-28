@@ -107,12 +107,21 @@ function Header() {
             </span>
           </span>
           <Link
-            href={"/profile"}
+            href="/profile"
             className="size-[33px] rounded-full bg-gray-300 relative"
+            onClick={(e) => {
+              e.preventDefault();
+              // Store current user data in localStorage before navigation
+              if (user) {
+                localStorage.setItem('farcaster_user', JSON.stringify(user));
+              }
+              window.location.href = '/profile';
+            }}
           >
             <Image
               loading="lazy"
               fill
+              priority={true}
               alt={user?.username || "User Profile"}
               src={user?.pfpUrl || User}
               className="rounded-full object-cover"

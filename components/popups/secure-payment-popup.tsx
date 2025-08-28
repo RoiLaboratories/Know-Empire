@@ -45,7 +45,11 @@ function SecurePaymentPopup({ onNext, onBack, product }: Props) {
       }
 
       if (!context?.user?.fid) {
-        throw new Error("Please connect with Farcaster first");
+        const storedUser = localStorage.getItem('farcaster_user');
+        const user = storedUser ? JSON.parse(storedUser) : null;
+        if (!user?.fid) {
+          throw new Error("Please connect with Farcaster first");
+        }
       }
 
       // First approve USDC spending
@@ -68,6 +72,14 @@ function SecurePaymentPopup({ onNext, onBack, product }: Props) {
       );
 
       // Create order with escrow ID
+      // Get user from localStorage if context is not available
+      const storedUser = localStorage.getItem('farcaster_user');
+      const user = storedUser ? JSON.parse(storedUser) : null;
+      
+      if (!user?.fid) {
+        throw new Error('No user FID found');
+      }
+
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
