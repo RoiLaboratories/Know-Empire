@@ -36,8 +36,8 @@ function OrdersCard({
               src={img}
               width={36}
               height={40}
-              className="w-full h-full object-cover"
               {...(typeof img !== 'string' && { placeholder: "blur" })}
+              className="w-full h-full object-cover"
             />
           </div>
           <p className="font-bold text-gray-light line-clamp-2">{name}</p>
@@ -82,18 +82,18 @@ function OrdersCard({
               to="/raise-dispute"
             >
               <Icon icon={ICON.CAUTION} fontSize={16} />
-              Raise a Dispute
+              Raised a Dispute
             </Button>
 
             <Button variant="success" size="xs" className="rounded-lg">
               <Icon icon={ICON.ARROW_CHECKED} fontSize={16} />
-              Confirm Delivery
+              Confirmed
             </Button>
           </>
         ) : (
           <Button variant="warning" size="xs" className="rounded-lg">
             <Icon icon={ICON.CAUTION} fontSize={16} />
-            Raise a Dispute
+            Raised a Dispute
           </Button>
         )}
       </div>

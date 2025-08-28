@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { formatCurrency } from "@/utils/helpers";
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
-import { confirmDeliveryBySeller, updateOrderStatus } from '@/utils/contractHelpers';
+import { confirmDeliveryBySeller } from '@/utils/contractHelpers';
 import { useAccount } from 'wagmi';
 import { generateTrackingId, copyTrackingId } from '@/utils/tracking';
 import Button  from '@/ui/Button';
@@ -182,21 +182,6 @@ const SellerOrderManagement: NextPage = () => {
     return (
       <div className="flex items-center justify-center w-full h-full min-h-screen">
         <p>Loading orders...</p>
-      </div>
-    );
-  }
-
-  if (orders.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center w-full h-full min-h-screen">
-        <Image
-          src="/empty.svg"
-          alt="No orders"
-          width={200}
-          height={200}
-        />
-        <h3 className="mt-4 text-xl font-semibold">No Orders Yet</h3>
-        <p className="mt-2 text-gray-600">Wait for your first order to start managing them here.</p>
       </div>
     );
   }

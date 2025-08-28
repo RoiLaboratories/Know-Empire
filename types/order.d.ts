@@ -16,8 +16,6 @@ interface Order {
   price: number;
   created_at: string;
   tracking_number: string | null;
-  shipped_at: string | null;
-  delivered_at: string | null;
   escrow_id: string;
   product: Product;
   seller: Seller;

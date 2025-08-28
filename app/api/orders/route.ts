@@ -54,57 +54,53 @@ export async function GET(request: Request) {
   const supabaseAdmin = createServiceClient();
   try {
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
+    const fid = searchParams.get('fid');
 
-    // If userId is provided, fetch orders for that specific user as buyer or seller
-    let query = supabaseAdmin
-      .from("orders")
+    if (!fid) {
+      return NextResponse.json({ error: 'Farcaster ID is required' }, { status: 400 });
+    }
+
+    // Get orders where user is either buyer or seller
+    const { data: orders, error } = await supabaseAdmin
+      .from('orders')
       .select(`
-        id,
-        buyer_id,
-        seller_id,
-        product_id,
-        status,
-        total_amount,
-        created_at,
-        updated_at,
+        *,
         product:products (
+          id,
           title,
           description,
           photos,
-          price
+          price,
+          seller_fid
         ),
-        seller:users!seller_id (
+        seller:users!seller_fid (
+          fid,
           farcaster_username,
           display_name,
           avatar_url
         ),
-        buyer:users!buyer_id (
+        buyer:users!buyer_fid (
+          fid,
           farcaster_username,
           display_name,
           avatar_url
         )
       `)
-      .order("created_at", { ascending: false });
-
-    // If userId is provided, filter for that user's orders (as buyer or seller)
-    if (userId) {
-      query = query.or(`buyer_id.eq.${userId},seller_id.eq.${userId}`);
-    }
-
-    const { data: orders, error } = await query;
+      .or(`buyer_fid.eq.${fid},seller_id.eq.${fid}`)
+      .order('created_at', { ascending: false });
 
     if (error) {
-      console.error("Error fetching orders:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch orders" },
-        { status: 500 }
-      );
+      console.error('Error fetching orders:', error);
+      return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 });
     }
 
-    // Transform the response to match our DatabaseOrder type
-    const normalizedOrders = (orders as SupabaseOrder[]).map(normalizeOrder);
-    return NextResponse.json(normalizedOrders);
+    // Transform the data to include a type field indicating if user is buyer or seller
+    const transformedOrders = orders.map(order => ({
+      ...normalizeOrder(order as any),
+      orderType: order.seller_id === fid ? 'seller' : 'buyer'
+    }));
+
+    return NextResponse.json(transformedOrders);
   } catch (error) {
     console.error("Error in orders fetch:", error);
     return NextResponse.json(

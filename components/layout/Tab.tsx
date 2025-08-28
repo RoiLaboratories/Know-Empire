@@ -5,6 +5,8 @@ import { ICON } from "../../utils/icon-export";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useOrders } from "../../providers/orders";
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
+import { useState, useEffect } from 'react';
 
 interface ITab {
   name: string;
@@ -12,33 +14,66 @@ interface ITab {
   showRoutes?: boolean;
 }
 
-const tabs = [
+interface TabItem {
+  title: string;
+  icon: string;
+  link: string;
+}
+
+const defaultTabs = [
   { title: "Discover", icon: ICON.SEARCH, link: "/marketplace" },
   { title: "Orders", icon: ICON.GIFT_CARD, link: "/orders" },
+  { title: "Top", icon: ICON.ORGANISATION, link: "/leaderboard" },
+];
+
+const sellerTabs = [
+  { title: "Discover", icon: ICON.SEARCH, link: "/marketplace" },
+  { title: "Orders", icon: ICON.GIFT_CARD, link: "/seller/orders" },
   { title: "Top", icon: ICON.ORGANISATION, link: "/leaderboard" },
 ];
 
 function Tab({ name, description, showRoutes = true }: ITab) {
   const pathname = usePathname();
   const router = useRouter();
+  const { context } = useMiniKit();
   const { hasOrders } = useOrders();
+  const [isSellerAccount, setIsSellerAccount] = useState(false);
+  const [tabs, setTabs] = useState<TabItem[]>(defaultTabs);
 
   const excludeRoutes = ["/marketplace/sell"];
 
+  useEffect(() => {
+    const checkSellerStatus = async (fid: number) => {
+      try {
+        const response = await fetch(`/api/seller/${fid}`);
+        const data = await response.json();
+        setIsSellerAccount(!!data);
+        setTabs(!!data ? sellerTabs : defaultTabs);
+      } catch (error) {
+        console.error('Error checking seller status:', error);
+        setIsSellerAccount(false);
+        setTabs(defaultTabs);
+      }
+    };
+
+    if (context?.user?.fid) {
+      checkSellerStatus(context.user.fid);
+    }
+  }, [context?.user?.fid]);
+
   const handleOrdersClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (pathname === "/orders") {
-      // If we're already on the orders page, prevent navigation
+    const isBuyerOrdersPage = pathname === "/orders";
+    const isSellerOrdersPage = pathname === "/seller/orders";
+    
+    if ((isBuyerOrdersPage && !isSellerAccount) || (isSellerOrdersPage && isSellerAccount)) {
+      // If we're already on the correct orders page, prevent navigation
+      e.preventDefault();
       return;
     }
 
     e.preventDefault();
-    if (hasOrders) {
-      // If user has orders, navigate to OrdersCard view
-      router.push("/orders");
-    } else {
-      // If user has no orders, navigate to empty state view
-      router.push("/orders");
-    }
+    // Navigate to the appropriate orders page based on account type
+    router.push(isSellerAccount ? "/seller/orders" : "/orders");
   };
 
   return (

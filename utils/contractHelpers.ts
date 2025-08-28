@@ -3,7 +3,7 @@ import { ESCROW_CONTRACT_ADDRESS, USDC_CONTRACT_ADDRESS, USDC_DECIMALS } from ".
 import { base } from "viem/chains";
 import { escrowABI, usdcABI } from "./contractABIs";
 import { createPublicClient, http } from "viem";
-import { getWalletClient } from "wagmi/actions";
+import { getWalletClient, getAccount } from "wagmi/actions";
 import { config } from "../providers/wagmi";
 
 // Initialize public client
@@ -13,31 +13,13 @@ const publicClient = createPublicClient({
 });
 
 async function getWallet() {
-  const walletClient = await getWalletClient(config);
-  if (!walletClient?.account) throw new Error('No account connected');
+  const account = getAccount(config);
+  if (!account?.address) throw new Error('No account connected');
 
-  return { 
-    address: walletClient.account.address, 
-    client: walletClient 
-  };
-}
+  const client = await getWalletClient(config);
+  if (!client) throw new Error('Could not get wallet client');
 
-// Helper function to update order status and tracking info
-export async function updateOrderStatus(orderId: string, status: string, tracking_number?: string) {
-  const response = await fetch(`/api/orders/${orderId}/status`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ status, tracking_number }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to update order status');
-  }
-
-  return response.json();
+  return { address: account.address, client };
 }
 
 export async function approveUSDC(amount: string) {

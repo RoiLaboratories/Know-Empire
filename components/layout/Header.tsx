@@ -3,7 +3,7 @@ import { Icon } from "@iconify/react";
 import Image from "next/image";
 import { ICON } from "../../utils/icon-export";
 import User from "../../assets/images/user.svg";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "../../providers/cart";
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
@@ -23,7 +23,6 @@ interface FarcasterUser {
 }
 
 function Header() {
-  const router = useRouter();
   const pathname = usePathname();
   const { cart } = useCart();
   const { context } = useMiniKit();
@@ -42,17 +41,9 @@ function Header() {
           
           // Only update routes if user is a seller
           if (data) {
-            // Seller routes
             setRoutes([
               { title: "Buy Products", icon: ICON.BUY, path: "/marketplace" },
-              { title: "List Product", icon: ICON.SELL, path: "/list_product" },
-              { title: "Seller Orders", icon: ICON.ORDER, path: "/seller/orders" }
-            ]);
-          } else {
-            // Buyer routes
-            setRoutes([
-              { title: "Buy Products", icon: ICON.BUY, path: "/marketplace" },
-              { title: "My Orders", icon: ICON.ORDER, path: "/order_management" }
+              { title: "List Product", icon: ICON.SELL, path: "/list_product" }
             ]);
           }
         }
@@ -115,12 +106,8 @@ function Header() {
               {cart.length}
             </span>
           </span>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              router.push('/profile');
-            }}
+          <Link
+            href={"/profile"}
             className="size-[33px] rounded-full bg-gray-300 relative"
           >
             <Image
@@ -130,7 +117,7 @@ function Header() {
               src={user?.pfpUrl || User}
               className="rounded-full object-cover"
             />
-          </button>
+          </Link>
         </div>
       </div>
 
