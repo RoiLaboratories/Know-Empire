@@ -11,6 +11,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Farcaster ID is required' }, { status: 400 });
     }
 
+    // Verify seller exists
+    const { data: seller, error: sellerError } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('farcaster_id', fid)
+      .single();
+
+    if (sellerError || !seller) {
+      console.error('Error finding seller:', sellerError);
+      return NextResponse.json({ error: 'Seller not found' }, { status: 404 });
+    }
+
     console.log('Fetching orders for seller FID:', fid);
     
     // First get the seller's products
@@ -44,15 +56,19 @@ export async function GET(request: Request) {
         tracking_number,
         shipped_at,
         delivered_at,
-        product:products!inner (
+        buyer:users!buyer_id (
+          fid,
+          farcaster_username,
+          display_name,
+          avatar_url
+        ),
+        product:products!product_id (
           id,
           title,
+          description,
           photos,
-          seller:users!inner (
-            fid,
-            farcaster_username,
-            wallet_address
-          )
+          price,
+          seller_fid
         )
       `)
       .in('product_id', productIds)
@@ -60,7 +76,10 @@ export async function GET(request: Request) {
     
     console.log('Orders query result:', { orders, error }); // For debugging
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error in orders query:', error);
+      throw error;
+    }
 
     return NextResponse.json(orders);
   } catch (error) {
