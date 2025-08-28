@@ -12,8 +12,7 @@ export const config = createConfig({
   transports: {
     [base.id]: http('https://mainnet.base.org')
   },
-  connectors: [customFarcasterConnector()],
-  syncConnectedChain: true // Ensures chain sync with connector
+  connectors: [customFarcasterConnector()]
 });
 
 // Create a client for managing cache
