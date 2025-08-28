@@ -22,6 +22,24 @@ async function getWallet() {
   };
 }
 
+// Helper function to update order status and tracking info
+export async function updateOrderStatus(orderId: string, status: string, tracking_number?: string) {
+  const response = await fetch(`/api/orders/${orderId}/status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ status, tracking_number }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to update order status');
+  }
+
+  return response.json();
+}
+
 export async function approveUSDC(amount: string) {
   try {
     const { client: walletClient } = await getWallet();

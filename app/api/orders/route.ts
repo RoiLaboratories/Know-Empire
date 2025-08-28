@@ -21,7 +21,10 @@ type DatabaseOrder = {
   seller_id: string;
   product_id: string;
   escrow_id: string;
-  status: 'pending' | 'completed' | 'cancelled';
+  status: 'pending' | 'shipped' | 'delivered' | 'cancelled';
+  tracking_number: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
   total_amount: number;
   created_at: string;
   updated_at: string;
