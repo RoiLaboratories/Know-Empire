@@ -272,7 +272,9 @@ const SellerOrderManagement: NextPage = () => {
               <div>
                 <BackButton />
               </div>
-              <h1 className="text-xl font-bold">Order Management</h1>
+              <div className="flex justify-center">
+                <h1 className="text-xl font-bold">Order Management</h1>
+              </div>
             </div>
 
             <div className="mt-4">
@@ -320,7 +322,8 @@ const SellerOrderManagement: NextPage = () => {
                     <div className={`px-3 py-1 rounded-lg text-xs font-medium capitalize flex items-center gap-1.5 ${
                       order.status === 'pending' ? 'bg-[#fef9c3] text-[#925f21]' :
                       order.status === 'shipped' ? 'bg-[#dbeafe] text-[#1e43be]' :
-                      'bg-[#dcfce7] text-[#166534]'
+                      order.status === 'delivered' ? 'bg-[#dcfce7] text-[#166534]' :
+                      'bg-[#fef9c3] text-[#925f21]'
                     }`}>
                       <Image
                         width={14}
@@ -342,7 +345,7 @@ const SellerOrderManagement: NextPage = () => {
                     <div className="w-full rounded-lg bg-[#f1f1f1] border border-[#989898] flex items-center p-2.5">
                       <input
                         className="flex-1 bg-transparent border-none outline-none text-sm text-[#989898]"
-                        placeholder="Enter tracking number"
+                        // placeholder="Enter tracking number"
                         type="text"
                         value={order.tracking_number || ''}
                         onChange={(e) => updateTrackingNumber(order.id, e.target.value)}
