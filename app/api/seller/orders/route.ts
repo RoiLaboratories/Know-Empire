@@ -56,19 +56,20 @@ export async function GET(request: Request) {
         tracking_number,
         shipped_at,
         delivered_at,
-        buyer:users!buyer_id (
-          fid,
+        buyer:users!orders_buyer_id_fkey (
+          id,
+          farcaster_id,
           farcaster_username,
           display_name,
           avatar_url
         ),
-        product:products!product_id (
+        product:products!orders_product_id_fkey (
           id,
           title,
           description,
           photos,
           price,
-          seller_fid
+          seller_id
         )
       `)
       .in('product_id', productIds)
@@ -81,7 +82,21 @@ export async function GET(request: Request) {
       throw error;
     }
 
-    return NextResponse.json(orders);
+    // Transform orders to match our types
+    const transformedOrders = !orders ? [] : orders.map(order => ({
+      id: order.id,
+      status: order.status,
+      created_at: order.created_at,
+      tracking_number: order.tracking_number,
+      shipped_at: order.shipped_at,
+      delivered_at: order.delivered_at,
+      total_amount: order.total_amount,
+      product: order.product,
+      buyer: order.buyer,
+      escrow_id: order.escrow_id
+    }));
+
+    return NextResponse.json(transformedOrders);
   } catch (error) {
     console.error('Error fetching seller orders:', error);
     return NextResponse.json(
