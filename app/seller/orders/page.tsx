@@ -123,7 +123,7 @@ const SellerOrderManagement: NextPage = () => {
         return;
       }
 
-      const response = await fetch(`/api/seller/orders/${orderId}/tracking`, {
+      const response = await fetch(`/api/seller/orders/${orderId}/tracking?select=*,product(*)`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -132,7 +132,10 @@ const SellerOrderManagement: NextPage = () => {
         })
       });
 
-      if (!response.ok) throw new Error('Failed to update tracking number');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update tracking number');
+      }
       
       // Update local state
       setOrders(orders.map(order => 
@@ -161,8 +164,8 @@ const SellerOrderManagement: NextPage = () => {
       // Generate a unique tracking ID
       const trackingId = generateTrackingId();
 
-      // Update status in the database
-      const response = await fetch(`/api/seller/orders/${orderId}/status`, {
+      // Update status in the database and fetch updated order with product data
+      const response = await fetch(`/api/seller/orders/${orderId}/status?select=*,product(*)`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -172,7 +175,10 @@ const SellerOrderManagement: NextPage = () => {
         })
       });
 
-      if (!response.ok) throw new Error('Failed to update order status');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update order status');
+      }
 
       // Update local state
       setOrders(orders.map(order => 
@@ -214,8 +220,8 @@ const SellerOrderManagement: NextPage = () => {
         return;
       }
 
-      // Update status in the database
-      const response = await fetch(`/api/seller/orders/${orderId}/status`, {
+      // Update status in the database and fetch updated order with product data
+      const response = await fetch(`/api/seller/orders/${orderId}/status?select=*,product(*)`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -224,7 +230,10 @@ const SellerOrderManagement: NextPage = () => {
         })
       });
 
-      if (!response.ok) throw new Error('Failed to update order status');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update order status');
+      }
 
       // Update local state
       setOrders(orders.map(order => 
