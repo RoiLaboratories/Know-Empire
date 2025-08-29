@@ -63,7 +63,7 @@ function Header() {
           ]);
         } else {
           setRoutes([
-            { title: "Buy Products", icon: ICON.BUY, path: "/marketplace/buy" },
+            { title: "Buy Products", icon: ICON.BUY, path: "/buy" },
             { title: "Sell Products", icon: ICON.SELL, path: "/marketplace/sell" }
           ]);
         }
