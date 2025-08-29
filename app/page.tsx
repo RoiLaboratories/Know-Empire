@@ -23,8 +23,9 @@ export default function Page() {
       // Store user data in localStorage for use across the app
       localStorage.setItem('farcaster_user', JSON.stringify(userData));
       
-      // Only redirect to marketplace if we're on the root page
-      if (window.location.pathname === '/') {
+      // Only redirect to marketplace if we're exactly on the root page
+      const currentPath = window.location.pathname;
+      if (currentPath === '/' || currentPath === '') {
         router.push("/marketplace");
       }
     } else {

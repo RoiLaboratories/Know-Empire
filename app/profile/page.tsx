@@ -153,7 +153,7 @@ function Profile() {
     return <div>Loading...</div>;
   }
 
-  if (!user && !isLoading) {
+  if (!user && !isLoading && !localStorage.getItem('farcaster_user')) {
     router.push("/onboarding");
     return null;
   }
