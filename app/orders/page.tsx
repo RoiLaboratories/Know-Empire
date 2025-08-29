@@ -28,10 +28,14 @@ function Orders() {
   const router = useRouter();
   const { context } = useMiniKit();
 
-  // Redirect sellers with no orders to the empty state page
+  // For sellers, check if they're in the correct route
   useEffect(() => {
-    if (metadata?.isSeller && (!orders || orders.length === 0)) {
-      router.push('/seller/empty-orders');
+    if (metadata?.isSeller) {
+      const path = window.location.pathname;
+      // Only redirect if they're on the main orders page
+      if (path === '/orders' && (!orders || orders.length === 0)) {
+        router.push('/seller/empty-orders');
+      }
     }
   }, [metadata?.isSeller, orders, router]);
 

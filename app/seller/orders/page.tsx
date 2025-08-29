@@ -2,6 +2,7 @@
 
 import type { NextPage } from "next";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { formatCurrency } from "@/utils/helpers";
@@ -34,8 +35,10 @@ const SellerOrderManagement: NextPage = () => {
   const [loading, setLoading] = useState(true);
   const { context } = useMiniKit();
   const { address, isConnected } = useAccount();
-
+  
   // Fetch orders
+  const router = useRouter();
+
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -49,6 +52,13 @@ const SellerOrderManagement: NextPage = () => {
         if (!response.ok) throw new Error('Failed to fetch orders');
         const data = await response.json();
         console.log('Fetched orders:', data); // For debugging
+        
+        // If there are no orders, redirect to empty state page
+        if (!data || data.length === 0) {
+          router.push('/seller/empty-orders');
+          return;
+        }
+        
         setOrders(data || []);
       } catch (error) {
         console.error('Error fetching orders:', error);
@@ -169,6 +179,13 @@ const SellerOrderManagement: NextPage = () => {
       const response = await fetch(`/api/seller/orders?fid=${context.user.fid}`);
       if (!response.ok) throw new Error('Failed to fetch orders');
       const data = await response.json();
+      
+      // Check for empty orders during refresh
+      if (!data || data.length === 0) {
+        router.push('/seller/empty-orders');
+        return;
+      }
+      
       setOrders(data || []);
     } catch (error) {
       console.error('Error refreshing orders:', error);
