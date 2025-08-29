@@ -24,28 +24,9 @@ interface Order {
 }
 
 function Orders() {
-  const { orders } = useOrders();
+  const { orders, metadata } = useOrders();
   const router = useRouter();
-  const [isSellerAccount, setIsSellerAccount] = useState(false);
   const { context } = useMiniKit();
-
-  useEffect(() => {
-    const checkSellerStatus = async () => {
-      if (!context?.user?.fid) return;
-      try {
-        const response = await fetch(`/api/seller/${context.user.fid}`);
-        const data = await response.json();
-        setIsSellerAccount(!!data);
-      } catch (error) {
-        console.error('Error checking seller status:', error);
-        setIsSellerAccount(false);
-      }
-    };
-
-    if (context?.user?.fid) {
-      checkSellerStatus();
-    }
-  }, [context?.user?.fid]);
 
   return (
     <section className="flex flex-col items-center min-h-screen pb-3">
@@ -60,8 +41,8 @@ function Orders() {
           {orders.length !== 0 && <Search />}
         </div>
 
-        {/*main content   orders.length !== 0*/}
-        {false ? (
+        {/*main content*/}
+        {!metadata?.isEmpty && orders.length > 0 ? (
           <ul className="grid grid-cols-1 gap-5 mt-2.5">
             {orders.map((order, i) => (
               <OrdersCard
@@ -80,7 +61,7 @@ function Orders() {
             <Image alt="empty orders" src={Empty} className="" />
 
             {/*sellers */}
-            {isSellerAccount ? (
+            {metadata?.isSeller ? (
               <p className="text-xs font-medium text-center">
                 You have no pending
                 <span className="text-primary font-bold"> orders</span>, your

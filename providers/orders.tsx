@@ -16,9 +16,16 @@ export interface Order extends OrdersCardProps {
   } | null;
 }
 
+interface OrderMetadata {
+  isSeller: boolean;
+  isEmpty: boolean;
+}
+
 interface OrdersContextType {
   orders: Order[];
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
+  metadata: OrderMetadata | null;
+  setMetadata: React.Dispatch<React.SetStateAction<OrderMetadata | null>>;
   hasOrders: boolean;
   isLoading: boolean;
   error: string | null;
@@ -29,6 +36,7 @@ const OrdersContext = createContext<OrdersContextType | undefined>(undefined);
 
 const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [metadata, setMetadata] = useState<OrderMetadata | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,7 +58,10 @@ const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
         throw new Error("Failed to fetch orders");
       }
       const data = await response.json();
-      setOrders(data);
+      
+      // Set orders and metadata from the response
+      setOrders(data.orders || []);
+      setMetadata(data.metadata || null);
     } catch (error) {
       console.error("Error fetching orders:", error);
       setError(error instanceof Error ? error.message : "Failed to fetch orders");
@@ -66,6 +77,8 @@ const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
   const value = {
     orders,
     setOrders,
+    metadata,
+    setMetadata,
     hasOrders: orders.length > 0,
     isLoading,
     error,

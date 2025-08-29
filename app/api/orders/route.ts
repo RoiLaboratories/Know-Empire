@@ -24,11 +24,7 @@ type DatabaseOrder = {
   buyer_id: string;
   seller_id: string;
   product_id: string;
-  escrow_id: string;
-  status: 'pending' | 'shipped' | 'delivered' | 'cancelled';
-  tracking_number: string | null;
-  shipped_at: string | null;
-  delivered_at: string | null;
+  status: 'pending' | 'completed' | 'cancelled';
   total_amount: number;
   created_at: string;
   updated_at: string;
@@ -39,16 +35,16 @@ type DatabaseOrder = {
 
 // The type returned by Supabase's joins
 type SupabaseOrder = Omit<DatabaseOrder, 'product' | 'seller' | 'buyer'> & {
-  product: [Product];
-  seller: [User];
-  buyer: [User];
+  products: Product[];
+  seller: User[];
+  buyer: User[];
 };
 
 // Convert Supabase's array fields to single objects
 function normalizeOrder(order: SupabaseOrder): DatabaseOrder {
   return {
     ...order,
-    product: order.product[0],
+    product: order.products[0],
     seller: order.seller[0],
     buyer: order.buyer[0]
   };
@@ -67,7 +63,7 @@ export async function GET(request: Request) {
     // Verify user exists
     const { data: user, error: userError } = await supabaseAdmin
       .from('users')
-      .select('id')
+      .select('id, is_seller')
       .eq('farcaster_id', fid)
       .single();
 
@@ -80,23 +76,35 @@ export async function GET(request: Request) {
     const { data: orders, error } = await supabaseAdmin
       .from('orders')
       .select(`
-        *,
-        product:products!orders_product_id_fkey(
+        id,
+        buyer_id,
+        seller_id,
+        product_id,
+        status,
+        total_amount,
+        created_at,
+        updated_at,
+        products:products!orders_product_id_fkey (
           id,
           title,
           description,
           photos,
           price,
-          seller_id
+          seller_id,
+          category,
+          country,
+          delivery
         ),
-        seller:users!orders_seller_id_fkey(
+        seller:users!orders_seller_id_fkey (
           id,
           farcaster_id,
           farcaster_username,
           display_name,
-          avatar_url
+          avatar_url,
+          seller_handle,
+          seller_rating
         ),
-        buyer:users!orders_buyer_id_fkey(
+        buyer:users!orders_buyer_id_fkey (
           id,
           farcaster_id,
           farcaster_username,
@@ -105,21 +113,37 @@ export async function GET(request: Request) {
         )
       `)
       .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
-      .order('created_at', { ascending: false })
-      .throwOnError();
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching orders:', error);
       return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 });
     }
 
+    // If there are no orders, return an empty array with metadata
+    if (!orders || orders.length === 0) {
+      return NextResponse.json({
+        orders: [],
+        metadata: {
+          isSeller: user.is_seller,
+          isEmpty: true
+        }
+      });
+    }
+
     // Transform the data to include a type field indicating if user is buyer or seller
     const transformedOrders = orders.map(order => ({
-      ...normalizeOrder(order as any),
+      ...normalizeOrder(order as unknown as SupabaseOrder),
       orderType: order.seller_id === user.id ? 'seller' : 'buyer'
     }));
 
-    return NextResponse.json(transformedOrders);
+    return NextResponse.json({
+      orders: transformedOrders,
+      metadata: {
+        isSeller: user.is_seller,
+        isEmpty: false
+      }
+    });
   } catch (error) {
     console.error('Error in orders endpoint:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -221,18 +245,24 @@ export async function POST(request: Request) {
         total_amount,
         created_at,
         updated_at,
-        product:products!product_id (
+        products:products!orders_product_id_fkey (
+          id,
           title,
           description,
           photos,
-          price
+          price,
+          seller_id
         ),
-        seller:users!seller_id (
+        seller:users!orders_seller_id_fkey (
+          id,
+          farcaster_id,
           farcaster_username,
           display_name,
           avatar_url
         ),
-        buyer:users!buyer_id (
+        buyer:users!orders_buyer_id_fkey (
+          id,
+          farcaster_id,
           farcaster_username,
           display_name,
           avatar_url
@@ -249,7 +279,7 @@ export async function POST(request: Request) {
     }
 
     // Transform the response to match our DatabaseOrder type
-    const normalizedOrder = normalizeOrder(order as SupabaseOrder);
+    const normalizedOrder = normalizeOrder(order as unknown as SupabaseOrder);
     return NextResponse.json(normalizedOrder);
   } catch (error) {
     console.error("Error in order creation:", error);
