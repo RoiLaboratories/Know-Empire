@@ -81,7 +81,7 @@ export async function GET(request: Request) {
       .from('orders')
       .select(`
         *,
-        product:products!inner(
+        product:products!orders_product_id_fkey(
           id,
           title,
           description,
@@ -89,14 +89,14 @@ export async function GET(request: Request) {
           price,
           seller_id
         ),
-        seller:users!inner(
+        seller:users!orders_seller_id_fkey(
           id,
           farcaster_id,
           farcaster_username,
           display_name,
           avatar_url
         ),
-        buyer:users!inner(
+        buyer:users!orders_buyer_id_fkey(
           id,
           farcaster_id,
           farcaster_username,
