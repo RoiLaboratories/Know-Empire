@@ -209,8 +209,8 @@ const SellerOrderManagement: NextPage = () => {
   );
 
   return (
-    <section className="flex flex-col items-center min-h-screen pt-3 px-3 bg-white">
-      <div className="w-full max-w-lg flex flex-col flex-1">
+    <section className="min-h-screen bg-white">
+      <div className="max-w-lg mx-auto px-4 pt-8">
         {refreshing && (
           <div className="fixed top-0 left-0 right-0 z-50 flex justify-center">
             <div className="bg-primary text-white text-sm py-1 px-4 rounded-b-lg">
@@ -219,10 +219,10 @@ const SellerOrderManagement: NextPage = () => {
           </div>
         )}
         
-        <div className="flex flex-col flex-1 bg-white">
+        <div className="flex flex-col">
           {/* Header */}
           <div className="sticky top-0 z-10 bg-white space-y-3 pb-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-6">
               <BackButton />
               <h1 className="text-xl font-bold text-center flex-1">Order Management</h1>
               <div className="w-[30px]"></div>
@@ -246,51 +246,50 @@ const SellerOrderManagement: NextPage = () => {
           ) : (
             <div className="w-full space-y-4">
               {filteredOrders.map((order) => (
-                <div key={order.id} className="self-stretch rounded-[10px] bg-[#fff] border-[#989898] border-solid border-[1px] overflow-hidden flex flex-col items-start justify-start py-[18px] px-[19px] gap-5">
-                  <div className="flex flex-col items-start justify-start gap-[9px]">
-                    <div className="w-[322px] h-[120px] relative">
-                      <Image
-                        className="absolute top-[119px] left-[0px] w-[322px] h-px"
-                        width={322}
-                        height={1}
-                        alt=""
-                        src="/Vector-1.svg"
-                      />
-                      <div className="absolute top-[59px] left-[0px] w-[189px] flex flex-row items-center justify-between gap-5">
-                        <div className="w-20 flex flex-col items-start justify-start gap-0.5">
-                          <div className="self-stretch relative">Order ID</div>
-                          <div className="self-stretch relative text-[13px] font-medium">
-                            {order.id.slice(0, 8)}...
-                          </div>
+                <div key={order.id} className="w-full rounded-lg bg-white border border-[#989898] p-4 flex flex-col gap-4">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-11 relative">
+                          <Image
+                            className="w-full h-full object-cover rounded"
+                            width={40}
+                            height={44}
+                            alt={order.product.title}
+                            src={order.product.photos[0]}
+                          />
                         </div>
-                        <div className="w-12 flex flex-col items-start justify-start gap-0.5">
-                          <div className="self-stretch relative">Amount</div>
-                          <div className="self-stretch relative text-[13px] font-medium text-[#16a34a]">
+                        <div className="flex flex-col gap-0.5">
+                          <div className="font-semibold text-sm text-[#414141]">
+                            {order.product.title}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            ID: {order.id.slice(0, 8)}...
+                          </div>
+                          <div className="text-sm font-medium text-[#16a34a]">
                             {formatCurrency(order.total_amount)}
                           </div>
                         </div>
                       </div>
                       <div className="absolute top-[0px] left-[0px] w-full h-11 text-[10px]">
-                        <div className="absolute top-[0px] left-[245px] flex flex-row items-start justify-start">
-                          <div className={`w-[77px] rounded-[10px] ${
+                        <div className="flex justify-end">
+                          <div className={`px-3 py-1 rounded-lg text-xs font-medium capitalize flex items-center gap-1.5 ${
                             order.status === 'pending' ? 'bg-[#fef9c3] text-[#925f21]' :
                             order.status === 'shipped' ? 'bg-[#dbeafe] text-[#1e43be]' :
                             'bg-[#dcfce7] text-[#166534]'
-                          } flex flex-col items-start justify-start py-[3px] px-1.5 box-border`}>
-                            <div className="flex flex-row items-center justify-start gap-[3px]">
-                              <Image
-                                className="h-[15px] w-[13.9px] relative"
-                                width={13.9}
-                                height={15}
-                                alt=""
-                                src={
-                                  order.status === 'pending' ? '/Vector.svg' :
-                                  order.status === 'shipped' ? '/Vector-2.svg' :
-                                  '/check.svg'
-                                }
-                              />
-                              <div className="relative capitalize">{order.status}</div>
-                            </div>
+                          }`}>
+                            <Image
+                              width={14}
+                              height={15}
+                              alt=""
+                              src={
+                                order.status === 'pending' ? '/Vector.svg' :
+                                order.status === 'shipped' ? '/Vector-2.svg' :
+                                '/check.svg'
+                              }
+                              className="w-3.5 h-[15px]"
+                            />
+                            <span>{order.status}</span>
                           </div>
                         </div>
                         <div className="absolute top-[0px] left-[0px] w-full flex flex-row items-start justify-start gap-[5px] h-full text-sm text-[#414141]">
@@ -308,11 +307,11 @@ const SellerOrderManagement: NextPage = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="w-[322px] flex flex-col items-start justify-start gap-[5px] z-[1] text-[#6b88b5]">
-                    <div className="self-stretch relative">Tracking ID:</div>
-                    <div className="self-stretch rounded-[5px] bg-[#f1f1f1] border-[#989898] border-solid border-[1px] flex flex-row items-center justify-between p-2.5">
+                  <div className="flex flex-col gap-2 w-full text-[#6b88b5]">
+                    <div className="text-sm">Tracking ID:</div>
+                    <div className="w-full rounded-lg bg-[#f1f1f1] border border-[#989898] flex items-center p-2.5">
                       <input
-                        className="w-full [border:none] [outline:none] bg-[transparent] h-[15px] flex flex-row items-center justify-start font-[Poppins] text-[10px] text-[#989898] min-w-[67px]"
+                        className="w-full bg-transparent border-none outline-none text-sm text-[#989898]"
                         placeholder="Enter tracking number"
                         type="text"
                         value={order.tracking_number || ''}
@@ -322,30 +321,22 @@ const SellerOrderManagement: NextPage = () => {
                   </div>
                   {order.status === 'pending' && (
                     <>
-                      <Image
-                        className="w-[322px] h-px relative max-h-full"
-                        width={322}
-                        height={1}
-                        alt=""
-                        src="/Vector-1.svg"
-                      />
+                      <div className="w-full h-px bg-[#989898] my-2" />
                       <button 
-                        className="cursor-pointer [border:none] pt-[9px] px-5 pb-2 bg-[#2563eb] w-[322px] rounded-[10px] overflow-hidden flex flex-row items-start justify-center box-border disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={() => markAsShipped(order.id, order.escrow_id)}
                         disabled={loading || !isConnected || !context?.user?.fid}
                       >
-                        <div className="flex flex-row items-center justify-start gap-2.5">
-                          <Image
-                            className="h-[18px] w-[22px] relative"
-                            width={22}
-                            height={18}
-                            alt=""
-                            src="/Vector-11.svg"
-                          />
-                          <div className="relative text-xs font-semibold font-[Poppins] text-[#fff] text-left">
-                            Mark as shipped
-                          </div>
-                        </div>
+                        <Image
+                          className="w-[22px] h-[18px]"
+                          width={22}
+                          height={18}
+                          alt=""
+                          src="/Vector-11.svg"
+                        />
+                        <span className="text-sm font-semibold">
+                          Mark as shipped
+                        </span>
                       </button>
                     </>
                   )}
