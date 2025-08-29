@@ -81,7 +81,7 @@ export async function GET(request: Request) {
       .from('orders')
       .select(`
         *,
-        product:products!product_id (
+        product:products!inner(
           id,
           title,
           description,
@@ -89,14 +89,14 @@ export async function GET(request: Request) {
           price,
           seller_id
         ),
-        seller:users!seller_id (
+        seller:users!inner(
           id,
           farcaster_id,
           farcaster_username,
           display_name,
           avatar_url
         ),
-        buyer:users!buyer_id (
+        buyer:users!inner(
           id,
           farcaster_id,
           farcaster_username,
@@ -105,7 +105,8 @@ export async function GET(request: Request) {
         )
       `)
       .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .throwOnError();
 
     if (error) {
       console.error('Error fetching orders:', error);
