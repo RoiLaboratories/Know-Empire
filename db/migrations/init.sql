@@ -7,6 +7,7 @@ create table public.users (
     avatar_url text,
     bio text,
     is_seller boolean default false,
+    is_buyer boolean default false,
     seller_handle text unique,
     seller_category text,
     seller_email text,
@@ -14,6 +15,9 @@ create table public.users (
     seller_description text,
     seller_rating numeric(3,2),
     seller_total_sales integer default 0,
+    buyer_email text,
+    buyer_phone text,
+    buyer_shipping_address text,
     created_at timestamp with time zone default timezone('utc'::text, now()) not null,
     updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
