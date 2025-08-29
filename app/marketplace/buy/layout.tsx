@@ -1,19 +1,19 @@
-"use client";
-import Header from "../../../components/layout/Header";
+// "use client";
+// import Header from "../../../components/layout/Header";
 
-function BuyFormLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <section className="flex flex-col items-center min-h-screen pt-3 px-3">
-      <div className="w-full max-w-lg flex flex-col flex-1">
-        <Header />
+// function BuyFormLayout({ children }: { children: React.ReactNode }) {
+//   return (
+//     <section className="flex flex-col items-center min-h-screen pt-3 px-3">
+//       <div className="w-full max-w-lg flex flex-col flex-1">
+//         <Header />
 
-        {/*form container */}
-        <div className="bg-white rounded-t-xl pt-5 flex flex-col gap-y-3 pb-3 px-3">
-          {children}
-        </div>
-      </div>
-    </section>
-  );
-}
+//         {/*form container */}
+//         <div className="bg-white rounded-t-xl pt-5 flex flex-col gap-y-3 pb-3 px-3">
+//           {children}
+//         </div>
+//       </div>
+//     </section>
+//   );
+// }
 
-export default BuyFormLayout;
+// export default BuyFormLayout;
