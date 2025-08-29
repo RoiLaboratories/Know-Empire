@@ -37,10 +37,14 @@ function Header() {
         const response = await fetch(`/api/seller?fid=${fid}`);
         if (response.ok) {
           const data = await response.json();
-          setIsSellerAccount(!!data);
+          const isSeller = !!data;
+          setIsSellerAccount(isSeller);
+          
+          // Store seller status in localStorage
+          localStorage.setItem('is_seller', JSON.stringify(isSeller));
           
           // Only update routes if user is a seller
-          if (data) {
+          if (isSeller) {
             setRoutes([
               { title: "Buy Products", icon: ICON.BUY, path: "/marketplace" },
               { title: "List Product", icon: ICON.SELL, path: "/list_product" }
@@ -111,11 +115,13 @@ function Header() {
             className="size-[33px] rounded-full bg-gray-300 relative"
             onClick={(e) => {
               e.preventDefault();
-              // Store current user data in localStorage before navigation
+              // Store all necessary data in localStorage
               if (user) {
                 localStorage.setItem('farcaster_user', JSON.stringify(user));
+                localStorage.setItem('is_seller', JSON.stringify(isSellerAccount));
+                // Use router.push instead of window.location for client-side navigation
+                window.location.replace('/profile');
               }
-              window.location.href = '/profile';
             }}
           >
             <Image

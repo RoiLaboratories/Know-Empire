@@ -61,8 +61,13 @@ function Profile() {
       if (!context?.user) {
         console.log('No minikit context user found');
         const storedUser = localStorage.getItem("farcaster_user");
+        const storedSellerStatus = localStorage.getItem("is_seller");
+        
         if (storedUser) {
           setUser(JSON.parse(storedUser));
+          if (storedSellerStatus) {
+            setSellerInfo({ is_seller: JSON.parse(storedSellerStatus) });
+          }
         } else if (!isLoading) {
           // Only redirect if we're sure the context is done loading
           router.push("/onboarding");
@@ -102,15 +107,15 @@ function Profile() {
   useEffect(() => {
     const loadSellerInfo = async () => {
       if (user?.fid) {
-        // Only check for seller info in Supabase
-        const { data, error } = await supabase
-          .from("sellers")
-          .select("*")
-          .eq("fid", user.fid)
-          .single();
-
-        if (!error) {
-          setSellerInfo(data);
+        try {
+          // Check seller status from the users table
+          const response = await fetch(`/api/seller?fid=${user.fid}`);
+          if (response.ok) {
+            const data = await response.json();
+            setSellerInfo(data ? { is_seller: true, ...data } : null);
+          }
+        } catch (error) {
+          console.error('Error loading seller info:', error);
         }
       }
       setIsLoading(false);

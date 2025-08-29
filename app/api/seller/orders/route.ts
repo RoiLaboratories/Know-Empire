@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     const { data: products, error: productsError } = await supabaseAdmin
       .from('products')
       .select('id')
-      .eq('seller_fid', fid);
+      .eq('seller_id', seller.id);  // Use seller.id instead of fid
 
     if (productsError) {
       console.error('Error fetching seller products:', productsError);
