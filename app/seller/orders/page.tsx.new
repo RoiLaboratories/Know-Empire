@@ -209,35 +209,35 @@ const SellerOrderManagement: NextPage = () => {
   );
 
   return (
-    <section className="flex flex-col items-center min-h-screen pt-3 px-3 bg-white">
-      <div className="w-full max-w-lg flex flex-col flex-1">
-        {refreshing && (
-          <div className="fixed top-0 left-0 right-0 z-50 flex justify-center">
-            <div className="bg-primary text-white text-sm py-1 px-4 rounded-b-lg">
-              Refreshing...
-            </div>
+    <div className="flex flex-col min-h-screen bg-white">
+      {refreshing && (
+        <div className="fixed top-0 left-0 right-0 z-50 flex justify-center">
+          <div className="bg-primary text-white text-sm py-1 px-4 rounded-b-lg">
+            Refreshing...
           </div>
-        )}
-        
-        <div className="flex flex-col flex-1 bg-white">
-          {/* Header */}
-          <div className="sticky top-0 z-10 bg-white space-y-3 pb-3">
-            <div className="flex items-center justify-between">
+        </div>
+      )}
+      <section className="flex flex-col items-center min-h-screen pb-3 bg-white">
+        <div className="w-[90%] max-w-lg flex flex-col flex-1 gap-y-1">
+          <section className="sticky top-0 space-y-3 py-3 bg-white">
+            <div className="flex flex-row justify-between items-center gap-2">
               <BackButton />
-              <h1 className="text-xl font-bold text-center flex-1">Order Management</h1>
-              <div className="w-[30px]"></div>
+              <div className="flex flex-col items-center justify-center gap-y-1">
+                <h1 className="text-xl font-bold">Order Management</h1>
+              </div>
+              <div className="w-[30px]" /> {/* Spacer for alignment */}
             </div>
 
-            <div className="mt-4">
+            <div className="mt-6">
               <input
                 type="text"
                 placeholder="Search orders by title or ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full p-2.5 rounded-lg border border-[#989898] text-sm outline-none"
+                className="w-full p-2 border rounded-lg"
               />
             </div>
-          </div>
+          </section>
 
           {loading ? (
             <div className="text-center py-8">Loading orders...</div>
@@ -354,8 +354,8 @@ const SellerOrderManagement: NextPage = () => {
             </div>
           )}
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 };
 

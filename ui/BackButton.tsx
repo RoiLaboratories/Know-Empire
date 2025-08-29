@@ -11,13 +11,18 @@ function BackButton({ className = "text-gray" }: BackButtonProps) {
   const router = useRouter();
 
   return (
-    <button>
+    <button 
+      onClick={(e) => {
+        e.preventDefault();
+        router.back();
+      }}
+      className="cursor-pointer"
+    >
       <Icon
         icon={ICON.ARROW_BACK}
         width={25}
         height={25}
-        className={`${className} cursor-pointer`}
-        onClick={() => router.back()}
+        className={className}
       />
     </button>
   );
