@@ -28,6 +28,18 @@ function Orders() {
   const router = useRouter();
   const { context } = useMiniKit();
 
+  // Redirect sellers with no orders to the empty state page
+  useEffect(() => {
+    if (metadata?.isSeller && (!orders || orders.length === 0)) {
+      router.push('/seller/empty-orders');
+    }
+  }, [metadata?.isSeller, orders, router]);
+
+  // Show loading state while potentially redirecting
+  if (metadata?.isSeller && (!orders || orders.length === 0)) {
+    return null;
+  }
+
   return (
     <section className="flex flex-col items-center min-h-screen pb-3">
       <div className="w-9/10 max-w-lg flex flex-col flex-1 gap-y-1">
@@ -41,8 +53,8 @@ function Orders() {
           {orders.length !== 0 && <Search />}
         </div>
 
-        {/*main content*/}
-        {!metadata?.isEmpty && orders.length > 0 ? (
+        {/*main content - only for buyers or sellers with orders*/}
+        {orders.length > 0 ? (
           <ul className="grid grid-cols-1 gap-5 mt-2.5">
             {orders.map((order, i) => (
               <OrdersCard
@@ -60,23 +72,13 @@ function Orders() {
           <div className="flex flex-col gap-10 items-center justify-between">
             <Image alt="empty orders" src={Empty} className="" />
 
-            {/*sellers */}
-            {metadata?.isSeller ? (
-              <p className="text-xs font-medium text-center">
-                You have no pending
-                <span className="text-primary font-bold"> orders</span>, your
-                orders will appear
-                <span className="text-primary font-bold"> here </span>
-                when customers make purchases
-              </p>
-            ) : (
-              <p className="text-xs font-medium text-center">
-                You have no
-                <span className="text-primary font-bold"> orders </span>
-                placed yet, place an order to see your order list
-                <span className="text-primary font-bold"> here </span>
-              </p>
-            )}
+            {/* Only show buyer empty state here since sellers are redirected */}
+            <p className="text-xs font-medium text-center">
+              You have no
+              <span className="text-primary font-bold"> orders </span>
+              placed yet, place an order to see your order list
+              <span className="text-primary font-bold"> here </span>
+            </p>
 
             <Button
               className="text-white rounded bg-primary flex justify-center gap-x-1 items-center text-xs font-bold py-2 px-5 drop-shadow-dark btn w-fit"
