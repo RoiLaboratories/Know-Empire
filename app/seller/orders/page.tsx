@@ -49,7 +49,7 @@ const SellerOrderManagement: NextPage = () => {
       }
 
       setLoading(true);
-      const response = await fetch(`/api/seller/orders?fid=${context.user.fid}`);
+      const response = await fetch(`/api/seller/orders?fid=${context.user.fid}&select=id,status,tracking_number,total_amount,escrow_id,isPaid,product:products(*)`);
       if (!response.ok) throw new Error('Failed to fetch orders');
       const data = await response.json();
       
@@ -123,12 +123,13 @@ const SellerOrderManagement: NextPage = () => {
         return;
       }
 
-      const response = await fetch(`/api/seller/orders/${orderId}/tracking?select=*,product(*)`, {
+      const response = await fetch(`/api/seller/orders/${orderId}/tracking`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           tracking_number: trackingNumber,
-          fid: context.user.fid 
+          fid: context.user.fid,
+          select: 'id,status,tracking_number,total_amount,escrow_id,isPaid,product:products(*)'
         })
       });
 
@@ -168,13 +169,14 @@ const SellerOrderManagement: NextPage = () => {
       const trackingId = generateTrackingId();
 
       // Update status in the database and fetch updated order with product data
-      const response = await fetch(`/api/seller/orders/${orderId}/status?select=*,product(*)`, {
+      const response = await fetch(`/api/seller/orders/${orderId}/status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           status: 'shipped',
           tracking_number: trackingId,
-          fid: context.user.fid 
+          fid: context.user.fid,
+          select: 'id,status,tracking_number,total_amount,escrow_id,isPaid,product:products(*)'
         })
       });
 
@@ -227,12 +229,13 @@ const SellerOrderManagement: NextPage = () => {
       }
 
       // Update status in the database and fetch updated order with product data
-      const response = await fetch(`/api/seller/orders/${orderId}/status?select=*,product(*)`, {
+      const response = await fetch(`/api/seller/orders/${orderId}/status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           status: 'delivered',
-          fid: context.user.fid 
+          fid: context.user.fid,
+          select: 'id,status,tracking_number,total_amount,escrow_id,isPaid,product:products(*)'
         })
       });
 
