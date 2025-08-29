@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
         ogTitle: process.env.NEXT_PUBLIC_APP_OG_TITLE,
         ogDescription: process.env.NEXT_PUBLIC_APP_OG_DESCRIPTION,
         ogImageUrl: `${URL}${process.env.NEXT_PUBLIC_APP_OG_IMAGE}`,
-        noindex: 'true',
+        noindex: 'false',
       }),
     }),
     {
