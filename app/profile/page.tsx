@@ -153,8 +153,8 @@ function Profile() {
     return <div>Loading...</div>;
   }
 
-  if (!user) {
-    router.push("/");
+  if (!user && !isLoading) {
+    router.push("/onboarding");
     return null;
   }
 
