@@ -12,6 +12,7 @@ import { useAccount } from 'wagmi';
 import { generateTrackingId } from '@/utils/tracking';
 import Button from '@/ui/Button';
 import BackButton from "@/ui/BackButton";
+import CopyIcon from '@/assets/images/copy.png';
 
 interface Order {
   id: string;
@@ -19,6 +20,7 @@ interface Order {
   tracking_number: string | null;
   total_amount: number;
   escrow_id: string;
+  isPaid: boolean;
   product: {
     id: string;
     title: string;
@@ -146,16 +148,11 @@ const SellerOrderManagement: NextPage = () => {
     }
   };
 
-  // Mark as shipped
-  const markAsShipped = async (orderId: string, escrowId: string) => {
+  // Mark as shipped (first stage - no contract interaction)
+  const markAsShipped = async (orderId: string) => {
     try {
       if (!context?.user?.fid) {
         toast.error('Please connect with Farcaster first');
-        return;
-      }
-
-      if (!isConnected || !address) {
-        toast.error('Please connect your wallet first');
         return;
       }
 
@@ -164,16 +161,7 @@ const SellerOrderManagement: NextPage = () => {
       // Generate a unique tracking ID
       const trackingId = generateTrackingId();
 
-      // First confirm delivery in the smart contract
-      try {
-        await confirmDeliveryBySeller(escrowId);
-      } catch (error: any) {
-        console.error('Contract error:', error);
-        toast.error(error.message || 'Failed to update escrow state');
-        return;
-      }
-
-      // Update both tracking number and status in the database
+      // Update status in the database
       const response = await fetch(`/api/seller/orders/${orderId}/status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -202,7 +190,65 @@ const SellerOrderManagement: NextPage = () => {
     }
   };
 
+  // Mark as delivered (second stage - includes contract interaction)
+  const markAsDelivered = async (orderId: string, escrowId: string) => {
+    try {
+      if (!context?.user?.fid) {
+        toast.error('Please connect with Farcaster first');
+        return;
+      }
+
+      if (!isConnected || !address) {
+        toast.error('Please connect your wallet first');
+        return;
+      }
+
+      setLoading(true);
+
+      // Confirm delivery in the smart contract
+      try {
+        await confirmDeliveryBySeller(escrowId);
+      } catch (error: any) {
+        console.error('Contract error:', error);
+        toast.error(error.message || 'Failed to update escrow state');
+        return;
+      }
+
+      // Update status in the database
+      const response = await fetch(`/api/seller/orders/${orderId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          status: 'delivered',
+          fid: context.user.fid 
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to update order status');
+
+      // Update local state
+      setOrders(orders.map(order => 
+        order.id === orderId 
+          ? { ...order, status: 'delivered' as const }
+          : order
+      ));
+
+      toast.success('Order marked as delivered');
+    } catch (error) {
+      console.error('Error marking as delivered:', error);
+      toast.error('Failed to mark order as delivered');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Filter orders based on search term
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => toast.success('Tracking ID copied to clipboard'))
+      .catch(() => toast.error('Failed to copy tracking ID'));
+  };
+
   const filteredOrders = orders.filter(order => 
     order.product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.id.toLowerCase().includes(searchTerm.toLowerCase())
@@ -222,10 +268,11 @@ const SellerOrderManagement: NextPage = () => {
         <div className="flex flex-col">
           {/* Header */}
           <div className="sticky top-0 z-10 bg-white space-y-3 pb-3">
-            <div className="flex items-center justify-between mb-6">
-              <BackButton />
-              <h1 className="text-xl font-bold text-center flex-1">Order Management</h1>
-              <div className="w-[30px]"></div>
+            <div className="space-y-4">
+              <div>
+                <BackButton />
+              </div>
+              <h1 className="text-xl font-bold">Order Management</h1>
             </div>
 
             <div className="mt-4">
@@ -247,97 +294,137 @@ const SellerOrderManagement: NextPage = () => {
             <div className="w-full space-y-4">
               {filteredOrders.map((order) => (
                 <div key={order.id} className="w-full rounded-lg bg-white border border-[#989898] p-4 flex flex-col gap-4">
-                  <div className="flex flex-col gap-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-11 relative">
-                          <Image
-                            className="w-full h-full object-cover rounded"
-                            width={40}
-                            height={44}
-                            alt={order.product.title}
-                            src={order.product.photos[0]}
-                          />
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-11 relative">
+                        <Image
+                          className="w-full h-full object-cover rounded"
+                          width={40}
+                          height={44}
+                          alt={order.product.title}
+                          src={order.product.photos[0]}
+                        />
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <div className="font-semibold text-sm text-[#414141]">
+                          {order.product.title}
                         </div>
-                        <div className="flex flex-col gap-0.5">
-                          <div className="font-semibold text-sm text-[#414141]">
-                            {order.product.title}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            ID: {order.id.slice(0, 8)}...
-                          </div>
-                          <div className="text-sm font-medium text-[#16a34a]">
-                            {formatCurrency(order.total_amount)}
-                          </div>
+                        <div className="text-xs text-gray-500">
+                          ID: {order.id.slice(0, 8)}...
+                        </div>
+                        <div className="text-sm font-medium text-[#16a34a]">
+                          {formatCurrency(order.total_amount)}
                         </div>
                       </div>
-                      <div className="absolute top-[0px] left-[0px] w-full h-11 text-[10px]">
-                        <div className="flex justify-end">
-                          <div className={`px-3 py-1 rounded-lg text-xs font-medium capitalize flex items-center gap-1.5 ${
-                            order.status === 'pending' ? 'bg-[#fef9c3] text-[#925f21]' :
-                            order.status === 'shipped' ? 'bg-[#dbeafe] text-[#1e43be]' :
-                            'bg-[#dcfce7] text-[#166534]'
-                          }`}>
-                            <Image
-                              width={14}
-                              height={15}
-                              alt=""
-                              src={
-                                order.status === 'pending' ? '/Vector.svg' :
-                                order.status === 'shipped' ? '/Vector-2.svg' :
-                                '/check.svg'
-                              }
-                              className="w-3.5 h-[15px]"
-                            />
-                            <span>{order.status}</span>
-                          </div>
-                        </div>
-                        <div className="absolute top-[0px] left-[0px] w-full flex flex-row items-start justify-start gap-[5px] h-full text-sm text-[#414141]">
-                          <Image
-                            className="h-11 w-10 relative object-cover"
-                            width={40}
-                            height={44}
-                            alt={order.product.title}
-                            src={order.product.photos[0]}
-                          />
-                          <div className="w-[140px] relative font-semibold inline-block shrink-0">
-                            {order.product.title}
-                          </div>
-                        </div>
-                      </div>
+                    </div>
+                    <div className={`px-3 py-1 rounded-lg text-xs font-medium capitalize flex items-center gap-1.5 ${
+                      order.status === 'pending' ? 'bg-[#fef9c3] text-[#925f21]' :
+                      order.status === 'shipped' ? 'bg-[#dbeafe] text-[#1e43be]' :
+                      'bg-[#dcfce7] text-[#166534]'
+                    }`}>
+                      <Image
+                        width={14}
+                        height={15}
+                        alt=""
+                        src={
+                          order.status === 'pending' ? '/Vector.svg' :
+                          order.status === 'shipped' ? '/Vector-2.svg' :
+                          order.status === 'delivered' ? '/check.svg' :
+                          '/Vector.svg'
+                        }
+                        className="w-3.5 h-[15px]"
+                      />
+                      <span>{order.status}</span>
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 w-full text-[#6b88b5]">
                     <div className="text-sm">Tracking ID:</div>
                     <div className="w-full rounded-lg bg-[#f1f1f1] border border-[#989898] flex items-center p-2.5">
                       <input
-                        className="w-full bg-transparent border-none outline-none text-sm text-[#989898]"
+                        className="flex-1 bg-transparent border-none outline-none text-sm text-[#989898]"
                         placeholder="Enter tracking number"
                         type="text"
                         value={order.tracking_number || ''}
                         onChange={(e) => updateTrackingNumber(order.id, e.target.value)}
+                        readOnly={order.status !== 'pending'}
                       />
+                      {order.tracking_number && order.status !== 'pending' && (
+                        <button
+                          onClick={() => copyToClipboard(order.tracking_number!)}
+                          className="ml-2 p-1 hover:opacity-80 transition-opacity"
+                        >
+                          <Image
+                            src={CopyIcon}
+                            alt="Copy"
+                            width={16}
+                            height={16}
+                          />
+                        </button>
+                      )}
                     </div>
                   </div>
-                  {order.status === 'pending' && (
+                  {(order.status === 'pending' || order.status === 'shipped' || order.status === 'delivered') && (
                     <>
                       <div className="w-full h-px bg-[#989898] my-2" />
-                      <button 
-                        className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
-                        onClick={() => markAsShipped(order.id, order.escrow_id)}
-                        disabled={loading || !isConnected || !context?.user?.fid}
-                      >
-                        <Image
-                          className="w-[22px] h-[18px]"
-                          width={22}
-                          height={18}
-                          alt=""
-                          src="/Vector-11.svg"
-                        />
-                        <span className="text-sm font-semibold">
-                          Mark as shipped
-                        </span>
-                      </button>
+                      {order.status === 'pending' && (
+                        <button 
+                          className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => markAsShipped(order.id)}
+                          disabled={loading || !context?.user?.fid}
+                        >
+                          <Image
+                            className="w-[22px] h-[18px]"
+                            width={22}
+                            height={18}
+                            alt=""
+                            src="/Vector-11.svg"
+                          />
+                          <span className="text-sm font-semibold">
+                            Mark as shipped
+                          </span>
+                        </button>
+                      )}
+                      
+                      {order.status === 'shipped' && (
+                        <button 
+                          className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => markAsDelivered(order.id, order.escrow_id)}
+                          disabled={loading || !isConnected || !context?.user?.fid}
+                        >
+                          <Image
+                            className="w-[22px] h-[18px]"
+                            width={22}
+                            height={18}
+                            alt=""
+                            src="/Vector-11.svg"
+                          />
+                          <span className="text-sm font-semibold">
+                            Mark as delivered
+                          </span>
+                        </button>
+                      )}
+
+                      {order.status === 'delivered' && (
+                        <>
+                          <button 
+                            className="w-full flex items-center justify-center gap-2.5 bg-[#ef4444] text-white rounded-lg py-2.5 px-5 mb-2"
+                            onClick={() => router.push(`/raise-dispute?orderId=${order.id}`)}
+                          >
+                            <span className="text-sm font-semibold">
+                              Raise a dispute
+                            </span>
+                          </button>
+                          {!order.isPaid && (
+                            <button 
+                              className="w-full flex items-center justify-center gap-2.5 bg-[#22c55e] text-white rounded-lg py-2.5 px-5"
+                            >
+                              <span className="text-sm font-semibold">
+                                Mark as paid
+                              </span>
+                            </button>
+                          )}
+                        </>
+                      )}
                     </>
                   )}
                 </div>
