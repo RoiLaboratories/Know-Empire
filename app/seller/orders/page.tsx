@@ -137,10 +137,13 @@ const SellerOrderManagement: NextPage = () => {
         throw new Error(error.message || 'Failed to update tracking number');
       }
       
-      // Update local state
+      // Get the updated order data from response
+      const updatedOrder = await response.json();
+      
+      // Update local state with the full returned order data
       setOrders(orders.map(order => 
         order.id === orderId 
-          ? { ...order, tracking_number: trackingNumber }
+          ? updatedOrder
           : order
       ));
 
@@ -180,10 +183,13 @@ const SellerOrderManagement: NextPage = () => {
         throw new Error(error.message || 'Failed to update order status');
       }
 
-      // Update local state
+      // Get the updated order data from response
+      const updatedOrder = await response.json();
+      
+      // Update local state with the full returned order data
       setOrders(orders.map(order => 
         order.id === orderId 
-          ? { ...order, status: 'shipped' as const, tracking_number: trackingId }
+          ? updatedOrder
           : order
       ));
 
@@ -235,10 +241,13 @@ const SellerOrderManagement: NextPage = () => {
         throw new Error(error.message || 'Failed to update order status');
       }
 
-      // Update local state
+      // Get the updated order data from response
+      const updatedOrder = await response.json();
+      
+      // Update local state with the full returned order data
       setOrders(orders.map(order => 
         order.id === orderId 
-          ? { ...order, status: 'delivered' as const }
+          ? updatedOrder
           : order
       ));
 
