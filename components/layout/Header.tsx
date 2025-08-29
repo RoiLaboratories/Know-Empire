@@ -113,21 +113,10 @@ function Header() {
           <Link
             href="/profile"
             className="size-[33px] rounded-full bg-gray-300 relative"
-            onClick={(e) => {
-              e.preventDefault();
-              // Store all necessary data in localStorage
-              if (user) {
-                localStorage.setItem('farcaster_user', JSON.stringify(user));
-                localStorage.setItem('is_seller', JSON.stringify(isSellerAccount));
-                // Use router.push instead of window.location for client-side navigation
-                window.location.replace('/profile');
-              }
-            }}
           >
             <Image
               loading="lazy"
               fill
-              priority={true}
               alt={user?.username || "User Profile"}
               src={user?.pfpUrl || User}
               className="rounded-full object-cover"
