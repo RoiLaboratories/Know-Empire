@@ -7,7 +7,8 @@ export async function GET(request: NextRequest) {
     accountAssociation: {
       header: process.env.FARCASTER_HEADER,
       payload: process.env.FARCASTER_PAYLOAD,
-      signature: process.env.FARCASTER_SIGNATURE,
+      signature: process.env.FARCASTER_SIGNATURE
+    },
     version: "1",
     name: "KnowEmpire",
     description: "A marketplace for physical goods powered by Farcaster",
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
     input: {
       text: "Search products..."
     },
-    noindex: false  // Add this to make sure the frame is discoverable
+    noindex: false
   };
 
   return new Response(JSON.stringify(data), {
