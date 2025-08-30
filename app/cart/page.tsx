@@ -76,20 +76,8 @@ function Cart() {
                     <p>Sub total</p>
                     <p className="text-[#5b5b5b]">{formatCurrency(total)}</p>
                   </li>
-                  <li className="flex justify-between items-center">
-                    <p>Taxes & Fees</p>
-                    <p className="text-[#5b5b5b]">
-                      {formatCurrency(taxesAndFees)}
-                    </p>
-                  </li>
-                  <li className="flex justify-between items-center">
-                    <p>Delivery Fee</p>
-                    <p className="text-[#5b5b5b]">
-                      {formatCurrency(deliveryFee)}
-                    </p>
-                  </li>
                   <li className="flex justify-between font-bold items-center">
-                    <p>Taxes and Fees</p>
+                    <p>Total</p>
                     <p className="text-[#5b5b5b]">
                       {formatCurrency(grandTotal)}
                     </p>
