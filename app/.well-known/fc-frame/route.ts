@@ -42,4 +42,4 @@ export async function GET(request: NextRequest) {
       'access-control-allow-origin': '*'
     }
   });
-}￼Enter
+}
