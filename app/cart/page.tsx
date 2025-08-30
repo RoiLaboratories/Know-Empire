@@ -23,11 +23,9 @@ function Cart() {
     costBreakDown: { total },
   } = useCart();
   const modalContext = useContext(ModalContext);
-  const taxesAndFees = 10;
-  const deliveryFee = 5;
   const [selectedProduct, setSelectedProduct] = useState<ProductWithSeller | null>(null);
 
-  const grandTotal = total + taxesAndFees + deliveryFee;
+  const grandTotal = total;
 
   return (
     <Modal>
