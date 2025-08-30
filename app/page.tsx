@@ -11,7 +11,7 @@ export default function Page() {
   useEffect(() => {
     setFrameReady();
 
-    // If we have user context, store it and redirect to marketplace
+    // If we have user context, store it
     if (context?.user) {
       const userData = {
         fid: context.user.fid,
@@ -23,8 +23,11 @@ export default function Page() {
       // Store user data in localStorage for use across the app
       localStorage.setItem('farcaster_user', JSON.stringify(userData));
       
-      // Redirect to marketplace since user is authenticated
-      router.push("/marketplace");
+      // Only redirect to marketplace if we're exactly on the root page
+      const currentPath = window.location.pathname;
+      if (currentPath === '/' || currentPath === '') {
+        router.push("/marketplace");
+      }
     } else {
       // If no user context, redirect to onboarding after splash
       const timer = setTimeout(() => {

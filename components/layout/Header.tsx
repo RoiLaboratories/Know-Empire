@@ -28,24 +28,44 @@ function Header() {
   const { context } = useMiniKit();
   const [user, setUser] = useState<FarcasterUser | null>(null);
   const [isSellerAccount, setIsSellerAccount] = useState(false);
+  const [isBuyerAccount, setIsBuyerAccount] = useState(false);
   const [routes, setRoutes] = useState(defaultRoutes);
 
-  // Check seller status
+  // Check seller and buyer status
   useEffect(() => {
-    const checkSellerStatus = async (fid: number) => {
+    const checkAccountStatus = async (fid: number) => {
       try {
-        const response = await fetch(`/api/seller?fid=${fid}`);
-        if (response.ok) {
-          const data = await response.json();
-          setIsSellerAccount(!!data);
-          
-          // Only update routes if user is a seller
-          if (data) {
-            setRoutes([
-              { title: "Buy Products", icon: ICON.BUY, path: "/marketplace" },
-              { title: "List Product", icon: ICON.SELL, path: "/list_product" }
-            ]);
-          }
+        const [sellerResponse, buyerResponse] = await Promise.all([
+          fetch(`/api/seller?fid=${fid}`),
+          fetch(`/api/buyer?fid=${fid}`)
+        ]);
+
+        const isSeller = sellerResponse.ok && !!(await sellerResponse.json());
+        const isBuyer = buyerResponse.ok && !!(await buyerResponse.json());
+
+        setIsSellerAccount(isSeller);
+        setIsBuyerAccount(isBuyer);
+        
+        // Store account status in localStorage
+        localStorage.setItem('is_seller', JSON.stringify(isSeller));
+        localStorage.setItem('is_buyer', JSON.stringify(isBuyer));
+        
+        // Update routes based on account status
+        if (isSeller) {
+          setRoutes([
+            { title: "Buy Products", icon: ICON.BUY, path: "/marketplace" },
+            { title: "List Product", icon: ICON.SELL, path: "/list_product" }
+          ]);
+        } else if (isBuyer) {
+          setRoutes([
+            { title: "Buy Products", icon: ICON.BUY, path: "/marketplace" },
+            { title: "Sell Products", icon: ICON.SELL, path: "/marketplace/sell" }
+          ]);
+        } else {
+          setRoutes([
+            { title: "Buy Products", icon: ICON.BUY, path: "/marketplace/buy" },
+            { title: "Sell Products", icon: ICON.SELL, path: "/marketplace/sell" }
+          ]);
         }
       } catch (error) {
         console.error('Error checking seller status:', error);
@@ -61,14 +81,14 @@ function Header() {
         pfpUrl: context.user.pfpUrl || ""
       };
       setUser(userData);
-      checkSellerStatus(context.user.fid);
+      checkAccountStatus(context.user.fid);
     } else {
       const storedUser = localStorage.getItem('farcaster_user');
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
         if (parsedUser.fid) {
-          checkSellerStatus(parsedUser.fid);
+          checkAccountStatus(parsedUser.fid);
         }
       }
     }
@@ -107,7 +127,7 @@ function Header() {
             </span>
           </span>
           <Link
-            href={"/profile"}
+            href="/profile"
             className="size-[33px] rounded-full bg-gray-300 relative"
           >
             <Image

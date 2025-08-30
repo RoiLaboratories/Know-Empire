@@ -42,6 +42,7 @@ export async function POST(request: Request) {
       email,
       location,
       description,
+      walletAddress,
     } = await request.json()
 
     if (!fid) {
@@ -70,6 +71,7 @@ export async function POST(request: Request) {
           is_seller: true,
           display_name: displayName,
           avatar_url: pfpUrl,
+          wallet_address: walletAddress, // Add wallet address
           updated_at: new Date().toISOString()
         })
         .eq('farcaster_id', fid)
@@ -95,6 +97,7 @@ export async function POST(request: Request) {
           seller_location: location,
           seller_description: description,
           is_seller: true,
+          wallet_address: walletAddress, // Add wallet address
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })

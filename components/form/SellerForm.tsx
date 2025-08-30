@@ -1,25 +1,50 @@
 "use client";
 import { useFormik } from "formik";
 import { useContext, useEffect, useState } from "react";
+import { Icon } from "@iconify/react";
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { SELLER_SCHEMA } from "../../schema/seller.schema";
+import { ICON } from "../../utils/icon-export";
 import FormInput from "./FormInput";
-import { supabase } from "../../utils/supabase";
+import InputField from "./InputField";
+import InputTextArea from "./InputTextArea";
+import Button from "../../ui/Button";
+import Modal, { ModalContext } from "../../context/ModalContext";
+import LoadingCard from "../popups/loading-card";
+import SellerCongratsPopup from "../popups/seller-congrats-popup";
+
+interface MiniKitAccount {
+  address: string;
+  chain: string;
+}
+
+interface MiniKitUser {
+  fid: number;
+  username?: string;
+  displayName?: string;
+  pfpUrl?: string;
+  verified_accounts?: MiniKitAccount[];
+}
+
+interface VerifiedAccount {
+  address: string;
+}
+
+interface FarcasterUser {
+  fid: number;
+  username?: string;
+  displayName?: string;
+  pfpUrl?: string;
+  verifiedAccounts?: VerifiedAccount[];
+}
 
 interface SellerInput {
   category: string;
   email: string;
   location: string;
   description: string;
+  walletAddress: string;
 }
-import InputField from "./InputField";
-import { useMiniKit } from '@coinbase/onchainkit/minikit';
-import Button from "../../ui/Button";
-import { Icon } from "@iconify/react";
-import { ICON } from "../../utils/icon-export";
-import Modal, { ModalContext } from "../../context/ModalContext";
-import LoadingCard from "../popups/loading-card";
-import SellerCongratsPopup from "../popups/seller-congrats-popup";
-import InputTextArea from "./InputTextArea";
 
 function SellerForm() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -29,15 +54,23 @@ function SellerForm() {
 
 
   const { context } = useMiniKit();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<FarcasterUser | null>(null);
 
   useEffect(() => {
     if (context?.user) {
-      setUser(context.user);
+      const contextUser = context.user as MiniKitUser;
+      const farcasterUser: FarcasterUser = {
+        fid: contextUser.fid,
+        username: contextUser.username,
+        displayName: contextUser.displayName,
+        pfpUrl: contextUser.pfpUrl
+      };
+      setUser(farcasterUser);
     } else {
       const storedUser = localStorage.getItem('farcaster_user');
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser) as FarcasterUser;
+        setUser(parsedUser);
       }
     }
   }, [context]);
@@ -51,6 +84,7 @@ function SellerForm() {
       email: "",
       location: "",
       description: "",
+      walletAddress: "",
     },
     onSubmit: async (values) => {
       if (!formik.isValid) {
@@ -75,7 +109,8 @@ function SellerForm() {
             fid: user.fid,
             username: user.username,
             displayName: user.displayName,
-            pfpUrl: user.pfpUrl
+            pfpUrl: user.pfpUrl,
+            walletAddress: values.walletAddress
           }),
         });
 
@@ -183,6 +218,20 @@ function SellerForm() {
               formik.errors.description && formik.touched.description
             )}
             errorMessage={formik.errors.description}
+          />
+
+          <InputField
+            config={{
+              placeholder: "Your Farcaster wallet address",
+              type: "text",
+              name: "walletAddress",
+              value: formik.values.walletAddress,
+              onChange: formik.handleChange,
+              onBlur: formik.handleBlur,
+            }}
+            label="Payment Address*"
+            error={Boolean(formik.errors.walletAddress && formik.touched.walletAddress)}
+            errorMessage={formik.errors.walletAddress}
           />
 
           <span className="flex gap-2 mt-1 items-center">

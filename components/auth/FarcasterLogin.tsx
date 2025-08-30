@@ -73,8 +73,35 @@ export default function FarcasterLogin() {
         const result = await response.json();
         
         if (result.success) {
+          // Register user in our database
+          const registerResponse = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              fid: authData.fid,
+              username: result.user.username,
+              displayName: result.user.displayName,
+              pfpUrl: result.user.pfp
+            }),
+          });
+
+          if (!registerResponse.ok) {
+            throw new Error('Failed to register user');
+          }
+
           setIsAuthenticated(true);
           setUserData(result.user);
+          
+          // Store user data in localStorage
+          localStorage.setItem('farcaster_user', JSON.stringify({
+            fid: authData.fid,
+            username: result.user.username,
+            displayName: result.user.displayName,
+            pfpUrl: result.user.pfp
+          }));
+
           // Redirect to marketplace
           router.push('/marketplace');
         } else {

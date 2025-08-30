@@ -20,9 +20,7 @@ export default function CartSummaryPopup({ onCloseModal, setSelectedProduct }: C
   const [isLoading, setIsLoading] = useState(false);
   const modalContext = useContext(ModalContext);
   
-  const taxesAndFees = 10;
-  const deliveryFee = 5;
-  const grandTotal = total + taxesAndFees + deliveryFee;
+  const grandTotal = total;
 
   const handleNext = async () => {
     if (!cart.length) return;
@@ -117,14 +115,6 @@ export default function CartSummaryPopup({ onCloseModal, setSelectedProduct }: C
               <div className="flex justify-between">
                 <span className="text-gray-600">Subtotal</span>
                 <span className="font-medium">{formatCurrency(total)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Taxes & Fees</span>
-                <span className="font-medium">{formatCurrency(taxesAndFees)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Delivery Fee</span>
-                <span className="font-medium">{formatCurrency(deliveryFee)}</span>
               </div>
               <div className="flex justify-between font-bold pt-2 border-t border-dashed border-[#989898]">
                 <span>Total</span>

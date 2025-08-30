@@ -8,7 +8,7 @@ import { getStatusColor } from "../../utils/helpers";
 export interface OrdersCardProps {
   status: string;
   name: string;
-  img: StaticImageData;
+  img: StaticImageData | string;
   seller: string;
   price: string;
   id: string;
@@ -34,7 +34,9 @@ function OrdersCard({
             <Image
               alt={name}
               src={img}
-              placeholder="blur"
+              width={36}
+              height={40}
+              {...(typeof img !== 'string' && { placeholder: "blur" })}
               className="w-full h-full object-cover"
             />
           </div>

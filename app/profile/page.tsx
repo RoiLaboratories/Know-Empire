@@ -55,87 +55,60 @@ function Profile() {
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
 
-  // Get user data and connect Farcaster wallet
+  // Handle wallet connection and user initialization
   useEffect(() => {
-    const connectWallet = async () => {
-      try {
-        if (!context?.user) {
-          console.log('No minikit context user found');
-          const storedUser = localStorage.getItem("farcaster_user");
-          if (storedUser) {
-            setUser(JSON.parse(storedUser));
-          } else {
-            router.push("/onboarding");
-          }
-          return;
+    const initializeUserAndWallet = async () => {
+      if (!context?.user) {
+        console.log('No minikit context user found');
+        const storedUser = localStorage.getItem("farcaster_user");
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        } else {
+          router.push("/onboarding");
         }
+        return;
+      }
 
-        // Set user data
-        setUser({
-          fid: context.user.fid,
-          username: context.user.username || "",
-          displayName: context.user.displayName || "",
-          pfpUrl: context.user.pfpUrl || "",
-        });
+      // Set user data
+      setUser({
+        fid: context.user.fid,
+        username: context.user.username || "",
+        displayName: context.user.displayName || "",
+        pfpUrl: context.user.pfpUrl || "",
+      });
 
-        // Clear any previous errors
-        setWalletError(null);
-
-        // Check if already connected
-        if (isConnected && address) {
-          console.log('Wallet already connected:', address);
-          return;
-        }
-
-        // Verify we have the necessary components for connection
-        const verifiedWallet = context.user.verified_accounts?.[0]?.wallet_address;
+      // Handle wallet connection if needed
+      const verifiedWallet = context.user.verified_accounts?.[0]?.wallet_address;
+      if (verifiedWallet && !isConnected && connectors.length > 0) {
         const farcasterConnector = connectors.find(c => c.id === 'farcaster');
-
-        if (!verifiedWallet) {
-          setWalletError('No verified Farcaster wallet found');
-          return;
+        if (farcasterConnector) {
+          try {
+            await connect({ connector: farcasterConnector });
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to connect wallet';
+            console.error('Wallet connection error:', errorMessage);
+            setWalletError(errorMessage);
+          }
         }
-
-        if (!farcasterConnector) {
-          setWalletError('Farcaster connector not available');
-          return;
-        }
-
-        // Attempt connection
-        console.log('Starting wallet connection for:', verifiedWallet);
-        await connect({
-          connector: farcasterConnector
-        });
-
-        // Verify connection was successful
-        if (!address) {
-          throw new Error('Wallet connected but address not available');
-        }
-
-        console.log('Wallet connected successfully:', address);
-      } catch (error: any) {
-        console.error('Wallet connection error:', error);
-        setWalletError(error.message || 'Failed to connect wallet. Please try again.');
       }
     };
 
-    // Only attempt connection if we're not already connecting
     if (!isConnecting) {
-      connectWallet();
+      initializeUserAndWallet();
     }
-  }, [context, router, connectors, connect, isConnected]);
+  }, [context, router, connectors, connect, isConnected, isConnecting]);
 
   useEffect(() => {
     const loadSellerInfo = async () => {
       if (user?.fid) {
-        // Only check for seller info in Supabase
+        // Check seller status from the users table
         const { data, error } = await supabase
-          .from("sellers")
-          .select("*")
-          .eq("fid", user.fid)
+          .from('users')
+          .select('is_seller, seller_since, seller_category, seller_email, seller_location, seller_description')
+          .eq('farcaster_id', user.fid)
           .single();
 
-        if (!error) {
+        if (!error && data) {
           setSellerInfo(data);
         }
       }
@@ -180,8 +153,8 @@ function Profile() {
     return <div>Loading...</div>;
   }
 
-  if (!user) {
-    router.push("/");
+  if (!user && !isLoading && !localStorage.getItem('farcaster_user')) {
+    router.push("/onboarding");
     return null;
   }
 

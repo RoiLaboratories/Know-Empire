@@ -33,13 +33,22 @@ export async function GET(request: Request) {
       );
     }
 
+    // Check if seller has a wallet address
+    if (!product.seller.wallet_address) {
+      return NextResponse.json(
+        { error: 'Seller wallet address not found. The seller may need to update their profile.' },
+        { status: 400 }
+      );
+    }
+
     // Transform the data to match the frontend's expected format
     const transformedProduct = {
       ...product,
       seller: {
         username: product.seller.farcaster_username,
         rating: product.seller.rating,
-        review_count: product.seller.review_count
+        review_count: product.seller.review_count,
+        wallet_address: product.seller.wallet_address
       }
     };
 

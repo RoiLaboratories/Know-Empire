@@ -5,12 +5,23 @@ import { ICON } from "../../utils/icon-export";
 import { useContext, useState } from "react";
 import { sleep } from "../../utils/helpers";
 import Modal, { ModalContext } from "../../context/ModalContext";
+import { CartContext } from "../../providers/cart";
 import GenericPopup from "./generic-popup";
 import { useAccount } from "wagmi";
 import { ProductWithSeller } from "../../types/product";
 import toast from "react-hot-toast";
 import { formatCurrency } from "../../utils/helpers";
 import { approveUSDC, createEscrow } from "../../utils/contractHelpers";
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
+
+interface MiniKitContext {
+  user?: {
+    fid: number;
+    username?: string;
+    displayName?: string;
+    pfpUrl?: string;
+  };
+}
 
 interface Props {
   onNext: () => void;
@@ -22,13 +33,29 @@ function SecurePaymentPopup({ onNext, onBack, product }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const modalContext = useContext(ModalContext);
   const { address, isConnected } = useAccount();
+  const { context } = useMiniKit() as { context: MiniKitContext };
+  const cartContext = useContext(CartContext);
 
-  // Total is just the product price as it includes delivery
-  const total = parseFloat(product.price);
+  // Calculate total based on cart quantity for this product
+  const cartItem = cartContext?.cart.find(item => item.productId === product.id);
+  const quantity = cartItem?.quantity || 1;
+  const total = parseFloat(product.price) * quantity;
 
   const handleSecurePayment = async () => {
     setIsLoading(true);
     try {
+      if (!isConnected || !address) {
+        throw new Error("Please connect your wallet first");
+      }
+
+      if (!context?.user?.fid) {
+        const storedUser = localStorage.getItem('farcaster_user');
+        const user = storedUser ? JSON.parse(storedUser) : null;
+        if (!user?.fid) {
+          throw new Error("Please connect with Farcaster first");
+        }
+      }
+
       // First approve USDC spending
       const approved = await approveUSDC(total.toString());
       if (!approved) {
@@ -49,6 +76,14 @@ function SecurePaymentPopup({ onNext, onBack, product }: Props) {
       );
 
       // Create order with escrow ID
+      // Get user from localStorage if context is not available
+      const storedUser = localStorage.getItem('farcaster_user');
+      const user = storedUser ? JSON.parse(storedUser) : null;
+      
+      if (!user?.fid) {
+        throw new Error('No user FID found');
+      }
+
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
@@ -59,6 +94,7 @@ function SecurePaymentPopup({ onNext, onBack, product }: Props) {
           product_id: product.id,
           escrow_id: escrowId,
           total_amount: total,
+          fid: context?.user?.fid || 0, // Using 0 as fallback for type safety, the API will handle this as an error
         }),
       });
 
