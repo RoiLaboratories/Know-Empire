@@ -7,7 +7,7 @@ function withValidProperties(properties: Record<string, undefined | string | str
 }
 
 export async function GET(request: NextRequest) {
-  const URL = process.env.NEXT_PUBLIC_URL || "https://know-empire.vercel.app";
+  const URL = process.env.NEXT_PUBLIC_URL || "https://knowempire.xyz";
   
   const data = {
     accountAssociation: {
