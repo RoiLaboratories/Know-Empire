@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       ogTitle: "KnowEmpire",
       ogDescription: "Your Onchain Marketplace powered by Farcaster",
       ogImageUrl: `${URL}/hero.svg`,
-      noindex: false  // Added back - set to false to allow indexing in Warpcast
+      noindex: "false" // Added back - set to false to allow indexing in Warpcast
     })
   };
 
