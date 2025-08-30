@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       splashBackgroundColor: "#b400f7",
       homeUrl: URL,
       webhookUrl: `${URL}/api/webhook`,
-      primaryCategory: "marketplace",
+      primaryCategory: "utility",
       heroImageUrl: `${URL}/hero.svg`,
       tagline: "Trade Freely, Earn Fully",
       ogTitle: "KnowEmpire",
