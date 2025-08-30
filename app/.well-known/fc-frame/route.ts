@@ -5,8 +5,8 @@ export async function GET(request: NextRequest) {
   
   const data = {
     accountAssociation: {
-      header: process.env.FARCASTER_HEADER 
-      payload: process.env.FARCASTER_PAYLOAD 
+      header: process.env.FARCASTER_HEADER,
+      payload: process.env.FARCASTER_PAYLOAD,
       signature: process.env.FARCASTER_SIGNATURE 
     version: "1",
     name: "KnowEmpire",
