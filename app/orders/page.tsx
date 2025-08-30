@@ -15,68 +15,92 @@ import { useOrders } from "../../providers/orders";
 import type { StaticImageData } from "next/image";
 
 interface Order {
-  name: string;
-  status: "shipped" | "pending";
-  img: StaticImageData | string;
-  seller: string;
-  price: string;
   id: string;
+  status: "shipped" | "pending" | "delivered";
+  tracking_number: string | null;
+  total_amount: number;
+  product: {
+    id: string;
+    title: string;
+    photos: string[];
+    seller: {
+      username: string;
+      wallet_address: string;
+    };
+  };
 }
 
 function Orders() {
-  const { orders, metadata } = useOrders();
+  const { orders } = useOrders();
   const router = useRouter();
   const { context } = useMiniKit();
 
-  // For sellers, check if they're in the correct route
+  // Check if the user is connected with Farcaster
+  const [loading, setLoading] = useState(true);
+  const [buyerOrders, setBuyerOrders] = useState<Order[]>([]);
+
   useEffect(() => {
-    if (metadata?.isSeller) {
-      const path = window.location.pathname;
-      // Only redirect if they're on the main orders page
-      if (path === '/orders' && (!orders || orders.length === 0)) {
-        router.push('/seller/empty-orders');
+    async function fetchBuyerOrders() {
+      if (!context?.user?.fid) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/orders?fid=${context.user.fid}`);
+        if (!response.ok) throw new Error('Failed to fetch orders');
+        const data = await response.json();
+        setBuyerOrders(data || []);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+      } finally {
+        setLoading(false);
       }
     }
-  }, [metadata?.isSeller, orders, router]);
 
-  // Show loading state while potentially redirecting
-  if (metadata?.isSeller && (!orders || orders.length === 0)) {
-    return null;
+    fetchBuyerOrders();
+  }, [context?.user?.fid]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin">
+          <Icon icon={ICON.SPINNER} className="w-8 h-8 text-primary" />
+        </div>
+      </div>
+    );
   }
 
   return (
     <section className="flex flex-col items-center min-h-screen pb-3">
       <div className="w-9/10 max-w-lg flex flex-col flex-1 gap-y-1">
         <div className="sticky top-0 space-y-3 bg-background py-3">
-          <BackButton />
+          <BackButton onClick={() => router.push("/marketplace")} />
           <Tab
             name="My Orders"
             description="Track your purchases and leave reviews"
           />
-          {/*search */}
-          {orders.length !== 0 && <Search />}
+          {buyerOrders.length > 0 && <Search />}
         </div>
 
-        {/*main content - only for buyers or sellers with orders*/}
-        {orders.length > 0 ? (
+        {buyerOrders.length > 0 ? (
           <ul className="grid grid-cols-1 gap-5 mt-2.5">
-            {orders.map((order, i) => (
+            {buyerOrders.map((order) => (
               <OrdersCard
-                key={i}
+                key={order.id}
                 status={order.status}
-                name={order.name}
-                img={order.img}
-                seller={order.seller}
-                price={order.price}
+                name={order.product.title}
+                img={order.product.photos[0]}
+                seller={order.product.seller.username}
+                price={order.total_amount.toString()}
                 id={order.id}
               />
             ))}
           </ul>
         ) : (
           <div className="flex flex-col gap-10 items-center justify-between">
-            <Image alt="empty orders" src={Empty} className="" />
+            <Image alt="empty orders" src={Empty} />
 
-            {/* Only show buyer empty state here since sellers are redirected */}
             <p className="text-xs font-medium text-center">
               You have no
               <span className="text-primary font-bold"> orders </span>
@@ -89,7 +113,7 @@ function Orders() {
               onClick={() => router.push("/marketplace")}
             >
               Go to marketplace
-              <Icon icon={ICON.ARROW_CIRCLE_RIGHT} className="" />
+              <Icon icon={ICON.ARROW_CIRCLE_RIGHT} />
             </Button>
           </div>
         )}

@@ -5,6 +5,7 @@ import { ICON } from "../../utils/icon-export";
 import { useContext, useState } from "react";
 import { sleep } from "../../utils/helpers";
 import Modal, { ModalContext } from "../../context/ModalContext";
+import { CartContext } from "../../providers/cart";
 import GenericPopup from "./generic-popup";
 import { useAccount } from "wagmi";
 import { ProductWithSeller } from "../../types/product";
@@ -33,9 +34,12 @@ function SecurePaymentPopup({ onNext, onBack, product }: Props) {
   const modalContext = useContext(ModalContext);
   const { address, isConnected } = useAccount();
   const { context } = useMiniKit() as { context: MiniKitContext };
+  const cartContext = useContext(CartContext);
 
-  // Total is just the product price as it includes delivery
-  const total = parseFloat(product.price);
+  // Calculate total based on cart quantity for this product
+  const cartItem = cartContext?.cart.find(item => item.productId === product.id);
+  const quantity = cartItem?.quantity || 1;
+  const total = parseFloat(product.price) * quantity;
 
   const handleSecurePayment = async () => {
     setIsLoading(true);

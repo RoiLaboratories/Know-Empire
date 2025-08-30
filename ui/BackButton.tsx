@@ -5,17 +5,24 @@ import { useRouter } from "next/navigation";
 
 interface BackButtonProps {
   className?: string;
+  onClick?: () => void;
 }
 
-function BackButton({ className = "text-gray" }: BackButtonProps) {
+function BackButton({ className = "text-gray", onClick }: BackButtonProps) {
   const router = useRouter();
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onClick) {
+      onClick();
+    } else {
+      router.back();
+    }
+  };
 
   return (
     <button 
-      onClick={(e) => {
-        e.preventDefault();
-        router.back();
-      }}
+      onClick={handleClick}
       className="cursor-pointer"
     >
       <Icon

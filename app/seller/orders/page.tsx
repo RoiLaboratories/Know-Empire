@@ -291,7 +291,7 @@ const SellerOrderManagement: NextPage = () => {
           <div className="sticky top-0 z-10 bg-white space-y-3 pb-3">
             <div className="space-y-4">
               <div>
-                <BackButton />
+                <BackButton onClick={() => router.push('/marketplace')} />
               </div>
               <div className="flex justify-center">
                 <h1 className="text-xl font-bold">Order Management</h1>
