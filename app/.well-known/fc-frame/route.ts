@@ -1,7 +1,13 @@
 import { NextRequest } from 'next/server';
 
+function withValidProperties(properties: Record<string, undefined | string | string[]>) {
+  return Object.fromEntries(
+    Object.entries(properties).filter(([_, value]) => (Array.isArray(value) ? value.length > 0 : !!value))
+  );
+}
+
 export async function GET(request: NextRequest) {
-  const URL = "https://know-empire.vercel.app";
+  const URL = process.env.NEXT_PUBLIC_URL || "https://know-empire.vercel.app";
   
   const data = {
     accountAssociation: {
@@ -9,25 +15,24 @@ export async function GET(request: NextRequest) {
       payload: process.env.FARCASTER_PAYLOAD,
       signature: process.env.FARCASTER_SIGNATURE
     },
-    version: "1",
-    name: "KnowEmpire",
-    description: "A marketplace for physical goods powered by Farcaster",
-    image: {
-      src: `${URL}/hero.svg`,
-      aspectRatio: "1.91:1"
-    },
-    buttons: [
-      {
-        label: "Visit Marketplace",
-        action: "link",
-        target: URL
-      }
-    ],
-    postUrl: `${URL}/api/frame`,
-    input: {
-      text: "Search products..."
-    },
-    noindex: false
+    frame: withValidProperties({
+      version: "1",
+      name: "KnowEmpire",
+      subtitle: "Your Onchain Marketplace",
+      description: "A marketplace for physical goods powered by Farcaster",
+      iconUrl: `${URL}/group.svg`,
+      splashImageUrl: `${URL}/splash.svg`,
+      splashBackgroundColor: "#b400f7",
+      homeUrl: URL,
+      webhookUrl: `${URL}/api/webhook`,
+      primaryCategory: "utility",
+      heroImageUrl: `${URL}/hero.svg`,
+      tagline: "Trade Freely, Earn Fully",
+      ogTitle: "KnowEmpire",
+      ogDescription: "Your Onchain Marketplace powered by Farcaster",
+      ogImageUrl: `${URL}/hero.svg`,
+      noindex: false  // Added back - set to false to allow indexing in Warpcast
+    })
   };
 
   return new Response(JSON.stringify(data), {
