@@ -20,17 +20,17 @@ export async function GET(request: NextRequest) {
       name: "KnowEmpire",
       subtitle: "Your Onchain Marketplace",
       description: "A marketplace for physical goods powered by Farcaster",
-      iconUrl: `${URL}/group.svg`,
-      splashImageUrl: `${URL}/splash.svg`,
+      iconUrl: `${URL}/icon.png`,
+      splashImageUrl: `${URL}/splash.png`,
       splashBackgroundColor: "#b400f7",
       homeUrl: URL,
       webhookUrl: `${URL}/api/webhook`,
       primaryCategory: "utility",
-      heroImageUrl: `${URL}/hero.svg`,
+      heroImageUrl: `${URL}/hero.png`,
       tagline: "Trade Freely, Earn Fully",
       ogTitle: "KnowEmpire",
       ogDescription: "Your Onchain Marketplace powered by Farcaster",
-      ogImageUrl: `${URL}/hero.svg`,
+      ogImageUrl: `${URL}/hero.png`,
       noindex: "false" // Added back - set to false to allow indexing in Warpcast
     })
   };
