@@ -120,6 +120,19 @@ export default function BuyerForm(): React.ReactElement {
     },
   });
 
+  // Debug effect to monitor form state changes
+  useEffect(() => {
+    console.log('Form State:', {
+      acceptedTerms,
+      verifiedAddress,
+      email: formik.values.email,
+      phone: formik.values.phone_number,
+      address: formik.values.shipping_address,
+      isValid: formik.isValid,
+      touched: formik.touched
+    });
+  }, [acceptedTerms, verifiedAddress, formik.values, formik.isValid, formik.touched]);
+
   return (
     <form onSubmit={formik.handleSubmit} className="w-full space-y-4">
       <InputField
@@ -177,14 +190,7 @@ export default function BuyerForm(): React.ReactElement {
 
       <Button
         type="submit"
-        disabled={
-          (!formik.isValid && Object.keys(formik.touched).length > 0) || 
-          !verifiedAddress || 
-          !acceptedTerms || 
-          !formik.values.email || 
-          !formik.values.phone_number || 
-          !formik.values.shipping_address
-        }
+        disabled={!acceptedTerms || !formik.isValid}
         className="w-full"
       >
         Create Buyer Account
