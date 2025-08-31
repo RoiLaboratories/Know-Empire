@@ -15,6 +15,9 @@ export async function GET(request: NextRequest) {
       payload: process.env.FARCASTER_PAYLOAD,
       signature: process.env.FARCASTER_SIGNATURE
     },
+    "baseBuilder": {
+      "allowedAddresses": ["0xEd01DA1FB9203Ef937BcC4F3055505fFf78F1D93"]
+    },
     frame: withValidProperties({
       version: "1",
       name: "KnowEmpire",
