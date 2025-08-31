@@ -177,8 +177,14 @@ export default function BuyerForm(): React.ReactElement {
 
       <Button
         type="submit"
-        disabled={!formik.isValid || !verifiedAddress || !acceptedTerms || 
-                 !formik.values.email || !formik.values.phone_number || !formik.values.shipping_address}
+        disabled={
+          (!formik.isValid && Object.keys(formik.touched).length > 0) || 
+          !verifiedAddress || 
+          !acceptedTerms || 
+          !formik.values.email || 
+          !formik.values.phone_number || 
+          !formik.values.shipping_address
+        }
         className="w-full"
       >
         Create Buyer Account
