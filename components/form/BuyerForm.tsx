@@ -89,26 +89,27 @@ export default function BuyerForm(): React.ReactElement {
         // Open loading modal first
         modalContext?.open("loading-modal");
 
-        const response = await fetch(`/api/buyer?fid=${user.fid}`, {
-          method: "POST",
+        const response = await fetch('/api/buyer', {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             ...values,
             fid: user.fid,
-            farcaster_username: user.username,
-            display_name: user.displayName,
-            avatar_url: user.pfpUrl,
+            username: user.username,
+            displayName: user.displayName,
+            pfpUrl: user.pfpUrl
           }),
         });
 
-        const data = await response.json();
-
         if (!response.ok) {
-          throw new Error(data.message || "Failed to create buyer account");
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to create buyer account');
         }
 
+        await response.json();
+        
         // Close loading modal and show congrats
         modalContext?.close();
         modalContext?.open("buyer-congrats-modal");
