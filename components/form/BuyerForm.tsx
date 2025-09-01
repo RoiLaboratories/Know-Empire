@@ -82,16 +82,29 @@ export default function BuyerForm(): React.ReactElement {
     },
     validationSchema: BUYER_SCHEMA,
     onSubmit: async (values) => {
+      console.log("Form submission started", { values, user, verifiedAddress });
+      
       if (!verifiedAddress) {
+        setError("Please connect with a verified Farcaster account");
+        return;
+      }
+
+      if (!user) {
+        setError("Please make sure you are connected with Farcaster");
+        return;
+      }
+
+      if (!user.fid) {
+        setError("Invalid Farcaster account. Please reconnect.");
         return;
       }
 
       try {
-        if (!user) {
-          throw new Error('Please make sure you are connected with Farcaster');
-        }
-
+        // Clear any previous errors
+        setError(null);
+        // Show loading state
         modalContext?.open("loading-modal");
+
         const response = await fetch(`/api/buyer?fid=${user.fid}`, {
           method: "POST",
           headers: {
@@ -106,16 +119,21 @@ export default function BuyerForm(): React.ReactElement {
           }),
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-          throw new Error("Failed to create buyer account");
+          throw new Error(data.message || "Failed to create buyer account");
         }
 
+        // Close loading modal
+        modalContext?.close();
+        // Show success modal
         setIsSuccess(true);
         modalContext?.open("buyer-congrats-modal");
       } catch (error) {
         console.error("Error creating buyer account:", error);
-        setError(error instanceof Error ? error.message : "Failed to create buyer account");
         modalContext?.close();
+        setError(error instanceof Error ? error.message : "Failed to create buyer account");
       }
     },
   });
@@ -188,10 +206,24 @@ export default function BuyerForm(): React.ReactElement {
         </p>
       </span>
 
+      {error && (
+        <div className="text-red-500 text-sm mt-2">
+          {error}
+        </div>
+      )}
+
       <Button
         type="submit"
         disabled={!acceptedTerms || !formik.isValid}
         className="w-full"
+        onClick={() => {
+          if (!formik.isValid) {
+            // Show validation errors
+            Object.keys(formik.values).forEach(key => {
+              formik.setFieldTouched(key);
+            });
+          }
+        }}
       >
         Create Buyer Account
       </Button>
