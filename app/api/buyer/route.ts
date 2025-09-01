@@ -73,9 +73,20 @@ export async function POST(request: Request) {
         .eq('farcaster_id', fid)
 
       if (updateError) {
-        console.error('Error updating user as buyer:', updateError)
+        console.error('Error updating user as buyer:', {
+          error: updateError,
+          payload: {
+            fid,
+            username,
+            displayName,
+            pfpUrl,
+            email,
+            phone_number,
+            shipping_address
+          }
+        })
         return NextResponse.json(
-          { error: 'Failed to update buyer account' },
+          { error: `Failed to update buyer account: ${updateError.message}` },
           { status: 500 }
         )
       }
@@ -95,9 +106,20 @@ export async function POST(request: Request) {
         })
 
       if (insertError) {
-        console.error('Error creating buyer:', insertError)
+        console.error('Error creating buyer:', {
+          error: insertError,
+          payload: {
+            fid,
+            username,
+            displayName,
+            pfpUrl,
+            email,
+            phone_number,
+            shipping_address
+          }
+        })
         return NextResponse.json(
-          { error: 'Failed to create buyer account' },
+          { error: `Failed to create buyer account: ${insertError.message}` },
           { status: 500 }
         )
       }
