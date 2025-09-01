@@ -64,7 +64,7 @@ export async function POST(request: Request) {
         .update({
           buyer_email: email,
           buyer_phone: phone_number,
-          shipping_address: shipping_address,
+          buyer_shipping_address: shipping_address,
           is_buyer: true,
           display_name: displayName,
           avatar_url: pfpUrl,
