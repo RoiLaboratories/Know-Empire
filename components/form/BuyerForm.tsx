@@ -1,5 +1,4 @@
 "use client";
-import React from "react";
 import { useFormik } from "formik";
 import { useContext, useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
@@ -18,7 +17,7 @@ interface MiniKitAccount {
   chain: string;
 }
 
-interface MiniKitUserContext {
+interface MiniKitUser {
   fid: number;
   username?: string;
   displayName?: string;
@@ -26,15 +25,16 @@ interface MiniKitUserContext {
   verified_accounts?: MiniKitAccount[];
 }
 
+interface VerifiedAccount {
+  address: string;
+}
+
 interface FarcasterUser {
   fid: number;
   username?: string;
   displayName?: string;
   pfpUrl?: string;
-  verifiedAccounts?: Array<{
-    address: string;
-    chain: string;
-  }>;
+  verifiedAccounts?: VerifiedAccount[];
 }
 
 interface BuyerInput {
@@ -44,41 +44,30 @@ interface BuyerInput {
 }
 
 export default function BuyerForm(): React.ReactElement {
-  const [isSuccess, setIsSuccess] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { context } = useMiniKit();
   const modalContext = useContext(ModalContext);
+  const { context } = useMiniKit();
   const [user, setUser] = useState<FarcasterUser | null>(null);
 
-  const userContext = context?.user as MiniKitUserContext | undefined;
-  const verifiedAccounts = userContext?.verified_accounts || [];
-  const verifiedAddress = verifiedAccounts[0]?.address;
-
   useEffect(() => {
-    if (userContext) {
-      // Log the full context for debugging
-      console.log('Farcaster Context:', context);
-      console.log('User Context:', userContext);
-      console.log('Verified Accounts:', verifiedAccounts);
-
+    if (context?.user) {
+      const contextUser = context.user as MiniKitUser;
       const farcasterUser: FarcasterUser = {
-        fid: userContext.fid,
-        username: userContext.username,
-        displayName: userContext.displayName,
-        pfpUrl: userContext.pfpUrl,
-        verifiedAccounts: verifiedAccounts
+        fid: contextUser.fid,
+        username: contextUser.username,
+        displayName: contextUser.displayName,
+        pfpUrl: contextUser.pfpUrl
       };
       setUser(farcasterUser);
     } else {
-      // Try to get from localStorage as fallback
       const storedUser = localStorage.getItem('farcaster_user');
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser) as FarcasterUser;
         setUser(parsedUser);
       }
     }
-  }, [userContext, context]);
+  }, [context]);
 
   const formik = useFormik<BuyerInput>({
     initialValues: {
@@ -88,46 +77,16 @@ export default function BuyerForm(): React.ReactElement {
     },
     validationSchema: BUYER_SCHEMA,
     onSubmit: async (values) => {
-      console.log("Form submission started", { 
-        values, 
-        user, 
-        verifiedAddress,
-        context: context,
-        userContext: userContext,
-        verifiedAccounts: verifiedAccounts
-      });
-      
-      // Check if we have the Farcaster context
-      if (!context) {
-        setError("Please make sure you're accessing this page through Warpcast's in-app browser.");
-        console.log("Missing Farcaster context:", { context });
-        return;
-      }
-
-      // Check if user is connected
-      if (!userContext) {
-        setError("Please connect your Farcaster account. If already connected, try refreshing the page.");
-        console.log("Missing user context:", { userContext, context });
-        return;
-      }
-
-      // Check for verified accounts
-      if (!verifiedAccounts || verifiedAccounts.length === 0) {
-        setError("Please verify your wallet in Warpcast before creating a buyer account.");
-        console.log("Missing verified accounts:", { verifiedAccounts, userContext });
-        return;
-      }
-
-      // Check for specific user data
-      if (!user || !user.fid) {
-        setError("Invalid Farcaster account data. Please refresh and try again.");
+      if (!formik.isValid) {
         return;
       }
 
       try {
-        // Clear any previous errors
-        setError(null);
-        // Show loading state
+        if (!user) {
+          throw new Error('Please make sure you are connected with Farcaster');
+        }
+
+        // Open loading modal first
         modalContext?.open("loading-modal");
 
         const response = await fetch(`/api/buyer?fid=${user.fid}`, {
@@ -150,10 +109,8 @@ export default function BuyerForm(): React.ReactElement {
           throw new Error(data.message || "Failed to create buyer account");
         }
 
-        // Close loading modal
+        // Close loading modal and show congrats
         modalContext?.close();
-        // Show success modal
-        setIsSuccess(true);
         modalContext?.open("buyer-congrats-modal");
       } catch (error) {
         console.error("Error creating buyer account:", error);
@@ -162,19 +119,6 @@ export default function BuyerForm(): React.ReactElement {
       }
     },
   });
-
-  // Debug effect to monitor form state changes
-  useEffect(() => {
-    console.log('Form State:', {
-      acceptedTerms,
-      verifiedAddress,
-      email: formik.values.email,
-      phone: formik.values.phone_number,
-      address: formik.values.shipping_address,
-      isValid: formik.isValid,
-      touched: formik.touched
-    });
-  }, [acceptedTerms, verifiedAddress, formik.values, formik.isValid, formik.touched]);
 
   return (
     <form onSubmit={formik.handleSubmit} className="w-full space-y-4">
