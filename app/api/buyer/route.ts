@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     // Check if user exists as a buyer in the users table
     const { data: buyer, error } = await supabaseAdmin
       .from('users')
-      .select('id, buyer_email, buyer_phone, shipping_address, is_buyer')
+      .select('id, buyer_email, buyer_phone, buyer_shipping_address, is_buyer')
       .eq('farcaster_id', fid)
       .single();
 
@@ -101,7 +101,7 @@ export async function POST(request: Request) {
           avatar_url: pfpUrl,
           buyer_email: email,
           buyer_phone: phone_number,
-          shipping_address: shipping_address,
+          buyer_shipping_address: shipping_address,
           is_buyer: true
         })
 
