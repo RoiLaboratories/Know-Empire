@@ -1,0 +1,28 @@
+{
+  "accountAssociation": {
+    "header": "",
+    "payload": "",
+    "signature": ""
+  },
+  "baseBuilder": {
+    "allowedAddresses": ["0xEd01DA1FB9203Ef937BcC4F3055505fFf78F1D93"]
+  },
+  "frame": {
+    "version": "1",
+    "name": "KnowEmpire",
+    "subtitle": "Your Onchain Marketplace",
+    "description": "A marketplace for physical goods powered by Farcaster",
+    "iconUrl": "https://knowempire.xyz/icon.png",
+    "splashImageUrl": "https://knowempire.xyz/splash.png",
+    "splashBackgroundColor": "#b400f7",
+    "homeUrl": "https://knowempire.xyz",
+    "webhookUrl": "https://knowempire.xyz/api/webhook",
+    "primaryCategory": "utility",
+    "heroImageUrl": "https://knowempire.xyz/hero.png",
+    "tagline": "Trade Freely, Earn Fully",
+    "ogTitle": "KnowEmpire",
+    "ogDescription": "Your Onchain Marketplace powered by Farcaster",
+    "ogImageUrl": "https://knowempire.xyz/hero.png",
+    "noindex": false
+  }
+}
