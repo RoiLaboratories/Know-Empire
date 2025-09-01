@@ -18,7 +18,7 @@ interface MiniKitAccount {
   chain: string;
 }
 
-interface MiniKitUser {
+interface MiniKitUserContext {
   fid: number;
   username?: string;
   displayName?: string;
@@ -26,16 +26,15 @@ interface MiniKitUser {
   verified_accounts?: MiniKitAccount[];
 }
 
-interface VerifiedAccount {
-  address: string;
-}
-
 interface FarcasterUser {
   fid: number;
   username?: string;
   displayName?: string;
   pfpUrl?: string;
-  verifiedAccounts?: VerifiedAccount[];
+  verifiedAccounts?: Array<{
+    address: string;
+    chain: string;
+  }>;
 }
 
 interface BuyerInput {
@@ -52,27 +51,34 @@ export default function BuyerForm(): React.ReactElement {
   const modalContext = useContext(ModalContext);
   const [user, setUser] = useState<FarcasterUser | null>(null);
 
-  const userContext = context?.user as any;
-  const verifiedAddress = userContext?.verified_accounts?.[0]?.address;
+  const userContext = context?.user as MiniKitUserContext | undefined;
+  const verifiedAccounts = userContext?.verified_accounts || [];
+  const verifiedAddress = verifiedAccounts[0]?.address;
 
   useEffect(() => {
     if (userContext) {
+      // Log the full context for debugging
+      console.log('Farcaster Context:', context);
+      console.log('User Context:', userContext);
+      console.log('Verified Accounts:', verifiedAccounts);
+
       const farcasterUser: FarcasterUser = {
         fid: userContext.fid,
         username: userContext.username,
         displayName: userContext.displayName,
         pfpUrl: userContext.pfpUrl,
-        verifiedAccounts: userContext.verified_accounts
+        verifiedAccounts: verifiedAccounts
       };
       setUser(farcasterUser);
     } else {
+      // Try to get from localStorage as fallback
       const storedUser = localStorage.getItem('farcaster_user');
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser) as FarcasterUser;
         setUser(parsedUser);
       }
     }
-  }, [userContext]);
+  }, [userContext, context]);
 
   const formik = useFormik<BuyerInput>({
     initialValues: {
@@ -82,20 +88,39 @@ export default function BuyerForm(): React.ReactElement {
     },
     validationSchema: BUYER_SCHEMA,
     onSubmit: async (values) => {
-      console.log("Form submission started", { values, user, verifiedAddress });
+      console.log("Form submission started", { 
+        values, 
+        user, 
+        verifiedAddress,
+        context: context,
+        userContext: userContext,
+        verifiedAccounts: verifiedAccounts
+      });
       
-      if (!verifiedAddress) {
-        setError("Please connect with a verified Farcaster account");
+      // Check if we have the Farcaster context
+      if (!context) {
+        setError("Please make sure you're accessing this page through Warpcast's in-app browser.");
+        console.log("Missing Farcaster context:", { context });
         return;
       }
 
-      if (!user) {
-        setError("Please make sure you are connected with Farcaster");
+      // Check if user is connected
+      if (!userContext) {
+        setError("Please connect your Farcaster account. If already connected, try refreshing the page.");
+        console.log("Missing user context:", { userContext, context });
         return;
       }
 
-      if (!user.fid) {
-        setError("Invalid Farcaster account. Please reconnect.");
+      // Check for verified accounts
+      if (!verifiedAccounts || verifiedAccounts.length === 0) {
+        setError("Please verify your wallet in Warpcast before creating a buyer account.");
+        console.log("Missing verified accounts:", { verifiedAccounts, userContext });
+        return;
+      }
+
+      // Check for specific user data
+      if (!user || !user.fid) {
+        setError("Invalid Farcaster account data. Please refresh and try again.");
         return;
       }
 
