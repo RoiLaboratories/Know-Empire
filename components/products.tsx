@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import ProductCard from "./cards/ProductCard";
 import Session from "./Session";
 import Phone from "../assets/images/prod1.png"; // Fallback image
@@ -42,11 +43,16 @@ function useProducts() {
   const [products, setProducts] = useState<APIProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const category = searchParams.get('category');
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch("/api/products/list");
+        const url = category 
+          ? `/api/products/list?category=${encodeURIComponent(category)}`
+          : "/api/products/list";
+        const response = await fetch(url);
         if (!response.ok) {
           throw new Error("Failed to fetch products");
         }
@@ -63,7 +69,7 @@ function useProducts() {
     };
 
     fetchProducts();
-  }, []);
+  }, [category]);
 
   return { products, loading, error };
 }

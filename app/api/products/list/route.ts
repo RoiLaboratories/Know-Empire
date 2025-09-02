@@ -3,8 +3,11 @@ import { createServiceClient } from '../../../../utils/supabase'
 
 export async function GET(request: Request) {
   const supabaseAdmin = createServiceClient();
+  const { searchParams } = new URL(request.url);
+  const category = searchParams.get('category');
+
   try {
-    const { data: products, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('products')
       .select(`
         id,
@@ -26,7 +29,13 @@ export async function GET(request: Request) {
         )
       `)
       .eq('status', 'active')
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    if (category) {
+      query = query.eq('category', category);
+    }
+
+    const { data: products, error } = await query;
 
     if (error) {
       console.error('Error fetching products:', error)
