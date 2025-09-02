@@ -64,6 +64,11 @@ export default function SellerProducts() {
     return <div>Error: {error}</div>;
   }
 
+  if (!loading && products.length === 0) {
+    window.location.href = '/seller/empty-products';
+    return null;
+  }
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
