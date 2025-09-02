@@ -11,11 +11,11 @@ export async function GET(request: Request) {
   }
 
   try {
-    // First get the user's UUID using their FID
+    // First get the user's UUID using their Farcaster ID
     const { data: user, error: userError } = await supabaseAdmin
       .from('users')
       .select('id')
-      .eq('fid', sellerId)
+      .eq('farcaster_id', sellerId)
       .single();
 
     if (userError) {
