@@ -11,10 +11,26 @@ export async function GET(request: Request) {
   }
 
   try {
+    // First get the seller's UUID using their FID
+    const { data: seller, error: sellerError } = await supabaseAdmin
+      .from('sellers')
+      .select('id')
+      .eq('fid', sellerId)
+      .single();
+
+    if (sellerError) {
+      console.error('Error fetching seller:', sellerError);
+      return NextResponse.json(
+        { error: 'Seller not found' },
+        { status: 404 }
+      );
+    }
+
+    // Then get their products using the UUID
     const { data: products, error } = await supabaseAdmin
       .from('products')
       .select('*')
-      .eq('seller_id', sellerId)
+      .eq('seller_id', seller.id)
       .order('created_at', { ascending: false });
 
     if (error) {
