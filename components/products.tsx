@@ -87,11 +87,20 @@ function Products() {
 
   console.log('Raw products from API:', products);
 
+  const searchParams = useSearchParams();
+  const category = searchParams?.get('category');
+
   return (
     <Modal>
-      <Session title="Curated for you" link="See more">
-        <ul className="grid grid-cols-2 gap-2">
-          {products.map((apiProduct) => {
+      <Session title={category ? `${category} Products` : "Curated for you"} link="See more">
+        {products.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 text-center">
+            <p className="text-gray-500 mb-2">No products listed {category ? `in ${category}` : 'here'} yet</p>
+            <p className="text-sm text-gray-400">Check back later for new items</p>
+          </div>
+        ) : (
+          <ul className="grid grid-cols-2 gap-2">
+            {products.map((apiProduct) => {
             console.log('Processing product:', apiProduct);
             const product: ProductWithSeller = {
               ...apiProduct,
@@ -110,7 +119,8 @@ function Products() {
               />
             );
           })}
-        </ul>
+          </ul>
+        )}
       </Session>
     </Modal>
   );
