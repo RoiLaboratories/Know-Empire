@@ -71,11 +71,11 @@ function useProducts() {
     fetchProducts();
   }, [category]);
 
-  return { products, loading, error };
+  return { products, loading, error, category };
 }
 
 function Products() {
-  const { products, loading, error } = useProducts();
+  const { products, loading, error, category } = useProducts();
 
   if (loading) {
     return <div>Loading...</div>;
@@ -86,9 +86,6 @@ function Products() {
   }
 
   console.log('Raw products from API:', products);
-
-  const searchParams = useSearchParams();
-  const category = searchParams?.get('category');
 
   return (
     <Modal>
