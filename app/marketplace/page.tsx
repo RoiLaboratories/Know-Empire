@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Category from "../../components/Category";
 import Header from "../../components/layout/Header";
 import Tab from "../../components/layout/Tab";
@@ -19,10 +20,18 @@ function MarketPage() {
       <Search />
 
       {/*category */}
-      <Category />
+      <Suspense fallback={<div className="animate-pulse h-24 bg-gray-100 rounded-lg"></div>}>
+        <Category />
+      </Suspense>
 
       {/*curated */}
-      <Products />
+      <Suspense fallback={<div className="animate-pulse grid grid-cols-2 gap-2">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="aspect-square bg-gray-100 rounded-lg"></div>
+        ))}
+      </div>}>
+        <Products />
+      </Suspense>
     </div>
   );
 }
