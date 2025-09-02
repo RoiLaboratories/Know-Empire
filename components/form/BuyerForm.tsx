@@ -198,7 +198,11 @@ export default function BuyerForm(): React.ReactElement {
         Create Buyer Account
       </Button>
 
-      {modalContext?.openNames.includes("loading-modal") && <LoadingCard />}
+      {modalContext?.openNames.includes("loading-modal") && (
+        <Modal>
+          <LoadingCard />
+        </Modal>
+      )}
       {modalContext?.openNames.includes("buyer-congrats-modal") && (
         <Modal>
           <BuyerCongratsPopup />
