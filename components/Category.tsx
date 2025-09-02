@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import Fashion from "../assets/images/fashion.png";
 import Gadgets from "../assets/images/gadget.png";
