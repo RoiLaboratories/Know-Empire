@@ -44,7 +44,7 @@ function useProducts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
-  const category = searchParams.get('category');
+  const category = searchParams?.get('category');
 
   useEffect(() => {
     const fetchProducts = async () => {

@@ -35,7 +35,7 @@ const categories = [
 function Category() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentCategory = searchParams.get('category');
+  const currentCategory = searchParams?.get('category');
 
   const handleCategoryClick = (label: string) => {
     if (currentCategory === label) {
