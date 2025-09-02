@@ -9,8 +9,9 @@ import InputField from "./InputField";
 import InputTextArea from "./InputTextArea";
 import Button from "../../ui/Button";
 import Modal, { ModalContext } from "../../context/ModalContext";
-import LoadingCard from "../popups/loading-buyer-card";
+import LoadingCard from "../popups/loading-card";
 import BuyerCongratsPopup from "../popups/buyer-congrats-popup";
+import FormInput from "./FormInput";
 
 interface MiniKitAccount {
   address: string;
@@ -122,92 +123,96 @@ export default function BuyerForm(): React.ReactElement {
   });
 
   return (
-    <form onSubmit={formik.handleSubmit} className="w-full space-y-4">
-      <InputField
-        label="Email"
-        config={{
-          name: "email",
-          type: "email",
-          placeholder: "Enter your email",
-          value: formik.values.email,
-          onChange: formik.handleChange,
-          onBlur: formik.handleBlur
-        }}
-        error={!!formik.touched.email && !!formik.errors.email}
-        errorMessage={formik.touched.email ? formik.errors.email : undefined}
-      />
+    <>
+      <FormInput config={{ onSubmit: formik.handleSubmit }}>
+        <div className="w-full space-y-4">
+          <InputField
+            label="Email"
+            config={{
+              name: "email",
+              type: "email",
+              placeholder: "Enter your email",
+              value: formik.values.email,
+              onChange: formik.handleChange,
+              onBlur: formik.handleBlur
+            }}
+            error={!!formik.touched.email && !!formik.errors.email}
+            errorMessage={formik.touched.email ? formik.errors.email : undefined}
+          />
 
-      <InputField
-        label="Phone Number"
-        config={{
-          name: "phone_number",
-          type: "tel",
-          placeholder: "Enter your phone number",
-          value: formik.values.phone_number,
-          onChange: formik.handleChange,
-          onBlur: formik.handleBlur
-        }}
-        error={!!formik.touched.phone_number && !!formik.errors.phone_number}
-        errorMessage={formik.touched.phone_number ? formik.errors.phone_number : undefined}
-      />
+          <InputField
+            label="Phone Number"
+            config={{
+              name: "phone_number",
+              type: "tel",
+              placeholder: "Enter your phone number",
+              value: formik.values.phone_number,
+              onChange: formik.handleChange,
+              onBlur: formik.handleBlur
+            }}
+            error={!!formik.touched.phone_number && !!formik.errors.phone_number}
+            errorMessage={formik.touched.phone_number ? formik.errors.phone_number : undefined}
+          />
 
-      <InputTextArea
-        label="Shipping Address"
-        config={{
-          name: "shipping_address",
-          placeholder: "Enter your shipping address",
-          value: formik.values.shipping_address,
-          onChange: formik.handleChange,
-          onBlur: formik.handleBlur
-        }}
-        error={!!formik.touched.shipping_address && !!formik.errors.shipping_address}
-        errorMessage={formik.touched.shipping_address ? formik.errors.shipping_address : undefined}
-      />
+          <InputTextArea
+            label="Shipping Address"
+            config={{
+              name: "shipping_address",
+              placeholder: "Enter your shipping address",
+              value: formik.values.shipping_address,
+              onChange: formik.handleChange,
+              onBlur: formik.handleBlur
+            }}
+            error={!!formik.touched.shipping_address && !!formik.errors.shipping_address}
+            errorMessage={formik.touched.shipping_address ? formik.errors.shipping_address : undefined}
+          />
 
-      <span className="flex gap-2 mt-1 items-center">
-        <Icon
-          icon={!acceptedTerms ? ICON.CIRCLE : ICON.CHECK}
-          onClick={() => setAcceptedTerms(!acceptedTerms)}
-          className="text-primary cursor-pointer"
-          fontSize={20}
-        />
-        <p className="text-xs font-medium">
-          I agree to the terms and conditions for purchases and understand how escrow works*
-        </p>
-      </span>
+          <span className="flex gap-2 mt-1 items-center">
+            <Icon
+              icon={!acceptedTerms ? ICON.CIRCLE : ICON.CHECK}
+              onClick={() => setAcceptedTerms(!acceptedTerms)}
+              className="text-primary cursor-pointer"
+              fontSize={20}
+            />
+            <p className="text-xs font-medium">
+              I agree to the terms and conditions for purchases and understand how escrow works*
+            </p>
+          </span>
 
-      {error && (
-        <div className="text-red-500 text-sm mt-2">
-          {error}
+          {error && (
+            <div className="text-red-500 text-sm mt-2">
+              {error}
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            disabled={!acceptedTerms || !formik.isValid}
+            variant="primary_gradient"
+            size="xs"
+            className="text-gray-medium mt-2 disabled:bg-[#989898]"
+            onClick={() => {
+              if (!formik.isValid) {
+                // Show validation errors
+                Object.keys(formik.values).forEach(key => {
+                  formik.setFieldTouched(key);
+                });
+              }
+            }}
+          >
+            Create Buyer Account
+          </Button>
         </div>
-      )}
+      </FormInput>
 
-      <Button
-        type="submit"
-        disabled={!acceptedTerms || !formik.isValid}
-        className="w-full"
-        onClick={() => {
-          if (!formik.isValid) {
-            // Show validation errors
-            Object.keys(formik.values).forEach(key => {
-              formik.setFieldTouched(key);
-            });
-          }
-        }}
-      >
-        Create Buyer Account
-      </Button>
+      {/* Modal Windows */}
+      <Modal.Window name="loading-modal" showBg={false}>
+        <LoadingCard message="Creating account..." />
+      </Modal.Window>
 
-      {modalContext?.openNames.includes("loading-modal") && (
-        <Modal>
-          <LoadingCard />
-        </Modal>
-      )}
-      {modalContext?.openNames.includes("buyer-congrats-modal") && (
-        <Modal>
-          <BuyerCongratsPopup />
-        </Modal>
-      )}
-    </form>
+      <Modal.Window name="buyer-congrats-modal" showBg={false}>
+        <BuyerCongratsPopup />
+      </Modal.Window>
+    </>
   );
 }
