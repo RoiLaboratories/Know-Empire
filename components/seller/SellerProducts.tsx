@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { Product as BaseProduct } from "../../types/product";
 import EditProductModal from "./EditProductModal";
 import Image from "next/image";
@@ -21,9 +22,18 @@ export default function SellerProducts() {
     fetchSellerProducts();
   }, []);
 
+  const { context } = useMiniKit();
+  
   const fetchSellerProducts = async () => {
+    const fid = context?.user?.fid;
+    if (!fid) {
+      setError('User not authenticated');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch('/api/seller/products');
+      const response = await fetch(`/api/seller/products?sellerId=${fid}`);
       if (!response.ok) {
         throw new Error('Failed to fetch seller products');
       }
