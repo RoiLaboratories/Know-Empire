@@ -16,6 +16,7 @@ export async function PATCH(request: Request) {
     }
 
     const updates = await request.json();
+    console.log('Received update request:', { productId, updates });
 
     // Only allow specific fields to be updated
     const allowedUpdates = [
@@ -34,20 +35,31 @@ export async function PATCH(request: Request) {
       return acc;
     }, {} as Record<string, any>);
 
-    const { error } = await supabaseAdmin
+    console.log('Filtered updates:', filteredUpdates);
+
+    const { data, error } = await supabaseAdmin
       .from('products')
       .update(filteredUpdates)
-      .eq('id', productId);
+      .eq('id', productId)
+      .select();
 
     if (error) {
       console.error('Error updating product:', error);
       return NextResponse.json(
-        { error: 'Failed to update product' },
+        { error: error.message || 'Failed to update product' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ success: true });
+    if (!data || data.length === 0) {
+      console.error('No product found with ID:', productId);
+      return NextResponse.json(
+        { error: 'Product not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(data[0]);
   } catch (error) {
     console.error('Error in product update:', error);
     return NextResponse.json(

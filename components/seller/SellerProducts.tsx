@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { Product as BaseProduct } from "../../types/product";
+import Modal from "../../context/ModalContext";
 import EditProductModal from "./EditProductModal";
 import Image from "next/image";
 
@@ -13,17 +14,12 @@ interface SellerProduct extends Omit<BaseProduct, 'price'> {
 
 export default function SellerProducts() {
   const router = useRouter();
+  const { context } = useMiniKit();
   const [products, setProducts] = useState<SellerProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<SellerProduct | null>(null);
 
-  useEffect(() => {
-    fetchSellerProducts();
-  }, []);
-
-  const { context } = useMiniKit();
-  
   const fetchSellerProducts = async () => {
     const fid = context?.user?.fid;
     if (!fid) {
@@ -33,6 +29,7 @@ export default function SellerProducts() {
     }
 
     try {
+      console.log('Fetching products for seller:', fid);
       const response = await fetch(`/api/seller/products?sellerId=${fid}`);
       if (!response.ok) {
         throw new Error('Failed to fetch seller products');
@@ -46,12 +43,13 @@ export default function SellerProducts() {
     }
   };
 
-  const handleEditProduct = (product: SellerProduct) => {
+  const handleEditProduct = (product: SellerProduct | null) => {
     setEditingProduct(product);
   };
 
   const handleSaveEdit = async (productId: string, updates: Partial<SellerProduct>) => {
     try {
+      console.log('Updating product:', { productId, updates });
       const response = await fetch(`/api/seller/products?productId=${productId}`, {
         method: 'PATCH',
         headers: {
@@ -60,17 +58,59 @@ export default function SellerProducts() {
         body: JSON.stringify(updates),
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error('Failed to update product');
+        console.error('Server error:', data);
+        throw new Error(data.error || 'Failed to update product');
       }
 
       // Refresh the products list
       await fetchSellerProducts();
       setEditingProduct(null);
     } catch (err) {
+      console.error('Client error:', err);
       setError(err instanceof Error ? err.message : 'Failed to update product');
     }
   };
+
+  useEffect(() => {
+    fetchSellerProducts();
+  }, []);
+
+  // Wrap the component with Modal context
+  return (
+    <Modal>
+      <SellerProductsList 
+        products={products}
+        loading={loading}
+        error={error}
+        editingProduct={editingProduct}
+        onEditProduct={handleEditProduct}
+        onSaveEdit={handleSaveEdit}
+        router={router}
+      />
+    </Modal>
+  );
+}
+
+function SellerProductsList({
+  products,
+  loading,
+  error,
+  editingProduct,
+  onEditProduct,
+  onSaveEdit,
+  router
+}: {
+  products: SellerProduct[];
+  loading: boolean;
+  error: string | null;
+  editingProduct: SellerProduct | null;
+  onEditProduct: (product: SellerProduct | null) => void;
+  onSaveEdit: (productId: string, updates: Partial<SellerProduct>) => Promise<void>;
+  router: ReturnType<typeof useRouter>;
+}) {
 
   if (loading) {
     return <div>Loading your products...</div>;
@@ -111,13 +151,13 @@ export default function SellerProducts() {
               </p>
               <div className="flex space-x-2">
                 <button
-                  onClick={() => handleEditProduct(product)}
+                  onClick={() => onEditProduct(product)}
                   className="text-primary hover:text-primary/80 text-sm font-medium"
                 >
                   Edit Product
                 </button>
                 <button
-                  onClick={() => handleSaveEdit(product.id, { 
+                  onClick={() => onSaveEdit(product.id, { 
                     status: product.status === 'active' ? 'inactive' : 'active' 
                   })}
                   className="text-gray-600 hover:text-gray-800 text-sm font-medium"
@@ -133,8 +173,8 @@ export default function SellerProducts() {
       {editingProduct && (
         <EditProductModal
           product={editingProduct}
-          onSave={handleSaveEdit}
-          onClose={() => setEditingProduct(null)}
+          onSave={onSaveEdit}
+          onClose={() => onEditProduct(null)}
         />
       )}
     </div>
