@@ -54,7 +54,8 @@ function Header() {
         if (isSeller) {
           setRoutes([
             { title: "Buy Products", icon: ICON.BUY, path: "/marketplace" },
-            { title: "List Product", icon: ICON.SELL, path: "/list_product" }
+            { title: "List Product", icon: ICON.SELL, path: "/list_product" },
+            { title: "My Products", icon: ICON.MANAGE_PRODUCTS, path: "/seller/products" }
           ]);
         } else if (isBuyer) {
           setRoutes([
