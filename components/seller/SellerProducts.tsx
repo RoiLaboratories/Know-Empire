@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Product as BaseProduct } from "../../types/product";
 import EditProductModal from "./EditProductModal";
 import Image from "next/image";
@@ -10,10 +11,15 @@ interface SellerProduct extends Omit<BaseProduct, 'price'> {
 }
 
 export default function SellerProducts() {
+  const router = useRouter();
   const [products, setProducts] = useState<SellerProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<SellerProduct | null>(null);
+
+  useEffect(() => {
+    fetchSellerProducts();
+  }, []);
 
   const fetchSellerProducts = async () => {
     try {
@@ -65,7 +71,7 @@ export default function SellerProducts() {
   }
 
   if (!loading && products.length === 0) {
-    window.location.href = '/seller/empty-products';
+    router.push('/seller/empty-products');
     return null;
   }
 
