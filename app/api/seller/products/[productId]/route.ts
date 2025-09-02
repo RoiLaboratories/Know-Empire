@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '../../../../../utils/supabase';
 
-export async function PATCH(request: Request) {
+export async function PATCH(
+  request: Request,
+  { params }: { params: { productId: string } }
+) {
   const supabaseAdmin = createServiceClient();
+  const { productId } = params;
+  
   try {
-    const { searchParams } = new URL(request.url);
-    const productId = searchParams.get('id');
 
     if (!productId) {
       return NextResponse.json(
