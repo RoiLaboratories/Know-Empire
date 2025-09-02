@@ -37,6 +37,22 @@ export async function PATCH(request: Request) {
 
     console.log('Filtered updates:', filteredUpdates);
 
+    // First verify the product exists and belongs to this seller
+    const { data: product, error: fetchError } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .eq('id', productId)
+      .single();
+
+    if (fetchError || !product) {
+      console.error('Error fetching product:', fetchError);
+      return NextResponse.json(
+        { error: 'Product not found' },
+        { status: 404 }
+      );
+    }
+
+    // Now perform the update
     const { data, error } = await supabaseAdmin
       .from('products')
       .update(filteredUpdates)

@@ -44,12 +44,19 @@ export default function SellerProducts() {
   };
 
   const handleEditProduct = (product: SellerProduct | null) => {
-    setEditingProduct(product);
+    try {
+      setEditingProduct(product);
+    } catch (err) {
+      console.error('Error setting edit mode:', err);
+      setError('Failed to enter edit mode');
+    }
   };
 
   const handleSaveEdit = async (productId: string, updates: Partial<SellerProduct>) => {
     try {
+      setError(null); // Clear any previous errors
       console.log('Updating product:', { productId, updates });
+      
       const response = await fetch(`/api/seller/products?productId=${productId}`, {
         method: 'PATCH',
         headers: {
@@ -65,12 +72,13 @@ export default function SellerProducts() {
         throw new Error(data.error || 'Failed to update product');
       }
 
-      // Refresh the products list
+      // Only refresh and clear edit mode if update was successful
       await fetchSellerProducts();
       setEditingProduct(null);
     } catch (err) {
       console.error('Client error:', err);
       setError(err instanceof Error ? err.message : 'Failed to update product');
+      // Don't clear edit mode on error so user can try again
     }
   };
 
