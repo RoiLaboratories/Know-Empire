@@ -1,6 +1,63 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '../../../../utils/supabase';
 
+// PATCH handler for updating products
+export async function PATCH(request: Request) {
+  const supabaseAdmin = createServiceClient();
+  try {
+    const { searchParams } = new URL(request.url);
+    const productId = searchParams.get('productId');
+
+    if (!productId) {
+      return NextResponse.json(
+        { error: 'Product ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const updates = await request.json();
+
+    // Only allow specific fields to be updated
+    const allowedUpdates = [
+      'title',
+      'description',
+      'price',
+      'category',
+      'delivery',
+      'status'
+    ];
+
+    const filteredUpdates = Object.keys(updates).reduce((acc, key) => {
+      if (allowedUpdates.includes(key)) {
+        acc[key] = updates[key];
+      }
+      return acc;
+    }, {} as Record<string, any>);
+
+    const { error } = await supabaseAdmin
+      .from('products')
+      .update(filteredUpdates)
+      .eq('id', productId);
+
+    if (error) {
+      console.error('Error updating product:', error);
+      return NextResponse.json(
+        { error: 'Failed to update product' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error in product update:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// GET handler for fetching products
 export async function GET(request: Request) {
   const supabaseAdmin = createServiceClient();
   const { searchParams } = new URL(request.url);

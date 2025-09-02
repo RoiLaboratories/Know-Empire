@@ -52,7 +52,7 @@ export default function SellerProducts() {
 
   const handleSaveEdit = async (productId: string, updates: Partial<SellerProduct>) => {
     try {
-      const response = await fetch(`/api/seller/products/${productId}`, {
+      const response = await fetch(`/api/seller/products?productId=${productId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
