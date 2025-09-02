@@ -11,17 +11,17 @@ export async function GET(request: Request) {
   }
 
   try {
-    // First get the seller's UUID using their FID
-    const { data: seller, error: sellerError } = await supabaseAdmin
-      .from('sellers')
+    // First get the user's UUID using their FID
+    const { data: user, error: userError } = await supabaseAdmin
+      .from('users')
       .select('id')
       .eq('fid', sellerId)
       .single();
 
-    if (sellerError) {
-      console.error('Error fetching seller:', sellerError);
+    if (userError) {
+      console.error('Error fetching user:', userError);
       return NextResponse.json(
-        { error: 'Seller not found' },
+        { error: 'User not found' },
         { status: 404 }
       );
     }
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     const { data: products, error } = await supabaseAdmin
       .from('products')
       .select('*')
-      .eq('seller_id', seller.id)
+      .eq('seller_id', user.id)
       .order('created_at', { ascending: false });
 
     if (error) {
