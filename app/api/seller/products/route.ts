@@ -3,10 +3,18 @@ import { createServiceClient } from '../../../../utils/supabase';
 
 export async function GET(request: Request) {
   const supabaseAdmin = createServiceClient();
+  const { searchParams } = new URL(request.url);
+  const sellerId = searchParams.get('sellerId');
+
+  if (!sellerId) {
+    return NextResponse.json({ error: 'Missing sellerId parameter' }, { status: 400 });
+  }
+
   try {
     const { data: products, error } = await supabaseAdmin
       .from('products')
       .select('*')
+      .eq('seller_id', sellerId)
       .order('created_at', { ascending: false });
 
     if (error) {

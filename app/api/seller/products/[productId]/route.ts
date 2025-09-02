@@ -1,14 +1,20 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '../../../../../utils/supabase';
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: { productId: string } }
-) {
+export async function PATCH(request: Request) {
   const supabaseAdmin = createServiceClient();
   try {
+    const { searchParams } = new URL(request.url);
+    const productId = searchParams.get('id');
+
+    if (!productId) {
+      return NextResponse.json(
+        { error: 'Product ID is required' },
+        { status: 400 }
+      );
+    }
+
     const updates = await request.json();
-    const { productId } = params;
 
     // Only allow specific fields to be updated
     const allowedUpdates = [
