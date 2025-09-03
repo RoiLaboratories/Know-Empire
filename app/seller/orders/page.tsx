@@ -50,7 +50,7 @@ const SellerOrderManagement: NextPage = () => {
       }
 
       setLoading(true);
-      const response = await fetch(`/api/seller/orders?fid=${context.user.fid}&select=id,status,tracking_number,total_amount,escrow_id,isPaid,product:products(*)`);
+      const response = await fetch(`/api/seller/orders?fid=${context.user.fid}&select=id,status,tracking_number,total_amount,escrow_id,product:products(*)`);
       if (!response.ok) throw new Error('Failed to fetch orders');
       const data = await response.json();
       
@@ -463,15 +463,7 @@ const SellerOrderManagement: NextPage = () => {
                               Raise a dispute
                             </span>
                           </button>
-                          {!order.isPaid && (
-                            <button 
-                              className="w-full flex items-center justify-center gap-2.5 bg-[#22c55e] text-white rounded-lg py-2.5 px-5"
-                            >
-                              <span className="text-sm font-semibold">
-                                Mark as paid
-                              </span>
-                            </button>
-                          )}
+                          {/* Payment status button removed until isPaid column is added */}
                         </>
                       )}
                     </>

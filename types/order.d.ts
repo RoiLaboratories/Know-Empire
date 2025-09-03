@@ -18,6 +18,7 @@ interface Order {
   shipped_at: string | null;
   delivered_at: string | null;
   total_amount: number;
+  is_paid: boolean;
   escrow_id: string;
   product: {
     id: string;
