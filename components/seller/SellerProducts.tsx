@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { Product as BaseProduct } from "../../types/product";
-import Modal from "../../context/ModalContext";
+import Modal, { useModal } from "../../context/ModalContext";
 import EditProductModal from "./EditProductModal";
 import Image from "next/image";
 
@@ -86,20 +86,44 @@ export default function SellerProducts() {
     fetchSellerProducts();
   }, []);
 
-  // Wrap the component with Modal context
-  return (
-    <Modal>
-      <SellerProductsList 
-        products={products}
-        loading={loading}
-        error={error}
-        editingProduct={editingProduct}
-        onEditProduct={handleEditProduct}
-        onSaveEdit={handleSaveEdit}
-        router={router}
-      />
-    </Modal>
-  );
+    const { open, close } = useModal();
+
+    // Open the modal when editingProduct changes
+    useEffect(() => {
+      if (editingProduct) {
+        open('edit-product');
+      } else {
+        close('edit-product');
+      }
+    }, [editingProduct]);
+
+    return (
+      <Modal>
+        <div>
+          <SellerProductsList 
+            products={products}
+            loading={loading}
+            error={error}
+            editingProduct={editingProduct}
+            onEditProduct={handleEditProduct}
+            onSaveEdit={handleSaveEdit}
+            router={router}
+          />
+          {editingProduct && (
+            <Modal.Window name="edit-product" showBg={true}>
+              <EditProductModal
+                product={editingProduct}
+                onSave={handleSaveEdit}
+                onClose={() => {
+                  handleEditProduct(null);
+                  close('edit-product');
+                }}
+              />
+            </Modal.Window>
+          )}
+        </div>
+      </Modal>
+    );
 }
 
 function SellerProductsList({
@@ -178,13 +202,7 @@ function SellerProductsList({
         ))}
       </div>
 
-      {editingProduct && (
-        <EditProductModal
-          product={editingProduct}
-          onSave={onSaveEdit}
-          onClose={() => onEditProduct(null)}
-        />
-      )}
+      {/* Modal is handled in parent component */}
     </div>
   );
 }

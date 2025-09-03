@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import Modal from "../../context/ModalContext";
+import { useModal } from "../../context/ModalContext";
 import { Product as BaseProduct } from "../../types/product";
 
 type ProductUpdate = {
@@ -18,6 +18,7 @@ interface EditProductModalProps {
 }
 
 export default function EditProductModal({ product, onSave, onClose }: EditProductModalProps) {
+  const { close } = useModal();
   const [formData, setFormData] = useState<ProductUpdate>({
     title: product.title,
     description: product.description,
@@ -35,7 +36,8 @@ export default function EditProductModal({ product, onSave, onClose }: EditProdu
 
     try {
       await onSave(product.id, formData);
-      onClose();
+      close('edit-product'); // Close using modal context
+      onClose(); // Call the prop for cleanup
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update product');
     } finally {
@@ -44,9 +46,8 @@ export default function EditProductModal({ product, onSave, onClose }: EditProdu
   };
 
   return (
-    <Modal.Window name="edit-product" showBg={true}>
-      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-auto">
-        <h2 className="text-xl font-semibold mb-4">Edit Product</h2>
+    <div className="bg-white rounded-lg p-6 w-full max-w-md mx-auto">
+      <h2 className="text-xl font-semibold mb-4">Edit Product</h2>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -144,6 +145,5 @@ export default function EditProductModal({ product, onSave, onClose }: EditProdu
           </div>
         </form>
       </div>
-    </Modal.Window>
   );
 }
