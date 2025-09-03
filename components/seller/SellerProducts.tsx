@@ -45,18 +45,36 @@ export default function SellerProducts() {
 
   const handleEditProduct = (product: SellerProduct | null) => {
     try {
+      console.log('[handleEditProduct] Opening modal for product:', product?.id);
+      if (product) {
+        // Validate product data before setting
+        if (!product.id || !product.title) {
+          throw new Error('Invalid product data received');
+        }
+      }
       setEditingProduct(product);
+      console.log('[handleEditProduct] Successfully set editing product');
     } catch (err) {
-      console.error('Error setting edit mode:', err);
-      setError('Failed to enter edit mode');
+      console.error('[handleEditProduct] Error setting edit mode:', err);
+      setError(err instanceof Error ? err.message : 'Failed to enter edit mode');
     }
   };
 
   const handleSaveEdit = async (productId: string, updates: Partial<SellerProduct>) => {
     try {
       setError(null); // Clear any previous errors
-      console.log('Updating product:', { productId, updates });
+      console.log('[handleSaveEdit] Starting product update:', { productId, updates });
       
+      if (!productId) {
+        throw new Error('Product ID is required');
+      }
+
+      // Validate updates object
+      if (Object.keys(updates).length === 0) {
+        throw new Error('No updates provided');
+      }
+
+      console.log('[handleSaveEdit] Sending PATCH request to API');
       const response = await fetch(`/api/seller/products?productId=${productId}`, {
         method: 'PATCH',
         headers: {
@@ -65,11 +83,21 @@ export default function SellerProducts() {
         body: JSON.stringify(updates),
       });
 
-      const data = await response.json();
+      // Log the raw response for debugging
+      console.log('[handleSaveEdit] API Response status:', response.status);
+      
+      let data;
+      try {
+        data = await response.json();
+        console.log('[handleSaveEdit] API Response data:', data);
+      } catch (parseError) {
+        console.error('[handleSaveEdit] Error parsing response:', parseError);
+        throw new Error('Failed to parse server response');
+      }
       
       if (!response.ok) {
-        console.error('Server error:', data);
-        throw new Error(data.error || 'Failed to update product');
+        console.error('[handleSaveEdit] Server error:', data);
+        throw new Error(data.error || `Server error: ${response.status}`);
       }
 
       // Only refresh and clear edit mode if update was successful
@@ -117,13 +145,23 @@ function ModalWrapper({
   onSave: (productId: string, updates: Partial<SellerProduct>) => Promise<void>;
 }) {
   const { open, close } = useModal();
+  const [modalError, setModalError] = useState<string | null>(null);
 
   // Open the modal when editingProduct changes
   useEffect(() => {
-    if (editingProduct) {
-      open('edit-product');
-    } else {
-      close('edit-product');
+    try {
+      console.log('[ModalWrapper] EditingProduct changed:', editingProduct?.id);
+      if (editingProduct) {
+        console.log('[ModalWrapper] Attempting to open modal');
+        open('edit-product');
+        console.log('[ModalWrapper] Modal opened successfully');
+      } else {
+        console.log('[ModalWrapper] Closing modal');
+        close('edit-product');
+      }
+    } catch (err) {
+      console.error('[ModalWrapper] Error managing modal:', err);
+      setModalError(err instanceof Error ? err.message : 'Failed to manage modal state');
     }
   }, [editingProduct, open, close]);
 
