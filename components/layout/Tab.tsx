@@ -52,38 +52,38 @@ function Tab({ name, description, showRoutes = true }: ITab) {
   useEffect(() => {
     const checkAccountStatus = async (fid: number) => {
       try {
-        // Check seller status and orders
+        console.log('Checking account status for FID:', fid);
+        
+        // Check seller status first
         const sellerResponse = await fetch(`/api/seller/${fid}`);
         const sellerData = await sellerResponse.json();
         const isSeller = !!sellerData;
+        console.log('Seller status:', isSeller);
         setIsSellerAccount(isSeller);
 
         if (isSeller) {
-          // Check seller orders
-          const sellerOrdersResponse = await fetch(`/api/seller/orders?fid=${fid}`);
-          const sellerOrdersData = await sellerOrdersResponse.json();
-          const hasSellerOrders = Array.isArray(sellerOrdersData) && sellerOrdersData.length > 0;
           setTabs(sellerTabs);
           return; // Exit early for seller accounts
         }
 
-        // If not a seller, check buyer status and orders
-        console.log('Checking buyer status and orders for FID:', fid);
+        // If not a seller, check for orders first
+        console.log('Not a seller, checking for orders...');
         const ordersResponse = await fetch(`/api/orders?fid=${fid}`);
+        if (!ordersResponse.ok) {
+          throw new Error('Failed to fetch orders');
+        }
         const ordersData = await ordersResponse.json();
-        console.log('Buyer orders check response:', ordersData);
+        console.log('Orders data:', ordersData);
         const hasOrders = Array.isArray(ordersData) && ordersData.length > 0;
 
-        const buyerResponse = await fetch(`/api/buyer/${fid}`);
-        const buyerData = await buyerResponse.json();
-        const isBuyer = buyerData?.is_buyer === true;
-        setIsBuyerAccount(isBuyer);
-
-        // Set appropriate tabs for buyer or default
-        if (isBuyer && hasOrders) {
+        if (hasOrders) {
+          console.log('Found orders, setting buyer tabs');
           setTabs(buyerTabs);
+          setIsBuyerAccount(true);
         } else {
+          console.log('No orders found, setting default tabs');
           setTabs(defaultTabs);
+          setIsBuyerAccount(false);
         }
       } catch (error) {
         console.error('Error checking account status:', error);
@@ -103,11 +103,21 @@ function Tab({ name, description, showRoutes = true }: ITab) {
   const handleOrdersClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     
-    if (isSellerAccount && context?.user?.fid) {
+    if (!context?.user?.fid) {
+      console.log('No FID found, redirecting to empty order');
+      router.push("/buyer/empty-order");
+      return;
+    }
+
+    console.log('Current user FID:', context.user.fid);
+    console.log('Account status - isSeller:', isSellerAccount, 'isBuyer:', isBuyerAccount);
+
+    if (isSellerAccount) {
       try {
-        // Check for seller orders
+        console.log('Checking seller orders...');
         const sellerOrdersResponse = await fetch(`/api/seller/orders?fid=${context.user.fid}`);
         const sellerOrdersData = await sellerOrdersResponse.json();
+        console.log('Seller orders data:', sellerOrdersData);
         
         if (Array.isArray(sellerOrdersData) && sellerOrdersData.length > 0) {
           router.push("/seller/orders");
@@ -121,30 +131,30 @@ function Tab({ name, description, showRoutes = true }: ITab) {
       return;
     }
 
-    // If we have a buyer account, check for orders
-    if (isBuyerAccount && context?.user?.fid) {
-      try {
-        console.log('Checking buyer orders for FID:', context.user.fid);
-        const ordersResponse = await fetch(`/api/orders?fid=${context.user.fid}`); // Changed to use the main orders API endpoint
-        const ordersData = await ordersResponse.json();
-        console.log('Buyer orders response:', ordersData);
-        
-        if (Array.isArray(ordersData) && ordersData.length > 0) {
-          console.log('Found buyer orders, redirecting to order management');
-          router.push("/buyer/order_management");
-        } else {
-          console.log('No buyer orders found, redirecting to empty state');
-          router.push("/buyer/empty-order");
-        }
-      } catch (error) {
-        console.error('Error checking orders:', error);
+    // Check for any orders first
+    try {
+      console.log('Checking for buyer orders...');
+      const ordersResponse = await fetch(`/api/orders?fid=${context.user.fid}`);
+      
+      if (!ordersResponse.ok) {
+        console.error('Orders API responded with status:', ordersResponse.status);
+        throw new Error('Failed to fetch orders');
+      }
+      
+      const ordersData = await ordersResponse.json();
+      console.log('Buyer orders data:', ordersData);
+      
+      if (Array.isArray(ordersData) && ordersData.length > 0) {
+        console.log('Found orders, redirecting to order management');
+        router.push("/buyer/order_management");
+      } else {
+        console.log('No orders found, redirecting to empty state');
         router.push("/buyer/empty-order");
       }
-      return;
+    } catch (error) {
+      console.error('Error checking orders:', error);
+      router.push("/buyer/empty-order");
     }
-
-    // Default case - no account or error
-    router.push("/buyer/empty-order");
   };
 
   return (
