@@ -63,8 +63,8 @@ export async function GET(request: Request) {
           farcaster_username,
           display_name,
           avatar_url,
-          shipping_address,
-          phone_number
+          buyer_shipping_address,
+          buyer_phone
         ),
         product:products!orders_product_id_fkey (
           id,
@@ -103,8 +103,8 @@ export async function GET(request: Request) {
       },
       buyer: {
         farcaster_username: order.user?.farcaster_username || '',
-        shipping_address: order.user?.shipping_address || '',
-        phone_number: order.user?.phone_number || ''
+        shipping_address: order.user?.buyer_shipping_address || '',
+        phone_number: order.user?.buyer_phone || ''
       },
       escrow_id: order.escrow_id
     }));

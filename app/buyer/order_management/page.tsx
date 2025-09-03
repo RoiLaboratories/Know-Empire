@@ -21,8 +21,8 @@ interface Order {
     title: string;
     photos: string[];
     price: number;
-    seller: {
-      farcaster_id: string;
+    user: {
+      farcaster_username: string;
     };
   };
   escrow_status?: string;
@@ -116,7 +116,7 @@ export default function OrderManagementPage() {
               status={order.status}
               name={order.product.title}
               img={order.product.photos[0] || '/placeholder.png'}
-              seller={order.product.seller.farcaster_id}
+              seller={order.product.user.farcaster_username}
               price={order.total_amount.toFixed(2)}
               id={order.id}
             />
