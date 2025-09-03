@@ -28,8 +28,8 @@ interface Order {
   };
   buyer: {
     farcaster_username: string;
-    shipping_address: string;
     phone_number: string;
+    shipping_address: string;
   };
 }
 
@@ -370,15 +370,21 @@ const SellerOrderManagement: NextPage = () => {
                           <span>Buyer:</span>
                           <span className="text-gray-800">@{order.buyer.farcaster_username}</span>
                         </p>
-                        <p className="flex justify-between">
-                          <span>Phone:</span>
-                          <span className="text-gray-800">{order.buyer.phone_number}</span>
-                        </p>
-                        <div className="border-t border-gray-200 my-2" />
-                        <div>
-                          <span className="block text-sm mb-1">Shipping Address:</span>
-                          <p className="text-gray-800 text-sm whitespace-pre-line">{order.buyer.shipping_address}</p>
-                        </div>
+                        {order.buyer.phone_number && (
+                          <p className="flex justify-between">
+                            <span>Phone:</span>
+                            <span className="text-gray-800">{order.buyer.phone_number}</span>
+                          </p>
+                        )}
+                        {order.buyer.shipping_address && (
+                          <>
+                            <div className="border-t border-gray-200 my-2" />
+                            <div>
+                              <span className="block text-sm mb-1">Shipping Address:</span>
+                              <p className="text-gray-800 text-sm whitespace-pre-line">{order.buyer.shipping_address}</p>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
 
