@@ -68,8 +68,10 @@ function Tab({ name, description, showRoutes = true }: ITab) {
         }
 
         // If not a seller, check buyer status and orders
-        const ordersResponse = await fetch(`/api/buyer/orders?fid=${fid}`);
+        console.log('Checking buyer status and orders for FID:', fid);
+        const ordersResponse = await fetch(`/api/orders?fid=${fid}`);
         const ordersData = await ordersResponse.json();
+        console.log('Buyer orders check response:', ordersData);
         const hasOrders = Array.isArray(ordersData) && ordersData.length > 0;
 
         const buyerResponse = await fetch(`/api/buyer/${fid}`);
@@ -122,12 +124,16 @@ function Tab({ name, description, showRoutes = true }: ITab) {
     // If we have a buyer account, check for orders
     if (isBuyerAccount && context?.user?.fid) {
       try {
-        const ordersResponse = await fetch(`/api/buyer/orders?fid=${context.user.fid}`);
+        console.log('Checking buyer orders for FID:', context.user.fid);
+        const ordersResponse = await fetch(`/api/orders?fid=${context.user.fid}`); // Changed to use the main orders API endpoint
         const ordersData = await ordersResponse.json();
+        console.log('Buyer orders response:', ordersData);
         
         if (Array.isArray(ordersData) && ordersData.length > 0) {
+          console.log('Found buyer orders, redirecting to order management');
           router.push("/buyer/order_management");
         } else {
+          console.log('No buyer orders found, redirecting to empty state');
           router.push("/buyer/empty-order");
         }
       } catch (error) {
