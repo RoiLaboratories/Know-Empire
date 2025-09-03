@@ -266,10 +266,29 @@ const SellerOrderManagement: NextPage = () => {
   };
 
   // Filter orders based on search term
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-      .then(() => toast.success('Tracking ID copied to clipboard'))
-      .catch(() => toast.error('Failed to copy tracking ID'));
+  const copyToClipboard = async (text: string) => {
+    try {
+      // Try using Clipboard API first
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (clipboardErr) {
+        // Fallback to execCommand
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+      }
+      toast.success('Tracking ID copied to clipboard');
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      toast.error('Failed to copy tracking ID');
+    }
   };
 
   const filteredOrders = orders.filter(order => 
