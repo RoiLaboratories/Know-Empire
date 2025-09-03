@@ -6,6 +6,7 @@ import { Product as BaseProduct } from "../../types/product";
 import Modal, { useModal } from "../../context/ModalContext";
 import EditProductModal from "./EditProductModal";
 import Image from "next/image";
+import Button  from "../../ui/Button";
 
 interface SellerProduct extends Omit<BaseProduct, 'price'> {
   price: number;
@@ -247,24 +248,26 @@ function SellerProductsList({
                 Status: {product.status}
               </p>
               <div className="flex space-x-2">
-                <button
+                <Button
                   onClick={(e) => {
                     e.preventDefault();
                     console.log('[SellerProductsList] Edit button clicked for product:', product.id);
                     onEditProduct(product);
                   }}
-                  className="text-primary hover:text-primary/80 text-sm font-medium"
+                  variant="primary_outline"
+                  size="sm"
                 >
                   Edit Product
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => onSaveEdit(product.id, { 
                     status: product.status === 'active' ? 'inactive' : 'active' 
                   })}
-                  className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                  variant="secondary"
+                  size="sm"
                 >
                   {product.status === 'active' ? 'Deactivate' : 'Activate'}
-                </button>
+                </Button>
               </div>
             </div>
           </div>

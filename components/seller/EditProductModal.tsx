@@ -140,7 +140,7 @@ export default function EditProductModal({ product, onSave, onClose }: EditProdu
               disabled={saving}
               className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 disabled:opacity-50"
             >
-              {saving ? 'Saving...' : 'Save Changes'}
+              {saving ? 'Saving...' : 'Save'}
             </button>
           </div>
         </form>
