@@ -12,7 +12,8 @@ import { useAccount } from 'wagmi';
 import { generateTrackingId } from '@/utils/tracking';
 import Button from '@/ui/Button';
 import BackButton from "@/ui/BackButton";
-import CopyIcon from '@/assets/images/copy.png';
+import { Icon } from "@iconify/react";
+import { ICON } from "@/utils/icon-export";
 
 interface Order {
   id: string;
@@ -402,11 +403,9 @@ const SellerOrderManagement: NextPage = () => {
                           onClick={() => copyToClipboard(order.id)}
                           className="ml-2 p-1 hover:opacity-80 transition-opacity"
                         >
-                          <Image
-                            src={CopyIcon}
-                            alt="Copy"
-                            width={16}
-                            height={16}
+                          <Icon 
+                            icon={ICON.COPY} 
+                            fontSize={16}
                           />
                         </button>
                       </div>
