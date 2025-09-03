@@ -82,18 +82,18 @@ function OrdersCard({
               to="/raise-dispute"
             >
               <Icon icon={ICON.CAUTION} fontSize={16} />
-              Raised a Dispute
+              Raise a Dispute
             </Button>
 
             <Button variant="success" size="xs" className="rounded-lg">
               <Icon icon={ICON.ARROW_CHECKED} fontSize={16} />
-              Confirmed
+              Confirm Delivery
             </Button>
           </>
         ) : (
           <Button variant="warning" size="xs" className="rounded-lg">
             <Icon icon={ICON.CAUTION} fontSize={16} />
-            Raised a Dispute
+            Raise a Dispute
           </Button>
         )}
       </div>

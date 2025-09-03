@@ -3,22 +3,29 @@ import BackButton from "../../ui/BackButton";
 import Search from "../../components/Search";
 import OrdersCard from "../../components/cards/OrdersCard";
 // Order management page only displays orders, no purchase functionality
-
 import { useEffect, useState } from "react";
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { toast } from "react-hot-toast";
 
 interface Order {
   id: string;
-  status: string;
+  status: 'pending' | 'shipped' | 'delivered' | 'cancelled';
   total_amount: number;
+  buyer_id: string;
+  seller_id: string;
+  created_at: string;
+  updated_at: string;
   product: {
+    id: string;
     title: string;
     photos: string[];
+    price: number;
     seller: {
-      farcaster_username: string;
+      farcaster_id: string;
     };
   };
+  escrow_status?: string;
+  transaction_hash?: string;
 }
 
 function OrderManagement() {
@@ -27,26 +34,41 @@ function OrderManagement() {
   const { context } = useMiniKit();
 
   useEffect(() => {
-    const fetchOrders = async () => {
+    const fetchBuyerOrders = async () => {
       try {
         if (!context?.user?.fid) {
           toast.error('Please connect with Farcaster first');
           return;
         }
 
-        const response = await fetch(`/api/orders?fid=${context.user.fid}`);
-        if (!response.ok) throw new Error('Failed to fetch orders');
+        setLoading(true);
+        console.log('Fetching orders for buyer FID:', context.user.fid);
+
+        const response = await fetch(`/api/buyer/orders?fid=${context.user.fid}`);
+        if (!response.ok) {
+          console.error('Server responded with status:', response.status);
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch orders');
+        }
+
         const data = await response.json();
-        setOrders(data || []);
+        console.log('Received orders:', data);
+
+        // Sort orders by creation date, most recent first
+        const sortedOrders = data.sort((a: Order, b: Order) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+
+        setOrders(sortedOrders || []);
       } catch (error) {
-        console.error('Error fetching orders:', error);
-        toast.error('Failed to load orders');
+        console.error('Error fetching buyer orders:', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to load orders');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchOrders();
+    fetchBuyerOrders();
   }, [context?.user?.fid]);
 
   return (
@@ -77,9 +99,9 @@ function OrderManagement() {
                 key={order.id}
                 status={order.status}
                 name={order.product.title}
-                img={order.product.photos[0]}
-                seller={order.product.seller.farcaster_username}
-                price={order.total_amount.toString()}
+                img={order.product.photos[0] || '/placeholder.png'}
+                seller={order.product.seller.farcaster_id}
+                price={order.total_amount.toFixed(2)}
                 id={order.id}
               />
             ))}
