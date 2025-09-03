@@ -51,9 +51,10 @@ export default function SellerProducts() {
         if (!product.id || !product.title) {
           throw new Error('Invalid product data received');
         }
+        console.log('[handleEditProduct] Product data validated, setting editingProduct');
       }
       setEditingProduct(product);
-      console.log('[handleEditProduct] Successfully set editing product');
+      console.log('[handleEditProduct] Successfully set editing product state');
     } catch (err) {
       console.error('[handleEditProduct] Error setting edit mode:', err);
       setError(err instanceof Error ? err.message : 'Failed to enter edit mode');
@@ -115,22 +116,24 @@ export default function SellerProducts() {
   }, []);
 
     return (
-      <div>
-        <SellerProductsList 
-          products={products}
-          loading={loading}
-          error={error}
-          editingProduct={editingProduct}
-          onEditProduct={handleEditProduct}
-          onSaveEdit={handleSaveEdit}
-          router={router}
-        />
-        <ModalWrapper 
-          editingProduct={editingProduct}
-          onClose={handleEditProduct}
-          onSave={handleSaveEdit}
-        />
-      </div>
+      <Modal>
+        <div>
+          <SellerProductsList 
+            products={products}
+            loading={loading}
+            error={error}
+            editingProduct={editingProduct}
+            onEditProduct={handleEditProduct}
+            onSaveEdit={handleSaveEdit}
+            router={router}
+          />
+          <ModalWrapper 
+            editingProduct={editingProduct}
+            onClose={handleEditProduct}
+            onSave={handleSaveEdit}
+          />
+        </div>
+      </Modal>
     );
 }
 
@@ -165,21 +168,26 @@ function ModalWrapper({
     }
   }, [editingProduct, open, close]);
 
-  if (!editingProduct) return null;
-
+  // Always render the Modal.Window with valid content
   return (
-    <Modal>
-      <Modal.Window name="edit-product" showBg={true}>
-        <EditProductModal
-          product={editingProduct}
-          onSave={onSave}
-          onClose={() => {
-            onClose(null);
-            close('edit-product');
-          }}
-        />
-      </Modal.Window>
-    </Modal>
+    <Modal.Window name="edit-product" showBg={true}>
+      <div className="modal-content">
+        {editingProduct ? (
+          <EditProductModal
+            product={editingProduct}
+            onSave={onSave}
+            onClose={() => {
+              console.log('[ModalWrapper] Closing modal and clearing editingProduct');
+              onClose(null);
+              close('edit-product');
+            }}
+          />
+        ) : (
+          // Render an empty div when no product is being edited
+          <div style={{ display: 'none' }} />
+        )}
+      </div>
+    </Modal.Window>
   );
 }
 
@@ -240,7 +248,11 @@ function SellerProductsList({
               </p>
               <div className="flex space-x-2">
                 <button
-                  onClick={() => onEditProduct(product)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    console.log('[SellerProductsList] Edit button clicked for product:', product.id);
+                    onEditProduct(product);
+                  }}
                   className="text-primary hover:text-primary/80 text-sm font-medium"
                 >
                   Edit Product
