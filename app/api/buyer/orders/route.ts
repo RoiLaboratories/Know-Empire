@@ -2,11 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "../../../../utils/supabase";
 
 interface Seller {
-  id: string;
-  farcaster_id: string;
   farcaster_username: string;
-  display_name: string;
-  avatar_url: string;
 }
 
 interface Product {
@@ -22,7 +18,7 @@ interface Order {
   id: string;
   status: 'pending' | 'shipped' | 'delivered' | 'cancelled';
   created_at: string;
-  tracking_number: string | null;
+  tracking_number: string;  // Using order.id as tracking number
   shipped_at: string | null;
   delivered_at: string | null;
   total_amount: number;
@@ -64,9 +60,9 @@ export async function GET(request: Request) {
         status,
         total_amount,
         escrow_id,
-        tracking_number,
         shipped_at,
         delivered_at,
+        isPaid,
         product:products (
           id,
           title,
@@ -74,11 +70,7 @@ export async function GET(request: Request) {
           photos,
           price,
           seller:users!products_seller_id_fkey (
-            id,
-            farcaster_id,
-            farcaster_username,
-            display_name,
-            avatar_url
+            farcaster_username
           )
         )
       `)
@@ -97,7 +89,7 @@ export async function GET(request: Request) {
       id: order.id,
       status: order.status,
       created_at: order.created_at,
-      tracking_number: order.tracking_number,
+      tracking_number: order.id,  // Using order.id as tracking number
       shipped_at: order.shipped_at,
       delivered_at: order.delivered_at,
       total_amount: order.total_amount,
@@ -109,11 +101,7 @@ export async function GET(request: Request) {
         photos: order.product.photos,
         price: order.product.price,
         seller: {
-          id: order.product.seller.id,
-          farcaster_id: order.product.seller.farcaster_id,
-          farcaster_username: order.product.seller.farcaster_username,
-          display_name: order.product.seller.display_name,
-          avatar_url: order.product.seller.avatar_url
+          farcaster_username: order.product.seller.farcaster_username
         }
       }
     }));

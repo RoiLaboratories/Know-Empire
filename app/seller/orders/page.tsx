@@ -25,10 +25,11 @@ interface Order {
     id: string;
     title: string;
     photos: string[];
-    seller: {
-      username: string;
-      wallet_address: string;
-    };
+  };
+  buyer: {
+    farcaster_username: string;
+    shipping_address: string;
+    phone_number: string;
   };
 }
 
@@ -359,20 +360,40 @@ const SellerOrderManagement: NextPage = () => {
                       <span>{order.status}</span>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2 w-full text-[#6b88b5]">
-                    <div className="text-sm">Tracking ID:</div>
-                    <div className="w-full rounded-lg bg-[#f1f1f1] border border-[#989898] flex items-center p-2.5">
-                      <input
-                        className="flex-1 bg-transparent border-none outline-none text-sm text-[#989898]"
-                        // placeholder="Enter tracking number"
-                        type="text"
-                        value={order.tracking_number || ''}
-                        onChange={(e) => updateTrackingNumber(order.id, e.target.value)}
-                        readOnly={order.status !== 'pending'}
-                      />
-                      {order.tracking_number && order.status !== 'pending' && (
+                  {/* Buyer Info and Tracking ID */}
+                  <div className="flex flex-col gap-4 w-full text-[#6b88b5]">
+                    {/* Buyer Details */}
+                    <div className="flex flex-col gap-2">
+                      <div className="text-sm font-medium">Buyer Information:</div>
+                      <div className="space-y-1 text-sm text-gray-600">
+                        <p className="flex justify-between">
+                          <span>Buyer:</span>
+                          <span className="text-gray-800">@{order.buyer.farcaster_username}</span>
+                        </p>
+                        <p className="flex justify-between">
+                          <span>Phone:</span>
+                          <span className="text-gray-800">{order.buyer.phone_number}</span>
+                        </p>
+                        <div className="border-t border-gray-200 my-2" />
+                        <div>
+                          <span className="block text-sm mb-1">Shipping Address:</span>
+                          <p className="text-gray-800 text-sm whitespace-pre-line">{order.buyer.shipping_address}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Tracking ID */}
+                    <div className="flex flex-col gap-2">
+                      <div className="text-sm">Tracking ID:</div>
+                      <div className="w-full rounded-lg bg-[#f1f1f1] border border-[#989898] flex items-center p-2.5">
+                        <input
+                          className="flex-1 bg-transparent border-none outline-none text-sm text-[#989898]"
+                          type="text"
+                          value={order.id}
+                          readOnly
+                        />
                         <button
-                          onClick={() => copyToClipboard(order.tracking_number!)}
+                          onClick={() => copyToClipboard(order.id)}
                           className="ml-2 p-1 hover:opacity-80 transition-opacity"
                         >
                           <Image
@@ -382,7 +403,7 @@ const SellerOrderManagement: NextPage = () => {
                             height={16}
                           />
                         </button>
-                      )}
+                      </div>
                     </div>
                   </div>
                   {(order.status === 'pending' || order.status === 'shipped' || order.status === 'delivered') && (

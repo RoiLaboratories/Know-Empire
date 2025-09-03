@@ -61,7 +61,9 @@ export async function GET(request: Request) {
           farcaster_id,
           farcaster_username,
           display_name,
-          avatar_url
+          avatar_url,
+          shipping_address,
+          phone_number
         ),
         product:products!orders_product_id_fkey (
           id,
@@ -83,16 +85,26 @@ export async function GET(request: Request) {
     }
 
     // Transform orders to match our types
-    const transformedOrders = !orders ? [] : orders.map(order => ({
+    const transformedOrders = !orders ? [] : orders.map((order: any) => ({
       id: order.id,
       status: order.status,
       created_at: order.created_at,
-      tracking_number: order.tracking_number,
+      tracking_number: order.id, // Using order.id as tracking number
       shipped_at: order.shipped_at,
       delivered_at: order.delivered_at,
       total_amount: order.total_amount,
-      product: order.product,
-      buyer: order.buyer,
+      product: {
+        id: order.product.id,
+        title: order.product.title,
+        description: order.product.description,
+        photos: order.product.photos,
+        price: order.product.price
+      },
+      buyer: {
+        farcaster_username: order.buyer?.farcaster_username || '',
+        shipping_address: order.buyer?.shipping_address || '',
+        phone_number: order.buyer?.phone_number || ''
+      },
       escrow_id: order.escrow_id
     }));
 

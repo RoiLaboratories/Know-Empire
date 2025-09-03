@@ -13,10 +13,20 @@ interface Product {
 interface Order {
   id: string;
   status: 'pending' | 'shipped' | 'delivered' | 'cancelled';
-  price: number;
   created_at: string;
   tracking_number: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
+  total_amount: number;
   escrow_id: string;
-  product: Product;
-  seller: Seller;
+  product: {
+    id: string;
+    title: string;
+    description: string;
+    photos: string[];
+    price: number;
+    seller: {
+      farcaster_username: string;
+    };
+  };
 }
