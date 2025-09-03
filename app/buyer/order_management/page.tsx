@@ -11,22 +11,22 @@ import { toast } from "react-hot-toast";
 interface Order {
   id: string;
   status: 'pending' | 'shipped' | 'delivered' | 'cancelled';
-  total_amount: number;
-  buyer_id: string;
-  seller_id: string;
   created_at: string;
-  updated_at: string;
+  tracking_number: string;
+  shipped_at: string | null;
+  delivered_at: string | null;
+  total_amount: number;
+  escrow_id: string;
   product: {
     id: string;
     title: string;
+    description: string;
     photos: string[];
     price: number;
     user: {
       farcaster_username: string;
     };
   };
-  escrow_status?: string;
-  transaction_hash?: string;
 }
 
 export default function OrderManagementPage() {

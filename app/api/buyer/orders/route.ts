@@ -11,7 +11,9 @@ interface Product {
   description: string;
   photos: string[];
   price: number;
-  seller: Seller;
+  user: {
+    farcaster_username: string;
+  };
 }
 
 interface Order {
@@ -100,7 +102,7 @@ export async function GET(request: Request) {
         description: order.product.description,
         photos: order.product.photos,
         price: order.product.price,
-        seller: {
+        user: {
           farcaster_username: order.product.user.farcaster_username
         }
       }
