@@ -11,7 +11,7 @@ export default function SellerProductsPage() {
   return (
     <Modal>
       <div className="space-y-6">
-        <div className="px-4">
+        <div className="px-4 mt-4">
           <BackButton onClick={() => router.back()} />
         </div>
 
