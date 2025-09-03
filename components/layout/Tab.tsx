@@ -52,22 +52,33 @@ function Tab({ name, description, showRoutes = true }: ITab) {
   useEffect(() => {
     const checkAccountStatus = async (fid: number) => {
       try {
-        // Check seller status
+        // Check seller status and orders
         const sellerResponse = await fetch(`/api/seller/${fid}`);
         const sellerData = await sellerResponse.json();
         const isSeller = !!sellerData;
         setIsSellerAccount(isSeller);
 
-        // Check buyer status
+        if (isSeller) {
+          // Check seller orders
+          const sellerOrdersResponse = await fetch(`/api/seller/orders?fid=${fid}`);
+          const sellerOrdersData = await sellerOrdersResponse.json();
+          const hasSellerOrders = Array.isArray(sellerOrdersData) && sellerOrdersData.length > 0;
+          setTabs(sellerTabs);
+          return; // Exit early for seller accounts
+        }
+
+        // If not a seller, check buyer status and orders
+        const ordersResponse = await fetch(`/api/buyer/orders?fid=${fid}`);
+        const ordersData = await ordersResponse.json();
+        const hasOrders = Array.isArray(ordersData) && ordersData.length > 0;
+
         const buyerResponse = await fetch(`/api/buyer/${fid}`);
         const buyerData = await buyerResponse.json();
-        const isBuyer = !!buyerData;
+        const isBuyer = buyerData?.is_buyer === true;
         setIsBuyerAccount(isBuyer);
 
-        // Set appropriate tabs
-        if (isSeller) {
-          setTabs(sellerTabs);
-        } else if (isBuyer) {
+        // Set appropriate tabs for buyer or default
+        if (isBuyer && hasOrders) {
           setTabs(buyerTabs);
         } else {
           setTabs(defaultTabs);
@@ -87,25 +98,47 @@ function Tab({ name, description, showRoutes = true }: ITab) {
     }
   }, [context?.user?.fid]);
 
-  const handleOrdersClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleOrdersClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     
-    // If no account exists, redirect to empty-order page
-    if (!isSellerAccount && !isBuyerAccount) {
-      router.push("/buyer/empty-order");
+    if (isSellerAccount && context?.user?.fid) {
+      try {
+        // Check for seller orders
+        const sellerOrdersResponse = await fetch(`/api/seller/orders?fid=${context.user.fid}`);
+        const sellerOrdersData = await sellerOrdersResponse.json();
+        
+        if (Array.isArray(sellerOrdersData) && sellerOrdersData.length > 0) {
+          router.push("/seller/orders");
+        } else {
+          router.push("/seller/empty-orders");
+        }
+      } catch (error) {
+        console.error('Error checking seller orders:', error);
+        router.push("/seller/empty-orders");
+      }
       return;
     }
 
-    const isBuyerOrdersPage = pathname === "/buyer/order_management";
-    const isSellerOrdersPage = pathname === "/seller/orders";
-    
-    if ((isBuyerOrdersPage && isBuyerAccount) || (isSellerOrdersPage && isSellerAccount)) {
-      // If we're already on the correct orders page, prevent navigation
+    // If we have a buyer account, check for orders
+    if (isBuyerAccount && context?.user?.fid) {
+      try {
+        const ordersResponse = await fetch(`/api/buyer/orders?fid=${context.user.fid}`);
+        const ordersData = await ordersResponse.json();
+        
+        if (Array.isArray(ordersData) && ordersData.length > 0) {
+          router.push("/buyer/order_management");
+        } else {
+          router.push("/buyer/empty-order");
+        }
+      } catch (error) {
+        console.error('Error checking orders:', error);
+        router.push("/buyer/empty-order");
+      }
       return;
     }
 
-    // Navigate to the appropriate orders page based on account type
-    router.push(isSellerAccount ? "/seller/orders" : "/buyer/order_management");
+    // Default case - no account or error
+    router.push("/buyer/empty-order");
   };
 
   return (
