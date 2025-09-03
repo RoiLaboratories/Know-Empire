@@ -86,44 +86,63 @@ export default function SellerProducts() {
     fetchSellerProducts();
   }, []);
 
-    const { open, close } = useModal();
-
-    // Open the modal when editingProduct changes
-    useEffect(() => {
-      if (editingProduct) {
-        open('edit-product');
-      } else {
-        close('edit-product');
-      }
-    }, [editingProduct]);
-
     return (
-      <Modal>
-        <div>
-          <SellerProductsList 
-            products={products}
-            loading={loading}
-            error={error}
-            editingProduct={editingProduct}
-            onEditProduct={handleEditProduct}
-            onSaveEdit={handleSaveEdit}
-            router={router}
-          />
-          {editingProduct && (
-            <Modal.Window name="edit-product" showBg={true}>
-              <EditProductModal
-                product={editingProduct}
-                onSave={handleSaveEdit}
-                onClose={() => {
-                  handleEditProduct(null);
-                  close('edit-product');
-                }}
-              />
-            </Modal.Window>
-          )}
-        </div>
-      </Modal>
+      <div>
+        <SellerProductsList 
+          products={products}
+          loading={loading}
+          error={error}
+          editingProduct={editingProduct}
+          onEditProduct={handleEditProduct}
+          onSaveEdit={handleSaveEdit}
+          router={router}
+        />
+        <ModalWrapper 
+          editingProduct={editingProduct}
+          onClose={handleEditProduct}
+          onSave={handleSaveEdit}
+        />
+      </div>
     );
+}
+
+// Client-side modal wrapper component
+function ModalWrapper({
+  editingProduct,
+  onClose,
+  onSave,
+}: {
+  editingProduct: SellerProduct | null;
+  onClose: (product: SellerProduct | null) => void;
+  onSave: (productId: string, updates: Partial<SellerProduct>) => Promise<void>;
+}) {
+  const { open, close } = useModal();
+
+  // Open the modal when editingProduct changes
+  useEffect(() => {
+    if (editingProduct) {
+      open('edit-product');
+    } else {
+      close('edit-product');
+    }
+  }, [editingProduct, open, close]);
+
+  if (!editingProduct) return null;
+
+  return (
+    <Modal>
+      <Modal.Window name="edit-product" showBg={true}>
+        <EditProductModal
+          product={editingProduct}
+          onSave={onSave}
+          onClose={() => {
+            onClose(null);
+            close('edit-product');
+          }}
+        />
+      </Modal.Window>
+    </Modal>
+  );
 }
 
 function SellerProductsList({
