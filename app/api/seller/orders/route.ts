@@ -56,7 +56,8 @@ export async function GET(request: Request) {
         tracking_number,
         shipped_at,
         delivered_at,
-        buyer:users!orders_buyer_id_fkey (
+        is_paid,
+        user:users!orders_buyer_id_fkey (
           id,
           farcaster_id,
           farcaster_username,
@@ -101,9 +102,9 @@ export async function GET(request: Request) {
         price: order.product.price
       },
       buyer: {
-        farcaster_username: order.buyer?.farcaster_username || '',
-        shipping_address: order.buyer?.shipping_address || '',
-        phone_number: order.buyer?.phone_number || ''
+        farcaster_username: order.user?.farcaster_username || '',
+        shipping_address: order.user?.shipping_address || '',
+        phone_number: order.user?.phone_number || ''
       },
       escrow_id: order.escrow_id
     }));

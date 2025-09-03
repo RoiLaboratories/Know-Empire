@@ -20,7 +20,7 @@ interface Order {
   tracking_number: string | null;
   total_amount: number;
   escrow_id: string;
-  isPaid: boolean;
+  is_paid: boolean;
   product: {
     id: string;
     title: string;

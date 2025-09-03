@@ -62,14 +62,14 @@ export async function GET(request: Request) {
         escrow_id,
         shipped_at,
         delivered_at,
-        isPaid,
+        is_paid,
         product:products (
           id,
           title,
           description,
           photos,
           price,
-          seller:users!products_seller_id_fkey (
+          user:users!products_seller_id_fkey (
             farcaster_username
           )
         )
@@ -101,7 +101,7 @@ export async function GET(request: Request) {
         photos: order.product.photos,
         price: order.product.price,
         seller: {
-          farcaster_username: order.product.seller.farcaster_username
+          farcaster_username: order.product.user.farcaster_username
         }
       }
     }));
