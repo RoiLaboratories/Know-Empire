@@ -47,7 +47,9 @@ export default function EditProductModal({ product, onSave, onClose }: EditProdu
 
   return (
     <div className="bg-white rounded-lg p-6 w-full max-w-md mx-auto">
-      <h2 className="text-xl font-semibold mb-4">Edit Product</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Edit Product</h2>
+      </div>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
