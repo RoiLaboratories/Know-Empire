@@ -311,8 +311,6 @@ const SellerOrderManagement: NextPage = () => {
 
           {loading ? (
             <div className="text-center py-8">Loading orders...</div>
-          ) : filteredOrders.length === 0 ? (
-            <div className="text-center py-8">No orders found</div>
           ) : (
             <div className="w-full space-y-4">
               {filteredOrders.map((order) => (

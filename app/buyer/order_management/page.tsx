@@ -1,9 +1,10 @@
 "use client";
-import BackButton from "../../ui/BackButton";
-import Search from "../../components/Search";
-import OrdersCard from "../../components/cards/OrdersCard";
-// Order management page only displays orders, no purchase functionality
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import BackButton from "../../../ui/BackButton";
+import Search from "../../../components/Search";
+import Tab from "../../../components/layout/Tab";
+import OrdersCard from "../../../components/cards/OrdersCard";
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { toast } from "react-hot-toast";
 
@@ -28,10 +29,11 @@ interface Order {
   transaction_hash?: string;
 }
 
-function OrderManagement() {
+export default function OrderManagementPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const { context } = useMiniKit();
+  const router = useRouter();
 
   useEffect(() => {
     const fetchBuyerOrders = async () => {
@@ -71,45 +73,56 @@ function OrderManagement() {
     fetchBuyerOrders();
   }, [context?.user?.fid]);
 
+  // Redirect to empty orders page if no orders are found
+  useEffect(() => {
+    if (!loading && orders.length === 0) {
+      router.push('/buyer/empty-order');
+    }
+  }, [loading, orders.length, router]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center w-full h-full min-h-[200px]">
+        <p>Loading orders...</p>
+      </div>
+    );
+  }
+
+  // If no orders, return null as we're redirecting
+  if (orders.length === 0) {
+    return null;
+  }
+
   return (
     <section className="flex flex-col items-center min-h-screen pb-3 bg-white">
       <div className="w-9/10 max-w-lg flex flex-col flex-1 gap-y-1">
         <div className="sticky top-0 space-y-3 py-3 bg-white">
-          <BackButton />
-          <div className="text-gray flex flex-col items-center">
-            <p className="text-xl font-bold">Order Management</p>
+          <div className="px-4 mt-4">
+            <BackButton onClick={() => router.back()} />
           </div>
+          <Tab
+            name="My Orders"
+            description="Track your purchases and leave reviews"
+          />
           <div className="mt-6">
             <Search placeholder="Search orders..." />
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center w-full h-full min-h-[200px]">
-            <p>Loading orders...</p>
-          </div>
-        ) : orders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center w-full h-full min-h-[200px]">
-            <p>No orders found</p>
-          </div>
-        ) : (
-          <ul className="grid grid-cols-1 gap-5 mt-2.5">
-            {orders.map((order) => (
-              <OrdersCard
-                key={order.id}
-                status={order.status}
-                name={order.product.title}
-                img={order.product.photos[0] || '/placeholder.png'}
-                seller={order.product.seller.farcaster_id}
-                price={order.total_amount.toFixed(2)}
-                id={order.id}
-              />
-            ))}
-          </ul>
-        )}
+        <ul className="grid grid-cols-1 gap-5 mt-2.5">
+          {orders.map((order) => (
+            <OrdersCard
+              key={order.id}
+              status={order.status}
+              name={order.product.title}
+              img={order.product.photos[0] || '/placeholder.png'}
+              seller={order.product.seller.farcaster_id}
+              price={order.total_amount.toFixed(2)}
+              id={order.id}
+            />
+          ))}
+        </ul>
       </div>
     </section>
   );
 }
-
-export default OrderManagement;
