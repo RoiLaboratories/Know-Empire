@@ -16,7 +16,25 @@ const nextConfig = {
           headers: [
             {
               key: 'Permissions-Policy',
-              value: 'clipboard-write=*'
+              value: 'clipboard-write=self'
+            }
+          ],
+        },
+        {
+          source: '/seller/orders',
+          headers: [
+            {
+              key: 'Permissions-Policy',
+              value: 'clipboard-write=self'
+            }
+          ],
+        },
+        {
+          source: '/buyer/order_management',
+          headers: [
+            {
+              key: 'Permissions-Policy',
+              value: 'clipboard-write=self'
             }
           ],
         }
