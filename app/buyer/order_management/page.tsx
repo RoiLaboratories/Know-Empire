@@ -46,7 +46,7 @@ export default function OrderManagementPage() {
         setLoading(true);
         console.log('Fetching orders for buyer FID:', context.user.fid);
 
-        const response = await fetch(`/api/orders?fid=${context.user.fid}`);
+        const response = await fetch(`/api/buyer/orders?fid=${context.user.fid}`);
         if (!response.ok) {
           console.error('Server responded with status:', response.status);
           const errorData = await response.json();

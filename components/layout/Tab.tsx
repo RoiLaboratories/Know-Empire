@@ -68,7 +68,7 @@ function Tab({ name, description, showRoutes = true }: ITab) {
 
         // If not a seller, check for orders first
         console.log('Not a seller, checking for orders...');
-        const ordersResponse = await fetch(`/api/orders?fid=${fid}`);
+        const ordersResponse = await fetch(`/api/buyer/orders?fid=${fid}`);
         if (!ordersResponse.ok) {
           throw new Error('Failed to fetch orders');
         }
@@ -134,7 +134,7 @@ function Tab({ name, description, showRoutes = true }: ITab) {
     // Check for any orders first
     try {
       console.log('Checking for buyer orders...');
-      const ordersResponse = await fetch(`/api/orders?fid=${context.user.fid}`);
+      const ordersResponse = await fetch(`/api/buyer/orders?fid=${context.user.fid}`);
       
       if (!ordersResponse.ok) {
         console.error('Orders API responded with status:', ordersResponse.status);
