@@ -82,7 +82,18 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
           <span className="font-semibold text-primary text-xs">
             ${unitPrice}
           </span>
-          <span className="text-[10px] text-yellow-300">@{product.seller.username}</span>
+          <span className="text-[10px] text-yellow-300 flex items-center gap-1">
+            @{product.seller.username}
+            {product.seller.is_verified && (
+              <span title="Verified trader (6+ successful trades)">
+                <Icon
+                  icon={ICON.VERIFIED}
+                  className="text-green-500"
+                  fontSize={12}
+                />
+              </span>
+            )}
+          </span>
           <span className="text-gray-lighter text-[8px] flex items-center gap-x-1">
             <Image alt="location" src={Map} />
             {location}

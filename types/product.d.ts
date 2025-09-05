@@ -18,5 +18,6 @@ export interface ProductWithSeller extends Product {
     review_count?: number;
     wallet_address?: string;
     farcaster_id: string;
+    is_verified?: boolean;
   };
 }

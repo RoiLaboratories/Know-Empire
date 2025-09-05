@@ -51,7 +51,18 @@ function ProductSummaryPopup({ onNext, product }: ProductSummaryPopupProps) {
             <div className="flex flex-col gap-1">
               <p className="text-xs text-gray-500">Seller</p>
               <div className="flex items-center justify-between">
-                <span className="font-medium text-[13px]">@{product.seller.username}</span>
+                <span className="font-medium text-[13px] flex items-center gap-2">
+                  @{product.seller.username}
+                  {product.seller.is_verified && (
+                    <span title="Verified trader (6+ successful trades)">
+                      <Icon
+                        icon={ICON.VERIFIED}
+                        className="text-green-500"
+                        fontSize={14}
+                      />
+                    </span>
+                  )}
+                </span>
                 <div className="flex items-center gap-2">
                   <span className="flex gap-x-1 text-xs items-center">
                     {Array.from({ length: 5 }).map((_, i) => (

@@ -31,7 +31,9 @@ interface SellerInfo {
   is_seller: boolean;
   seller_since?: string;
   items_sold?: number;
+  items_bought?: number;
   rating?: number;
+  is_verified?: boolean;
 }
 
 interface FarcasterUser {
@@ -101,15 +103,36 @@ function Profile() {
   useEffect(() => {
     const loadSellerInfo = async () => {
       if (user?.fid) {
-        // Check seller status from the users table
-        const { data, error } = await supabase
-          .from('users')
-          .select('is_seller, seller_since, seller_category, seller_email, seller_location, seller_description')
-          .eq('farcaster_id', user.fid)
-          .single();
+        // Get user info and successful trades count
+        const [userResponse, sellerOrdersResponse, buyerOrdersResponse] = await Promise.all([
+          // Get user info
+          supabase
+            .from('users')
+            .select('is_seller, seller_since, seller_category, seller_email, seller_location, seller_description')
+            .eq('farcaster_id', user.fid)
+            .single(),
+          // Count successful seller orders
+          supabase
+            .from('orders')
+            .select('id', { count: 'exact' })
+            .eq('seller_id', user.fid)
+            .eq('status', 'completed'),
+          // Count successful buyer orders
+          supabase
+            .from('orders')
+            .select('id', { count: 'exact' })
+            .eq('buyer_id', user.fid)
+            .eq('status', 'completed')
+        ]);
 
-        if (!error && data) {
-          setSellerInfo(data);
+        if (!userResponse.error && userResponse.data) {
+          const totalSuccessfulTrades = (sellerOrdersResponse.count || 0) + (buyerOrdersResponse.count || 0);
+          setSellerInfo({
+            ...userResponse.data,
+            items_sold: sellerOrdersResponse.count || 0,
+            items_bought: buyerOrdersResponse.count || 0,
+            is_verified: totalSuccessfulTrades >= 6 // Set verified status based on total trades
+          });
         }
       }
       setIsLoading(false);
@@ -310,18 +333,18 @@ function Profile() {
             <p className="font-bold text-2xl">{user?.displayName}</p>
           </div>
 
-          {/* <div className="text-xs text-[#5a5a5a] space-y-1">
+          <div className="text-xs text-[#5a5a5a] space-y-1">
             <p className="font-bold">BADGES</p>
             <div className="flex items-center gap-x-3">
-              <button className="flex items-center justify-center rounded-full py-1 px-4 border border-gray-light font-medium btn">
+              {/* <button className="flex items-center justify-center rounded-full py-1 px-4 border border-gray-light font-medium btn">
                 Both
-              </button>
+              </button> */}
               <button className="flex items-center justify-center gap-x-1 rounded-full py-1 px-3 bg-green-500 font-medium btn text-white border border-green-500">
                 <Image alt="wallet" src={Verified} />
                 Verified
               </button>
             </div>
-          </div> */}
+          </div>
 
           <p className="font-bold flex items-center text-xs text-[#5a5a5a] gap-1">
             Summary Stats
@@ -339,7 +362,7 @@ function Profile() {
             <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
               <Icon icon={ICON.BUY} fontSize={26} className="text-green-500" />
               <p className="text-[10px] font-medium">
-                {sellerInfo?.items_sold || 0}
+                {sellerInfo?.items_bought || 0}
               </p>
               <p className="text-[7px] text-nowrap">items Bought</p>
             </div>
@@ -354,18 +377,26 @@ function Profile() {
               </p>
               <p className="text-[7px]">Rating</p>
             </div>
-            <div className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center  justify-center gap-[2px]">
+            <div 
+              className="bg-[#f4f2f8] rounded-md py-2 px-6 flex flex-col items-center justify-center gap-[2px] relative group"
+              title="Complete 6 successful trades to become verified"
+            >
               <Icon
                 icon={ICON.VERIFIED}
                 fontSize={26}
                 className={
-                  sellerInfo?.is_seller ? "text-green-500" : "text-gray-400"
+                  sellerInfo?.is_verified ? "text-green-500" : "text-gray-400"
                 }
               />
               <p className="text-[10px] font-medium">
-                {sellerInfo?.is_seller ? "Verified" : "Not"}
+                {sellerInfo?.is_verified ? "Verified" : "Not"}
               </p>
-              <p className="text-[7px]">Seller</p>
+              <p className="text-[7px]">Trader</p>
+              <div className="hidden group-hover:block absolute bottom-full left-1/2 transform -translate-x-1/2 bg-black text-white text-xs rounded py-1 px-2 mb-2 whitespace-nowrap">
+                {sellerInfo?.is_verified 
+                  ? "Verified trader (6+ successful trades)"
+                  : `${((sellerInfo?.items_sold || 0) + (sellerInfo?.items_bought || 0))} / 6 trades completed`}
+              </div>
             </div>
           </div>
 
