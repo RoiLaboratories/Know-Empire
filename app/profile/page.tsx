@@ -352,13 +352,12 @@ function Profile() {
           <div className="text-xs text-[#5a5a5a] space-y-1">
             <p className="font-bold">BADGES</p>
             <div className="flex items-center gap-x-3">
-              {/* <button className="flex items-center justify-center rounded-full py-1 px-4 border border-gray-light font-medium btn">
-                Both
-              </button> */}
-              <button className="flex items-center justify-center gap-x-1 rounded-full py-1 px-3 bg-green-500 font-medium btn text-white border border-green-500">
-                <Image alt="wallet" src={Verified} />
-                Verified
-              </button>
+              {sellerInfo?.is_verified && (
+                <button className="flex items-center justify-center gap-x-1 rounded-full py-1 px-3 bg-green-500 font-medium btn text-white border border-green-500">
+                  <Image alt="verified" src={Verified} />
+                  Verified
+                </button>
+              )}
             </div>
           </div>
 
