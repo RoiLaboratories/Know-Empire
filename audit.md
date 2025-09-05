@@ -106,9 +106,9 @@ Impact: Low risk on Base, but could affect edge cases in high-stakes escrows.
 
 Location: `checkAndAutoRelease`.
 
-I
 
-# nformational Issues
+
+# Informational Issues
 
 # 1. Inconsistent or Incomplete Natspec Documentation  
 Description: Some functions lack full Natspec comments (e.g. `@param` for all inputs, `@return` where applicable). For example, `initiateDispute` has basic `@dev` but no param details.  
