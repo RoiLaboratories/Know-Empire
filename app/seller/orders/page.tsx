@@ -210,7 +210,7 @@ const SellerOrderManagement: NextPage = () => {
           status: 'shipped',
           tracking_number: trackingNumber,
           fid: context.user.fid,
-          select: 'id,status,tracking_number,total_amount,escrow_id,isPaid,product:products(*)'
+          select: 'id,status,tracking_number,total_amount,escrow_id,is_paid,product:products(id,title,photos)'
         })
       });
 
