@@ -21,8 +21,20 @@ export async function POST(request: Request) {
         shipped_at: status === 'shipped' ? new Date().toISOString() : null
       })
       .eq('id', id)
-      .eq('product.seller.fid', fid)
-      .select()
+      .eq('seller_id', fid)
+      .select(`
+        id,
+        status,
+        tracking_number,
+        total_amount,
+        escrow_id,
+        is_paid,
+        product:products (
+          id,
+          title,
+          photos
+        )
+      `)
       .single();
 
     if (error) throw error;
