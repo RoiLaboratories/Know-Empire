@@ -375,7 +375,28 @@ const SellerOrderManagement: NextPage = () => {
                 Orders to Fulfill
               </button>
               <button
-                onClick={() => setActiveTab('buyer')}
+                onClick={async () => {
+                  if (!context?.user?.fid) {
+                    toast.error('Please connect with Farcaster first');
+                    return;
+                  }
+
+                  try {
+                    // Check if the seller has any purchases
+                    const response = await fetch(`/api/buyer/orders?fid=${context.user.fid}`);
+                    const orders = await response.json();
+
+                    // Redirect based on whether they have purchases or not
+                    if (Array.isArray(orders) && orders.length > 0) {
+                      router.push('/buyer/order_management');
+                    } else {
+                      router.push('/buyer/empty-order');
+                    }
+                  } catch (error) {
+                    console.error('Error checking buyer orders:', error);
+                    router.push('/buyer/empty-order');
+                  }
+                }}
                 className={`flex-1 py-2 px-4 text-sm font-medium ${
                   activeTab === 'buyer'
                     ? 'border-b-2 border-blue-600 text-blue-600'
