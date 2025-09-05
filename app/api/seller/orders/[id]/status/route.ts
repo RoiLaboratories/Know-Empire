@@ -4,7 +4,7 @@ import { createServiceClient } from '../../../../../../utils/supabase';
 export async function POST(request: Request) {
   try {
     const { pathname } = new URL(request.url);
-    const id = pathname.split('/').pop();
+    const orderId = pathname.split('/').slice(-2)[0]; // Get the ID part from /orders/{id}/status
     const { status, tracking_number, fid } = await request.json();
     const supabaseAdmin = createServiceClient();
 
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
         tracking_number: tracking_number || null,
         shipped_at: status === 'shipped' ? new Date().toISOString() : null
       })
-      .eq('id', id)
+      .eq('id', orderId)
       .eq('seller_id', fid)
       .select(`
         id,

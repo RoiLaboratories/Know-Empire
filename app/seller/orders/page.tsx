@@ -203,14 +203,15 @@ const SellerOrderManagement: NextPage = () => {
       setLoading(true);
 
       // Update status in the database and fetch updated order with product data
-      const response = await fetch(`/api/seller/orders/${orderId}/status`, {
+      const response = await fetch(`/api/seller/orders/${orderId}/status/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ 
           status: 'shipped',
           tracking_number: trackingNumber,
-          fid: context.user.fid,
-          select: 'id,status,tracking_number,total_amount,escrow_id,is_paid,product:products(id,title,photos)'
+          fid: context.user.fid
         })
       });
 
