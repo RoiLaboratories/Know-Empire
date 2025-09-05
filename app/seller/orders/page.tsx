@@ -372,7 +372,7 @@ const SellerOrderManagement: NextPage = () => {
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Orders to Fulfill
+                My Sales
               </button>
               <button
                 onClick={async () => {
