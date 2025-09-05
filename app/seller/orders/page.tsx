@@ -15,7 +15,7 @@ import BackButton from "@/ui/BackButton";
 import { Icon } from "@iconify/react";
 import { ICON } from "@/utils/icon-export";
 
-interface Order {
+interface SellerOrder {
   id: string;
   status: 'pending' | 'shipped' | 'delivered' | 'cancelled';
   tracking_number: string | null;
@@ -34,11 +34,30 @@ interface Order {
   };
 }
 
+interface BuyerOrder {
+  id: string;
+  status: 'pending' | 'shipped' | 'delivered' | 'cancelled';
+  tracking_number: string | null;
+  total_amount: number;
+  escrow_id: string;
+  product: {
+    id: string;
+    title: string;
+    photos: string[];
+    user: {
+      farcaster_username: string;
+    };
+  };
+}
+
 const SellerOrderManagement: NextPage = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [activeTab, setActiveTab] = useState<'seller' | 'buyer'>('seller');
+  const [sellerOrders, setSellerOrders] = useState<SellerOrder[]>([]);
+  const [buyerOrders, setBuyerOrders] = useState<BuyerOrder[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [trackingNumbers, setTrackingNumbers] = useState<{ [orderId: string]: string }>({});
   const { context } = useMiniKit();
   const { address, isConnected } = useAccount();
   const router = useRouter();
@@ -51,17 +70,27 @@ const SellerOrderManagement: NextPage = () => {
       }
 
       setLoading(true);
-      const response = await fetch(`/api/seller/orders?fid=${context.user.fid}&select=id,status,tracking_number,total_amount,escrow_id,product:products(*)`);
-      if (!response.ok) throw new Error('Failed to fetch orders');
-      const data = await response.json();
       
-      // If there are no orders, redirect to empty state page
-      if (!data || data.length === 0) {
+      // Fetch both seller and buyer orders in parallel
+      const [sellerResponse, buyerResponse] = await Promise.all([
+        fetch(`/api/seller/orders?fid=${context.user.fid}&select=id,status,tracking_number,total_amount,escrow_id,product:products(*)`),
+        fetch(`/api/buyer/orders?fid=${context.user.fid}`)
+      ]);
+
+      if (!sellerResponse.ok) throw new Error('Failed to fetch seller orders');
+      if (!buyerResponse.ok) throw new Error('Failed to fetch buyer orders');
+
+      const sellerData = await sellerResponse.json();
+      const buyerData = await buyerResponse.json();
+      
+      // If both arrays are empty, redirect to empty state page
+      if ((!sellerData || sellerData.length === 0) && (!buyerData || buyerData.length === 0)) {
         router.push('/seller/empty-orders');
         return;
       }
       
-      setOrders(data || []);
+      setSellerOrders(sellerData || []);
+      setBuyerOrders(buyerData || []);
     } catch (error) {
       console.error('Error fetching orders:', error);
       toast.error('Failed to load orders');
@@ -144,7 +173,7 @@ const SellerOrderManagement: NextPage = () => {
       const updatedOrder = await response.json();
       
       // Update local state with the full returned order data
-      setOrders(orders.map(order => 
+      setSellerOrders(sellerOrders.map(order => 
         order.id === orderId 
           ? updatedOrder
           : order
@@ -165,10 +194,13 @@ const SellerOrderManagement: NextPage = () => {
         return;
       }
 
-      setLoading(true);
+      const trackingNumber = trackingNumbers[orderId];
+      if (!trackingNumber) {
+        toast.error('Please enter a tracking ID first');
+        return;
+      }
 
-      // Generate a unique tracking ID
-      const trackingId = generateTrackingId();
+      setLoading(true);
 
       // Update status in the database and fetch updated order with product data
       const response = await fetch(`/api/seller/orders/${orderId}/status`, {
@@ -176,7 +208,7 @@ const SellerOrderManagement: NextPage = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           status: 'shipped',
-          tracking_number: trackingId,
+          tracking_number: trackingNumber,
           fid: context.user.fid,
           select: 'id,status,tracking_number,total_amount,escrow_id,isPaid,product:products(*)'
         })
@@ -191,11 +223,17 @@ const SellerOrderManagement: NextPage = () => {
       const updatedOrder = await response.json();
       
       // Update local state with the full returned order data
-      setOrders(orders.map(order => 
+      setSellerOrders(sellerOrders.map(order => 
         order.id === orderId 
           ? updatedOrder
           : order
       ));
+
+      // Clear the tracking number from state
+      setTrackingNumbers(prev => {
+        const { [orderId]: _, ...rest } = prev;
+        return rest;
+      });
 
       toast.success('Order marked as shipped');
     } catch (error) {
@@ -250,7 +288,7 @@ const SellerOrderManagement: NextPage = () => {
       const updatedOrder = await response.json();
       
       // Update local state with the full returned order data
-      setOrders(orders.map(order => 
+      setSellerOrders(sellerOrders.map(order => 
         order.id === orderId 
           ? updatedOrder
           : order
@@ -291,10 +329,15 @@ const SellerOrderManagement: NextPage = () => {
     }
   };
 
-  const filteredOrders = orders.filter(order => 
-    order.product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredOrders = activeTab === 'seller'
+    ? sellerOrders.filter(order => 
+        order.product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.id.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : buyerOrders.filter(order => 
+        order.product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.id.toLowerCase().includes(searchTerm.toLowerCase())
+      );
 
   return (
     <section className="min-h-screen bg-white">
@@ -319,10 +362,34 @@ const SellerOrderManagement: NextPage = () => {
               </div>
             </div>
 
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200">
+              <button
+                onClick={() => setActiveTab('seller')}
+                className={`flex-1 py-2 px-4 text-sm font-medium ${
+                  activeTab === 'seller'
+                    ? 'border-b-2 border-blue-600 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Orders to Fulfill
+              </button>
+              <button
+                onClick={() => setActiveTab('buyer')}
+                className={`flex-1 py-2 px-4 text-sm font-medium ${
+                  activeTab === 'buyer'
+                    ? 'border-b-2 border-blue-600 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                My Purchases
+              </button>
+            </div>
+
             <div className="mt-4">
               <input
                 type="text"
-                placeholder="Search orders by title or ID..."
+                placeholder={`Search ${activeTab === 'seller' ? 'orders to fulfill' : 'your purchases'} by title or ID...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full p-2.5 rounded-lg border border-[#989898] text-sm outline-none"
@@ -357,6 +424,11 @@ const SellerOrderManagement: NextPage = () => {
                         <div className="text-sm font-medium text-[#16a34a]">
                           {formatCurrency(order.total_amount)}
                         </div>
+                        {activeTab === 'buyer' && (
+                          <div className="text-xs text-gray-500">
+                            Seller: @{(order as BuyerOrder).product.user.farcaster_username}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className={`px-3 py-1 rounded-lg text-xs font-medium capitalize flex items-center gap-1.5 ${
@@ -382,31 +454,33 @@ const SellerOrderManagement: NextPage = () => {
                   </div>
                   {/* Buyer Info and Tracking ID */}
                   <div className="flex flex-col gap-4 w-full text-[#6b88b5]">
-                    {/* Buyer Details */}
-                    <div className="flex flex-col gap-2">
-                      <div className="text-sm font-medium">Buyer Information:</div>
-                      <div className="space-y-1 text-sm text-gray-600">
-                        <p className="flex justify-between">
-                          <span>Buyer:</span>
-                          <span className="text-gray-800">@{order.buyer.farcaster_username}</span>
-                        </p>
-                        {order.buyer.phone_number && (
+                    {/* Buyer Details - only show for seller orders */}
+                    {activeTab === 'seller' && (
+                      <div className="flex flex-col gap-2">
+                        <div className="text-sm font-medium">Buyer Information:</div>
+                        <div className="space-y-1 text-sm text-gray-600">
                           <p className="flex justify-between">
-                            <span>Phone:</span>
-                            <span className="text-gray-800">{order.buyer.phone_number}</span>
+                            <span>Buyer:</span>
+                            <span className="text-gray-800">@{(order as SellerOrder).buyer.farcaster_username}</span>
                           </p>
-                        )}
-                        {order.buyer.shipping_address && (
-                          <>
-                            <div className="border-t border-gray-200 my-2" />
-                            <div>
-                              <span className="block text-sm mb-1">Shipping Address:</span>
-                              <p className="text-gray-800 text-sm whitespace-pre-line">{order.buyer.shipping_address}</p>
-                            </div>
-                          </>
-                        )}
+                          {(order as SellerOrder).buyer.phone_number && (
+                            <p className="flex justify-between">
+                              <span>Phone:</span>
+                              <span className="text-gray-800">{(order as SellerOrder).buyer.phone_number}</span>
+                            </p>
+                          )}
+                          {(order as SellerOrder).buyer.shipping_address && (
+                            <>
+                              <div className="border-t border-gray-200 my-2" />
+                              <div>
+                                <span className="block text-sm mb-1">Shipping Address:</span>
+                                <p className="text-gray-800 text-sm whitespace-pre-line">{(order as SellerOrder).buyer.shipping_address}</p>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Tracking ID */}
                     <div className="flex flex-col gap-2">
@@ -415,18 +489,29 @@ const SellerOrderManagement: NextPage = () => {
                         <input
                           className="flex-1 bg-transparent border-none outline-none text-sm text-[#989898]"
                           type="text"
-                          value={order.id}
-                          readOnly
+                          value={order.status === 'pending' ? trackingNumbers[order.id] || '' : order.tracking_number || ''}
+                          onChange={(e) => {
+                            if (order.status === 'pending') {
+                              setTrackingNumbers(prev => ({
+                                ...prev,
+                                [order.id]: e.target.value
+                              }));
+                            }
+                          }}
+                          placeholder="Enter tracking ID"
+                          readOnly={order.status !== 'pending'}
                         />
-                        <button
-                          onClick={() => copyToClipboard(order.id)}
-                          className="ml-2 p-1 hover:opacity-80 transition-opacity"
-                        >
-                          <Icon 
-                            icon={ICON.COPY} 
-                            fontSize={16}
-                          />
-                        </button>
+                        {order.status !== 'pending' && (
+                          <button
+                            onClick={() => copyToClipboard(order.tracking_number || '')}
+                            className="ml-2 p-1 hover:opacity-80 transition-opacity"
+                          >
+                            <Icon 
+                              icon={ICON.COPY} 
+                              fontSize={16}
+                            />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -437,7 +522,7 @@ const SellerOrderManagement: NextPage = () => {
                         <button 
                           className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={() => markAsShipped(order.id)}
-                          disabled={loading || !context?.user?.fid}
+                          disabled={!trackingNumbers[order.id] || loading || !context?.user?.fid}
                         >
                           <Image
                             className="w-[22px] h-[18px]"
