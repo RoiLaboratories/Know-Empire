@@ -11,7 +11,7 @@ import DeliveryInformationPopup from "./delivery-information-popup";
 import EscrowProtectionPopup from "./escrow-protection-popup";
 import SecurePaymentPopup from "./secure-payment-popup";
 import SecurePaymentConfirmed from "./secure-payment-confirmed-popup";
-
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { ProductWithSeller } from "../../types/product";
 
 interface PurchasePopupProps {
@@ -21,6 +21,13 @@ interface PurchasePopupProps {
 
 function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
   const [purchaseStep, setPurchaseStep] = useState(1);
+  const { context } = useMiniKit() as { context: { user?: { fid: number } } };
+  
+  // Safety check: prevent purchasing own products
+  if (context?.user && product.seller.farcaster_id === context.user.fid.toString()) {
+    onCloseModal?.();
+    return null;
+  }
 
   const handleNextStep = () => {
     console.log({ purchaseStep });

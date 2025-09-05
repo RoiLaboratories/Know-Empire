@@ -36,6 +36,7 @@ interface APIProduct extends Omit<BaseProduct, 'price'> {
     rating?: number;
     review_count?: number;
     wallet_address: string;
+    farcaster_id: string;
   };
 }
 
@@ -106,7 +107,8 @@ function Products() {
                 username: apiProduct.seller.farcaster_username,
                 rating: apiProduct.seller.rating,
                 review_count: apiProduct.seller.review_count,
-                wallet_address: apiProduct.seller.wallet_address
+                wallet_address: apiProduct.seller.wallet_address,
+                farcaster_id: apiProduct.seller.farcaster_id
               }
             };
             return (

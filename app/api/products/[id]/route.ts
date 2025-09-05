@@ -49,7 +49,8 @@ export async function GET(request: Request) {
         username: product.seller.farcaster_username,
         rating: product.seller.rating,
         review_count: product.seller.review_count,
-        wallet_address: product.seller.wallet_address
+        wallet_address: product.seller.wallet_address,
+        farcaster_id: product.seller.farcaster_id
       }
     };
 
