@@ -308,14 +308,9 @@ function Profile() {
         <div className="px-5 py-12 bg-white space-y-3">
           <div className="space-y-1">
             <p className="font-bold text-2xl">{user?.displayName}</p>
-
-            <div className="text-sm text-[#5a5a5a] font-medium space-y-1">
-              <p>@{user?.username}</p>
-              <p>{user?.fid} FID</p>
-            </div>
           </div>
 
-          <div className="text-xs text-[#5a5a5a] space-y-1">
+          {/* <div className="text-xs text-[#5a5a5a] space-y-1">
             <p className="font-bold">BADGES</p>
             <div className="flex items-center gap-x-3">
               <button className="flex items-center justify-center rounded-full py-1 px-4 border border-gray-light font-medium btn">
@@ -326,7 +321,7 @@ function Profile() {
                 Verified
               </button>
             </div>
-          </div>
+          </div> */}
 
           <p className="font-bold flex items-center text-xs text-[#5a5a5a] gap-1">
             Summary Stats
