@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { Review } from '../../types/review';
 import { supabase } from '@/utils/supabase';
 import Modal from "../../context/ModalContext";
 import GenericPopup from "../../components/popups/generic-popup";
@@ -51,6 +52,7 @@ function Profile() {
   const [isLoading, setIsLoading] = useState(true);
   const [showWalletDropdown, setShowWalletDropdown] = useState(false);
   const [walletError, setWalletError] = useState<string | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
   const { address, isConnecting, isConnected } = useAccount();
@@ -104,7 +106,7 @@ function Profile() {
     const loadSellerInfo = async () => {
       if (user?.fid) {
         // Get user info and successful trades count
-        const [userResponse, sellerOrdersResponse, buyerOrdersResponse] = await Promise.all([
+        const [userResponse, sellerOrdersResponse, buyerOrdersResponse, reviewsResponse] = await Promise.all([
           // Get user info
           supabase
             .from('users')
@@ -122,7 +124,17 @@ function Profile() {
             .from('orders')
             .select('id', { count: 'exact' })
             .eq('buyer_id', user.fid)
-            .eq('status', 'completed')
+            .eq('status', 'completed'),
+          // Get reviews for the user
+          supabase
+            .from('reviews')
+            .select(`
+              *,
+              reviewer:users!reviews_reviewer_id_fkey(farcaster_username, display_name),
+              product:products!reviews_product_id_fkey(title)
+            `)
+            .eq('reviewed_user_id', user.fid)
+            .order('created_at', { ascending: false })
         ]);
 
         if (!userResponse.error && userResponse.data) {
@@ -133,6 +145,10 @@ function Profile() {
             items_bought: buyerOrdersResponse.count || 0,
             is_verified: totalSuccessfulTrades >= 6 // Set verified status based on total trades
           });
+
+          if (!reviewsResponse.error && reviewsResponse.data) {
+            setReviews(reviewsResponse.data);
+          }
         }
       }
       setIsLoading(false);
@@ -401,52 +417,15 @@ function Profile() {
           </div>
 
           <p className="font-bold flex items-center text-xs text-[#5a5a5a] gap-1 mb-5">
-            Reviews (3)
+            Reviews ({reviews.length})
             <span className="bg-gray-200 h-[1px] flex-1" />
           </p>
 
           {/*reviews */}
           <ul className="text-[#5a5a5a] space-y-5">
-            <ReviewsCard />
-            <li className="space-y-2">
-              <div className="flex justify-between">
-                <span className="flex gap-x-1 items-center">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <Icon
-                      icon={ICON.STAR}
-                      key={i}
-                    />
-                  ))}
-                  {Array.from({ length: 2 }).map((_, i) => (
-                    <Icon icon={ICON.STAR_EMPTY} key={i} />
-                  ))}
-                </span>
-                <p className="text-xs">12-06-2025</p>
-              </div>
-              <p className="font-semibold text-sm flex items-center">
-                Mike Rodriguez&nbsp;&nbsp;
-                <span className="text-[10px] font-light">@mikecollector</span>
-              </p>
-              <span className="flex items-center justify-center rounded-full px-1 py-[1px] border-[1.5px] w-fit border-gray-light font-medium text-[10px]">
-                NFT Sticker Pack
-              </span>
-              {/*review */}
-              <div className="flex items-start gap-5 text-[10px]">
-                <p className="text-gray-500">
-                  Good transaction overall. Item condition was great. Packaging
-                  could be better
-                </p>
-                <p className="text-nowrap flex items-center gap-x-1 text-green-500">
-                  <span>
-                    <Icon
-                      icon={ICON.ARROW_CHECKED}
-                      className="text-green-500"
-                    />
-                  </span>
-                  Verified Purchase
-                </p>
-              </div>
-            </li>
+            {reviews.map((review) => (
+              <ReviewsCard key={review.id} review={review} />
+            ))}
           </ul>
         </div>
       </div>
