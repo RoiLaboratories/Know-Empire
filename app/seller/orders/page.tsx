@@ -510,10 +510,16 @@ const SellerOrderManagement: NextPage = () => {
                         width={14}
                         height={15}
                         alt=""
-                        src={order.status === 'pending' ? '/Vector.svg' : order.status === 'shipped' ? '/Vector-11.svg' : '/check.svg'}
+                        src={
+                          order.status === 'pending'
+                            ? '/Vector.svg'
+                            : order.status === 'shipped'
+                            ? '/Vector-11.svg'
+                            : '/check.svg'
+                        }
                         className="w-3.5 h-[15px]"
                       />
-                      <span>Pending</span>
+                      <span>{order.status === 'pending' ? 'Pending' : order.status.charAt(0).toUpperCase() + order.status.slice(1).toLowerCase()}</span>
                     </div>
                   </div>
                   {/* Buyer Info and Tracking ID */}
@@ -551,18 +557,18 @@ const SellerOrderManagement: NextPage = () => {
                       <div className="text-sm">Tracking ID:</div>
                       <div className="w-full rounded-lg bg-[#f1f1f1] border border-[#989898] flex items-center p-2.5">
                         <input
-                          className="flex-1 bg-transparent border-none outline-none text-sm text-black"
+                          className="flex-1 bg-transparent border-none outline-none text-sm"
                           type="text"
-                          value={order.tracking_number || trackingNumbers[order.id] || ''}
+                          value={order.status === 'pending' && activeTab === 'seller' ? trackingNumbers[order.id] || '' : order.tracking_number || ''}
                           onChange={(e) => {
-                            if (activeTab === 'seller' && order.status === 'pending') {
+                            if (order.status === 'pending' && activeTab === 'seller') {
+                              const value = e.target.value;
                               setTrackingNumbers(prev => ({
                                 ...prev,
-                                [order.id]: e.target.value
+                                [order.id]: value
                               }));
                             }
                           }}
-                          readOnly={order.status !== 'pending' || activeTab !== 'seller'}
                           placeholder="Enter tracking ID"
                         />
                         {order.tracking_number && (
@@ -580,10 +586,10 @@ const SellerOrderManagement: NextPage = () => {
                     </div>
                   </div>
 
-                  {/* Mark as Shipped Button - Only show for pending orders in seller view */}
-                  {order.status === 'pending' && activeTab === 'seller' && (
-                    <div className="mt-4">
-                      <div className="w-full h-px bg-[#989898] mb-4" />
+                  {/* Mark as Shipped Button */}
+                  {(activeTab === 'seller' && order.status === 'pending') ? (
+                    <div>
+                      <div className="w-full h-px bg-[#989898] my-2" />
                       <button 
                         className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={() => markAsShipped(order.id)}
@@ -601,7 +607,7 @@ const SellerOrderManagement: NextPage = () => {
                         </span>
                       </button>
                     </div>
-                  )}
+                  ) : null}
                       
                   {order.status === 'shipped' && activeTab === 'seller' && (
                     <button 
