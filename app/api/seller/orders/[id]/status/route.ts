@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     }
 
     // Validate status is one of the allowed values
-    const allowedStatuses = ['PENDING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+    const allowedStatuses = ['pending', 'shipped', 'delivered', 'completed', 'cancelled'];
     if (!allowedStatuses.includes(status)) {
       return NextResponse.json({ error: 'Invalid status value' }, { status: 400 });
     }

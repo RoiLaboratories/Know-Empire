@@ -17,7 +17,7 @@ import { ICON } from "@/utils/icon-export";
 
 interface SellerOrder {
   id: string;
-  status: 'PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+  status: 'pending' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
   tracking_number: string | null;
   total_amount: number;
   escrow_id: string;
@@ -36,7 +36,7 @@ interface SellerOrder {
 
 interface BuyerOrder {
   id: string;
-  status: 'PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+  status: 'pending' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
   tracking_number: string | null;
   total_amount: number;
   escrow_id: string;
@@ -209,7 +209,7 @@ const SellerOrderManagement: NextPage = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
-          status: 'SHIPPED', // Using uppercase to match database enum
+          status: 'shipped',
           tracking_number: trackingNumber,
           fid: context.user.fid
         })
@@ -245,6 +245,50 @@ const SellerOrderManagement: NextPage = () => {
     }
   };
 
+  // Mark as completed (final stage - after delivery)
+  const markAsCompleted = async (orderId: string) => {
+    try {
+      if (!context?.user?.fid) {
+        toast.error('Please connect with Farcaster first');
+        return;
+      }
+
+      setLoading(true);
+
+      // Update status in the database
+      const response = await fetch(`/api/seller/orders/${orderId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          status: 'completed',
+          fid: context.user.fid
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to mark order as completed');
+      }
+
+      // Get the updated order data from response
+      const updatedOrder = await response.json();
+      
+      // Update local state with the full returned order data
+      setSellerOrders(sellerOrders.map(order => 
+        order.id === orderId 
+          ? updatedOrder
+          : order
+      ));
+
+      toast.success('Order marked as completed');
+    } catch (error) {
+      console.error('Error marking as completed:', error);
+      toast.error('Failed to mark order as completed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Mark as delivered (second stage - includes contract interaction)
   const markAsDelivered = async (orderId: string, escrowId: string) => {
     try {
@@ -274,7 +318,7 @@ const SellerOrderManagement: NextPage = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          status: 'DELIVERED',
+          status: 'delivered',
           fid: context.user.fid,
           select: 'id,status,tracking_number,total_amount,escrow_id,isPaid,product:products(*)'
         })
@@ -454,21 +498,18 @@ const SellerOrderManagement: NextPage = () => {
                       </div>
                     </div>
                     <div className={`px-3 py-1 rounded-lg text-xs font-medium capitalize flex items-center gap-1.5 ${
-                      order.status === 'PENDING' ? 'bg-[#fef9c3] text-[#925f21]' :
-                      order.status === 'SHIPPED' ? 'bg-[#dbeafe] text-[#1e43be]' :
-                      order.status === 'DELIVERED' ? 'bg-[#dcfce7] text-[#166534]' :
+                      order.status === 'pending' ? 'bg-[#fef9c3] text-[#925f21]' :
+                      order.status === 'shipped' ? 'bg-[#dbeafe] text-[#1e43be]' :
+                      order.status === 'delivered' ? 'bg-[#dcfce7] text-[#166534]' :
+                      order.status === 'completed' ? 'bg-[#dcfce7] text-[#15803d]' :
+                      order.status === 'cancelled' ? 'bg-[#fee2e2] text-[#991b1b]' :
                       'bg-[#fef9c3] text-[#925f21]'
                     }`}>
                       <Image
                         width={14}
                         height={15}
                         alt=""
-                        src={
-                          order.status === 'PENDING' ? '/Vector.svg' :
-                          order.status === 'SHIPPED' ? '/Vector-2.svg' :
-                          order.status === 'DELIVERED' ? '/check.svg' :
-                          '/Vector.svg'
-                        }
+                        src={order.status === 'pending' ? '/Vector.svg' : order.status === 'completed' ? '/check.svg' : '/Vector-2.svg'}
                         className="w-3.5 h-[15px]"
                       />
                       <span>{order.status}</span>
@@ -511,9 +552,9 @@ const SellerOrderManagement: NextPage = () => {
                         <input
                           className="flex-1 bg-transparent border-none outline-none text-sm text-[#989898]"
                           type="text"
-                          value={order.status === 'PENDING' ? trackingNumbers[order.id] || '' : order.tracking_number || ''}
+                          value={order.status === 'pending' ? trackingNumbers[order.id] || '' : order.tracking_number || ''}
                           onChange={(e) => {
-                            if (order.status === 'PENDING') {
+                            if (order.status === 'pending') {
                               setTrackingNumbers(prev => ({
                                 ...prev,
                                 [order.id]: e.target.value
@@ -521,9 +562,9 @@ const SellerOrderManagement: NextPage = () => {
                             }
                           }}
                           placeholder="Enter tracking ID"
-                          readOnly={order.status !== 'PENDING'}
+                          readOnly={order.status !== 'pending'}
                         />
-                        {order.status !== 'PENDING' && (
+                        {order.status !== 'pending' && (
                           <button
                             onClick={() => copyToClipboard(order.tracking_number || '')}
                             className="ml-2 p-1 hover:opacity-80 transition-opacity"
@@ -537,10 +578,10 @@ const SellerOrderManagement: NextPage = () => {
                       </div>
                     </div>
                   </div>
-                  {(order.status === 'PENDING' || order.status === 'SHIPPED' || order.status === 'DELIVERED') && (
+                  {(order.status === 'pending' || order.status === 'shipped' || order.status === 'delivered') && (
                     <>
                       <div className="w-full h-px bg-[#989898] my-2" />
-                      {order.status === 'PENDING' && (
+                      {order.status === 'pending' && (
                         <button 
                           className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={() => markAsShipped(order.id)}
@@ -559,7 +600,7 @@ const SellerOrderManagement: NextPage = () => {
                         </button>
                       )}
                       
-                      {order.status === 'SHIPPED' && (
+                      {order.status === 'shipped' && (
                         <button 
                           className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={() => markAsDelivered(order.id, order.escrow_id)}
@@ -578,18 +619,23 @@ const SellerOrderManagement: NextPage = () => {
                         </button>
                       )}
 
-                      {order.status === 'DELIVERED' && (
-                        <>
-                          <button 
-                            className="w-full flex items-center justify-center gap-2.5 bg-[#ef4444] text-white rounded-lg py-2.5 px-5 mb-2"
-                            onClick={() => router.push(`/raise-dispute?orderId=${order.id}`)}
-                          >
-                            <span className="text-sm font-semibold">
-                              Raise a dispute
-                            </span>
-                          </button>
-                          {/* Payment status button removed until isPaid column is added */}
-                        </>
+                      {order.status === 'delivered' && (
+                        <button 
+                          className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => markAsCompleted(order.id)}
+                          disabled={loading || !context?.user?.fid}
+                        >
+                          <Image
+                            className="w-[22px] h-[18px]"
+                            width={22}
+                            height={18}
+                            alt=""
+                            src="/check.svg"
+                          />
+                          <span className="text-sm font-semibold">
+                            Mark as completed
+                          </span>
+                        </button>
                       )}
                     </>
                   )}
