@@ -13,11 +13,32 @@ export async function POST(request: Request) {
     }
 
     // First, verify that the order exists and belongs to this seller
+    const { data: seller } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('farcaster_id', fid)
+      .single();
+    
+    if (!seller) {
+      return NextResponse.json({ error: 'Seller not found' }, { status: 404 });
+    }
+
+    // Get seller's products
+    const { data: products } = await supabaseAdmin
+      .from('products')
+      .select('id')
+      .eq('seller_id', seller.id);
+
+    if (!products || products.length === 0) {
+      return NextResponse.json({ error: 'No products found for seller' }, { status: 404 });
+    }
+
+    // Verify order exists and belongs to one of seller's products
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
-      .select('id')
+      .select('id, product:products(seller_id)')
       .eq('id', orderId)
-      .eq('seller_id', fid)
+      .in('product_id', products.map(p => p.id))
       .single();
 
     if (orderError || !order) {
