@@ -557,16 +557,14 @@ const SellerOrderManagement: NextPage = () => {
                       <div className="text-sm">Tracking ID:</div>
                       <div className="w-full rounded-lg bg-[#f1f1f1] border border-[#989898] flex items-center p-2.5">
                         <input
-                          className="flex-1 bg-transparent border-none outline-none text-sm text-black"
+                          className="flex-1 bg-transparent border-none outline-none text-sm"
                           type="text"
                           value={trackingNumbers[order.id] || ''}
-                          onChange={(e) => {
-                            setTrackingNumbers(prev => ({
-                              ...prev,
-                              [order.id]: e.target.value
-                            }));
-                          }}
-                          disabled={order.status !== 'pending' || activeTab !== 'seller'}
+                          onChange={(e) => setTrackingNumbers(prev => ({
+                            ...prev,
+                            [order.id]: e.target.value
+                          }))}
+                          readOnly={order.status !== 'pending' || activeTab !== 'seller'}
                           placeholder="Enter tracking ID"
                         />
                         {order.tracking_number && (
@@ -583,7 +581,7 @@ const SellerOrderManagement: NextPage = () => {
                       </div>
                     </div>
                   </div>
-                  {order.status === 'pending' && activeTab === 'seller' && (
+                  {activeTab === 'seller' && order.status === 'pending' && (
                     <>
                       <div className="w-full h-px bg-[#989898] my-2" />
                       <button 
