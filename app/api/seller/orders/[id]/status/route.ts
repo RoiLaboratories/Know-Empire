@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '../../../../../../utils/supabase';
 
-export async function POST(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: Request) {
   try {
-    const orderId = params.id;
+    const { pathname } = new URL(request.url);
+    const orderId = pathname.match(/\/orders\/([^\/]+)\/status/)?.[1];
+    
+    if (!orderId) {
+      return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 });
+    }
     const { status, tracking_number, fid } = await request.json();
     const supabaseAdmin = createServiceClient();
 

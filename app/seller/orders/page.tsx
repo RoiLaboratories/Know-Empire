@@ -203,7 +203,7 @@ const SellerOrderManagement: NextPage = () => {
       setLoading(true);
 
       // Update status in the database and fetch updated order with product data
-      const response = await fetch(`/api/seller/orders/${orderId}/status/`, {
+      const response = await fetch(`/api/seller/orders/${encodeURIComponent(orderId)}/status`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'
