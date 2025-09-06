@@ -88,7 +88,7 @@ export async function GET(request: Request) {
     // Transform orders to match our types
     const transformedOrders = !orders ? [] : orders.map((order: any) => ({
       id: order.id,
-      status: order.status,
+      status: (order.status || '').toUpperCase(),
       created_at: order.created_at,
       tracking_number: order.tracking_number,
       shipped_at: order.shipped_at,
