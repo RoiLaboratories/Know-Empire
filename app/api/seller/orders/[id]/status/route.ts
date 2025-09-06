@@ -12,6 +12,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Farcaster ID is required' }, { status: 400 });
     }
 
+    // First, verify that the order exists and belongs to this seller
+    const { data: order, error: orderError } = await supabaseAdmin
+      .from('orders')
+      .select('id')
+      .eq('id', orderId)
+      .eq('seller_id', fid)
+      .single();
+
+    if (orderError || !order) {
+      console.error('Error finding order:', orderError);
+      return NextResponse.json({ error: 'Order not found or unauthorized' }, { status: 404 });
+    }
+
     // Update order status
     const { data, error } = await supabaseAdmin
       .from('orders')
