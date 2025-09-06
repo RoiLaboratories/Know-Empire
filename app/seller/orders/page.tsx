@@ -15,6 +15,34 @@ import BackButton from "@/ui/BackButton";
 import { Icon } from "@iconify/react";
 import { ICON } from "@/utils/icon-export";
 
+const getStatusStyles = (status: 'pending' | 'shipped' | 'delivered' | 'completed' | 'cancelled'): string => {
+  switch (status) {
+    case 'pending':
+      return 'bg-[#fef9c3] text-[#925f21]';
+    case 'shipped':
+      return 'bg-[#dbeafe] text-[#1e43be]';
+    case 'delivered':
+      return 'bg-[#dcfce7] text-[#166534]';
+    case 'completed':
+      return 'bg-[#dcfce7] text-[#15803d]';
+    case 'cancelled':
+      return 'bg-[#fee2e2] text-[#991b1b]';
+    default:
+      return 'bg-[#fef9c3] text-[#925f21]';
+  }
+};
+
+const getStatusIcon = (status: 'pending' | 'shipped' | 'delivered' | 'completed' | 'cancelled'): string => {
+  switch (status) {
+    case 'pending':
+      return '/Vector.svg';
+    case 'completed':
+      return '/check.svg';
+    default:
+      return '/Vector-11.svg';
+  }
+};
+
 interface SellerOrder {
   id: string;
   status: 'pending' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
@@ -498,21 +526,16 @@ const SellerOrderManagement: NextPage = () => {
                       </div>
                     </div>
                     <div className={`px-3 py-1 rounded-lg text-xs font-medium capitalize flex items-center gap-1.5 ${
-                      order.status === 'pending' ? 'bg-[#fef9c3] text-[#925f21]' :
-                      order.status === 'shipped' ? 'bg-[#dbeafe] text-[#1e43be]' :
-                      order.status === 'delivered' ? 'bg-[#dcfce7] text-[#166534]' :
-                      order.status === 'completed' ? 'bg-[#dcfce7] text-[#15803d]' :
-                      order.status === 'cancelled' ? 'bg-[#fee2e2] text-[#991b1b]' :
-                      'bg-[#fef9c3] text-[#925f21]'
+                      getStatusStyles(order.status)
                     }`}>
                       <Image
                         width={14}
                         height={15}
                         alt=""
-                        src={order.status === 'pending' ? '/Vector.svg' : order.status === 'completed' ? '/check.svg' : '/Vector-2.svg'}
+                        src={getStatusIcon(order.status)}
                         className="w-3.5 h-[15px]"
                       />
-                      <span className="capitalize">{order.status.toLowerCase()}</span>
+                      <span>{order.status}</span>
                     </div>
                   </div>
                   {/* Buyer Info and Tracking ID */}
@@ -554,15 +577,17 @@ const SellerOrderManagement: NextPage = () => {
                           type="text"
                           value={order.status === 'pending' ? (trackingNumbers[order.id] || '') : (order.tracking_number || '')}
                           onChange={(e) => {
-                            setTrackingNumbers(prev => ({
-                              ...prev,
-                              [order.id]: e.target.value
-                            }));
+                            if (order.status === 'pending' && activeTab === 'seller') {
+                              setTrackingNumbers(prev => ({
+                                ...prev,
+                                [order.id]: e.target.value
+                              }));
+                            }
                           }}
                           placeholder="Enter tracking ID"
-                          disabled={order.status !== 'pending'}
+                          readOnly={order.status !== 'pending' || activeTab !== 'seller'}
                         />
-                        {order.tracking_number && order.status !== 'pending' && (
+                        {order.tracking_number && (
                           <button
                             onClick={() => copyToClipboard(order.tracking_number || '')}
                             className="ml-2 p-1 hover:opacity-80 transition-opacity"
@@ -576,26 +601,28 @@ const SellerOrderManagement: NextPage = () => {
                       </div>
                     </div>
                   </div>
-                  {activeTab === 'seller' && (order.status === 'pending' || order.status === 'shipped' || order.status === 'delivered') && (
+                  {activeTab === 'seller' && (
                     <>
-                      <div className="w-full h-px bg-[#989898] my-2" />
                       {order.status === 'pending' && (
-                        <button 
-                          className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
-                          onClick={() => markAsShipped(order.id)}
-                          disabled={!trackingNumbers[order.id] || loading || !context?.user?.fid}
-                        >
-                          <Image
-                            className="w-[22px] h-[18px]"
-                            width={22}
-                            height={18}
-                            alt=""
-                            src="/Vector-11.svg"
-                          />
-                          <span className="text-sm font-semibold">
-                            Mark as shipped
-                          </span>
-                        </button>
+                        <>
+                          <div className="w-full h-px bg-[#989898] my-2" />
+                          <button 
+                            className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={() => markAsShipped(order.id)}
+                            disabled={!trackingNumbers[order.id] || loading || !context?.user?.fid}
+                          >
+                            <Image
+                              className="w-[22px] h-[18px]"
+                              width={22}
+                              height={18}
+                              alt=""
+                              src="/Vector-11.svg"
+                            />
+                            <span className="text-sm font-semibold">
+                              Mark as shipped
+                            </span>
+                          </button>
+                        </>
                       )}
                       
                       {order.status === 'shipped' && (
