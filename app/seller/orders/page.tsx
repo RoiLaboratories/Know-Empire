@@ -509,7 +509,7 @@ const SellerOrderManagement: NextPage = () => {
                         width={14}
                         height={15}
                         alt=""
-                        src={order.status === 'pending' ? '/Vector-2.svg' : order.status === 'completed' ? '/check.svg' : '/Vector-2.svg'}
+                        src={order.status === 'pending' ? '/Vector.svg' : order.status === 'completed' ? '/check.svg' : '/Vector-2.svg'}
                         className="w-3.5 h-[15px]"
                       />
                       <span className="capitalize">{order.status.toLowerCase()}</span>
@@ -552,19 +552,17 @@ const SellerOrderManagement: NextPage = () => {
                         <input
                           className="flex-1 bg-transparent border-none outline-none text-sm text-[#989898]"
                           type="text"
-                          value={order.status === 'pending' ? trackingNumbers[order.id] || '' : order.tracking_number || ''}
+                          value={order.status === 'pending' ? (trackingNumbers[order.id] || '') : (order.tracking_number || '')}
                           onChange={(e) => {
-                            if (order.status === 'pending') {
-                              setTrackingNumbers(prev => ({
-                                ...prev,
-                                [order.id]: e.target.value
-                              }));
-                            }
+                            setTrackingNumbers(prev => ({
+                              ...prev,
+                              [order.id]: e.target.value
+                            }));
                           }}
                           placeholder="Enter tracking ID"
-                          readOnly={order.status !== 'pending'}
+                          disabled={order.status !== 'pending'}
                         />
-                        {order.tracking_number && (
+                        {order.tracking_number && order.status !== 'pending' && (
                           <button
                             onClick={() => copyToClipboard(order.tracking_number || '')}
                             className="ml-2 p-1 hover:opacity-80 transition-opacity"
@@ -578,7 +576,7 @@ const SellerOrderManagement: NextPage = () => {
                       </div>
                     </div>
                   </div>
-                  {(order.status === 'pending' || order.status === 'shipped' || order.status === 'delivered') && (
+                  {activeTab === 'seller' && (order.status === 'pending' || order.status === 'shipped' || order.status === 'delivered') && (
                     <>
                       <div className="w-full h-px bg-[#989898] my-2" />
                       {order.status === 'pending' && (
