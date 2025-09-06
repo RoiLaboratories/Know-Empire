@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '../../../../../../utils/supabase';
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { pathname } = new URL(request.url);
-    const orderId = pathname.split('/').slice(-2)[0]; // Get the ID part from /orders/{id}/status
+    const orderId = params.id;
     const { status, tracking_number, fid } = await request.json();
     const supabaseAdmin = createServiceClient();
 
@@ -23,22 +25,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Seller not found' }, { status: 404 });
     }
 
-    // Get seller's products
-    const { data: products } = await supabaseAdmin
-      .from('products')
-      .select('id')
-      .eq('seller_id', seller.id);
-
-    if (!products || products.length === 0) {
-      return NextResponse.json({ error: 'No products found for seller' }, { status: 404 });
-    }
-
-    // Verify order exists and belongs to one of seller's products
+    // Verify order exists and belongs to seller's products
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
-      .select('id, product:products(seller_id)')
+      .select(`
+        id,
+        product:products!inner (
+          id,
+          seller_id
+        )
+      `)
       .eq('id', orderId)
-      .in('product_id', products.map(p => p.id))
+      .eq('product.seller_id', seller.id)
       .single();
 
     if (orderError || !order) {
@@ -55,7 +53,6 @@ export async function POST(request: Request) {
         shipped_at: status === 'shipped' ? new Date().toISOString() : null
       })
       .eq('id', orderId)
-      .eq('seller_id', fid)
       .select(`
         id,
         status,
@@ -63,7 +60,7 @@ export async function POST(request: Request) {
         total_amount,
         escrow_id,
         is_paid,
-        product:products (
+        product:products!inner (
           id,
           title,
           photos
