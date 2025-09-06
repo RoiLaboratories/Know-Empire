@@ -17,7 +17,7 @@ import { ICON } from "@/utils/icon-export";
 
 interface SellerOrder {
   id: string;
-  status: 'pending' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
   tracking_number: string | null;
   total_amount: number;
   escrow_id: string;
@@ -36,7 +36,7 @@ interface SellerOrder {
 
 interface BuyerOrder {
   id: string;
-  status: 'pending' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
   tracking_number: string | null;
   total_amount: number;
   escrow_id: string;
@@ -209,7 +209,7 @@ const SellerOrderManagement: NextPage = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
-          status: 'shipped',
+          status: 'SHIPPED', // Using uppercase to match database enum
           tracking_number: trackingNumber,
           fid: context.user.fid
         })
@@ -274,7 +274,7 @@ const SellerOrderManagement: NextPage = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          status: 'delivered',
+          status: 'DELIVERED',
           fid: context.user.fid,
           select: 'id,status,tracking_number,total_amount,escrow_id,isPaid,product:products(*)'
         })
@@ -454,9 +454,9 @@ const SellerOrderManagement: NextPage = () => {
                       </div>
                     </div>
                     <div className={`px-3 py-1 rounded-lg text-xs font-medium capitalize flex items-center gap-1.5 ${
-                      order.status === 'pending' ? 'bg-[#fef9c3] text-[#925f21]' :
-                      order.status === 'shipped' ? 'bg-[#dbeafe] text-[#1e43be]' :
-                      order.status === 'delivered' ? 'bg-[#dcfce7] text-[#166534]' :
+                      order.status === 'PENDING' ? 'bg-[#fef9c3] text-[#925f21]' :
+                      order.status === 'SHIPPED' ? 'bg-[#dbeafe] text-[#1e43be]' :
+                      order.status === 'DELIVERED' ? 'bg-[#dcfce7] text-[#166534]' :
                       'bg-[#fef9c3] text-[#925f21]'
                     }`}>
                       <Image
@@ -464,9 +464,9 @@ const SellerOrderManagement: NextPage = () => {
                         height={15}
                         alt=""
                         src={
-                          order.status === 'pending' ? '/Vector.svg' :
-                          order.status === 'shipped' ? '/Vector-2.svg' :
-                          order.status === 'delivered' ? '/check.svg' :
+                          order.status === 'PENDING' ? '/Vector.svg' :
+                          order.status === 'SHIPPED' ? '/Vector-2.svg' :
+                          order.status === 'DELIVERED' ? '/check.svg' :
                           '/Vector.svg'
                         }
                         className="w-3.5 h-[15px]"
@@ -511,9 +511,9 @@ const SellerOrderManagement: NextPage = () => {
                         <input
                           className="flex-1 bg-transparent border-none outline-none text-sm text-[#989898]"
                           type="text"
-                          value={order.status === 'pending' ? trackingNumbers[order.id] || '' : order.tracking_number || ''}
+                          value={order.status === 'PENDING' ? trackingNumbers[order.id] || '' : order.tracking_number || ''}
                           onChange={(e) => {
-                            if (order.status === 'pending') {
+                            if (order.status === 'PENDING') {
                               setTrackingNumbers(prev => ({
                                 ...prev,
                                 [order.id]: e.target.value
@@ -521,9 +521,9 @@ const SellerOrderManagement: NextPage = () => {
                             }
                           }}
                           placeholder="Enter tracking ID"
-                          readOnly={order.status !== 'pending'}
+                          readOnly={order.status !== 'PENDING'}
                         />
-                        {order.status !== 'pending' && (
+                        {order.status !== 'PENDING' && (
                           <button
                             onClick={() => copyToClipboard(order.tracking_number || '')}
                             className="ml-2 p-1 hover:opacity-80 transition-opacity"
@@ -537,10 +537,10 @@ const SellerOrderManagement: NextPage = () => {
                       </div>
                     </div>
                   </div>
-                  {(order.status === 'pending' || order.status === 'shipped' || order.status === 'delivered') && (
+                  {(order.status === 'PENDING' || order.status === 'SHIPPED' || order.status === 'DELIVERED') && (
                     <>
                       <div className="w-full h-px bg-[#989898] my-2" />
-                      {order.status === 'pending' && (
+                      {order.status === 'PENDING' && (
                         <button 
                           className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={() => markAsShipped(order.id)}
@@ -559,7 +559,7 @@ const SellerOrderManagement: NextPage = () => {
                         </button>
                       )}
                       
-                      {order.status === 'shipped' && (
+                      {order.status === 'SHIPPED' && (
                         <button 
                           className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={() => markAsDelivered(order.id, order.escrow_id)}
@@ -578,7 +578,7 @@ const SellerOrderManagement: NextPage = () => {
                         </button>
                       )}
 
-                      {order.status === 'delivered' && (
+                      {order.status === 'DELIVERED' && (
                         <>
                           <button 
                             className="w-full flex items-center justify-center gap-2.5 bg-[#ef4444] text-white rounded-lg py-2.5 px-5 mb-2"

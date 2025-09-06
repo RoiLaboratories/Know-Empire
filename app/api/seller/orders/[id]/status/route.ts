@@ -16,6 +16,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Farcaster ID is required' }, { status: 400 });
     }
 
+    // Validate status is one of the allowed values
+    const allowedStatuses = ['PENDING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+    if (!allowedStatuses.includes(status)) {
+      return NextResponse.json({ error: 'Invalid status value' }, { status: 400 });
+    }
+
     // First, verify that the order exists and belongs to this seller
     const { data: seller } = await supabaseAdmin
       .from('users')
