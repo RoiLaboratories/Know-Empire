@@ -66,17 +66,15 @@ const SellerOrderManagement: NextPage = () => {
   const { address, isConnected } = useAccount();
   const router = useRouter();
 
-  // Debug log on mount
+  // Setup component with context and connection state
   useEffect(() => {
-    console.log('Component mounted with context:', context);
-    console.log('Initial connection state:', { isConnected, address });
-  }, []);
+    if (!isConnected || !context?.user?.fid) {
+      setLoading(false);
+    }
+  }, [isConnected, context?.user?.fid]);
 
   const fetchOrders = useCallback(async () => {
-    console.log('Fetching orders with context:', context);
-    
     if (!context?.user?.fid) {
-      console.error('No Farcaster ID available');
       toast.error('Please connect your Farcaster account');
       setLoading(false);
       return;
@@ -87,28 +85,30 @@ const SellerOrderManagement: NextPage = () => {
       setLoading(true);
 
       // Fetch seller orders first
-      console.log('Fetching seller orders...');
       const sellerResponse = await fetch(`/api/seller/orders?fid=${context.user.fid}`);
       if (!sellerResponse.ok) {
         throw new Error(`Failed to fetch seller orders: ${sellerResponse.statusText}`);
       }
-      const sellerData = await sellerResponse.json();
-      console.log('Seller orders response:', sellerData);
+      const sellerData: SellerOrder[] = await sellerResponse.json();
       setSellerOrders(sellerData || []);
 
       // Then fetch buyer orders
-      console.log('Fetching buyer orders...');
       const buyerResponse = await fetch(`/api/buyer/orders?fid=${context.user.fid}`);
       if (!buyerResponse.ok) {
         throw new Error(`Failed to fetch buyer orders: ${buyerResponse.statusText}`);
       }
-      const buyerData = await buyerResponse.json();
-      console.log('Buyer orders response:', buyerData);
+      const buyerData: BuyerOrder[] = await buyerResponse.json();
       setBuyerOrders(buyerData || []);
-
-      console.log('Fetched seller orders:', sellerData);
-      console.log('Fetched buyer orders:', buyerData);
       
+      // Initialize tracking numbers from seller orders that have them
+      const initialTrackingNumbers: { [key: string]: string } = {};
+      sellerData.forEach(order => {
+        if (order.tracking_number) {
+          initialTrackingNumbers[order.id] = order.tracking_number;
+        }
+      });
+      setTrackingNumbers(prev => ({ ...prev, ...initialTrackingNumbers }));
+
       setSellerOrders(sellerData);
       setBuyerOrders(buyerData);
       setLoading(false);
@@ -128,18 +128,13 @@ const SellerOrderManagement: NextPage = () => {
   }, [isConnected, address, context?.user?.fid, fetchOrders]);
 
   useEffect(() => {
-    console.log('Tab changed:', activeTab);
-    console.log('Current orders:', { sellerOrders, buyerOrders });
-    
     // Update filtered orders based on active tab and search term
     const orders = activeTab === 'seller' ? sellerOrders : buyerOrders;
-    console.log('Orders to filter:', orders);
     
     const filtered = orders.filter(order =>
       order.product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.id.toLowerCase().includes(searchTerm.toLowerCase())
     );
-    console.log('Filtered orders:', filtered);
     
     setFilteredOrders(filtered);
   }, [activeTab, sellerOrders, buyerOrders, searchTerm]);
@@ -270,7 +265,7 @@ const SellerOrderManagement: NextPage = () => {
             <div className="text-center py-8">No orders match your search</div>
           ) : (
             <div className="w-full space-y-4">
-              {filteredOrders.map((order) => (
+              {filteredOrders.map((order: SellerOrder | BuyerOrder) => (
                 <div key={order.id} className="w-full rounded-lg bg-white border border-[#989898] p-4 flex flex-col gap-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3">
@@ -361,7 +356,7 @@ const SellerOrderManagement: NextPage = () => {
                             ...prev,
                             [order.id]: e.target.value
                           }))}
-                          disabled={order.status !== 'pending' || activeTab !== 'seller'}
+                          disabled={order.status !== 'pending'}
                           placeholder="Enter tracking ID"
                         />
                         {order.tracking_number && (
