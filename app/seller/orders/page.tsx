@@ -64,11 +64,17 @@ const SellerOrderManagement: NextPage = () => {
   const router = useRouter();
 
   const fetchOrders = useCallback(async () => {
+    if (!context?.user?.fid) {
+      console.error('No Farcaster ID available');
+      toast.error('Please connect your Farcaster account');
+      return;
+    }
+
     try {
       setRefreshing(true);
       const [sellerResponse, buyerResponse] = await Promise.all([
-        fetch('/api/seller/orders'),
-        fetch('/api/buyer/orders')
+        fetch(`/api/seller/orders?fid=${context.user.fid}`),
+        fetch(`/api/buyer/orders?fid=${context.user.fid}`)
       ]);
       
       if (!sellerResponse.ok || !buyerResponse.ok) {
@@ -80,22 +86,26 @@ const SellerOrderManagement: NextPage = () => {
         buyerResponse.json()
       ]);
 
+      console.log('Fetched seller orders:', sellerData);
+      console.log('Fetched buyer orders:', buyerData);
+      
       setSellerOrders(sellerData);
       setBuyerOrders(buyerData);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching orders:', error);
       toast.error('Failed to fetch orders');
+      setLoading(false);
     } finally {
       setRefreshing(false);
     }
   }, []);
 
   useEffect(() => {
-    if (isConnected && address) {
+    if (isConnected && address && context?.user?.fid) {
       fetchOrders();
     }
-  }, [isConnected, address, fetchOrders]);
+  }, [isConnected, address, context?.user?.fid, fetchOrders]);
 
   useEffect(() => {
     // Reset loading when changing tabs if we already have data
