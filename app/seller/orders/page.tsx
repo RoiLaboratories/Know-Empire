@@ -506,20 +506,37 @@ const SellerOrderManagement: NextPage = () => {
                       order.status === 'cancelled' ? 'bg-[#fee2e2] text-[#991b1b]' :
                       'bg-[#fef9c3] text-[#925f21]'
                     }`}>
-                      <Image
-                        width={14}
-                        height={15}
-                        alt=""
-                        src={
-                          order.status === 'pending'
-                            ? '/Vector.svg'
-                            : order.status === 'shipped'
-                            ? '/Vector-11.svg'
-                            : '/check.svg'
-                        }
-                        className="w-3.5 h-[15px]"
-                      />
-                      <span>{order.status === 'pending' ? 'Pending' : order.status.charAt(0).toUpperCase() + order.status.slice(1).toLowerCase()}</span>
+                      {order.status === 'pending' && (
+                        <Image
+                          width={14}
+                          height={15}
+                          alt=""
+                          src="/Vector.svg"
+                          className="w-3.5 h-[15px]"
+                        />
+                      )}
+                      {order.status === 'shipped' && (
+                        <Image
+                          width={14}
+                          height={15}
+                          alt=""
+                          src="/Vector-11.svg"
+                          className="w-3.5 h-[15px]"
+                        />
+                      )}
+                      {!['pending', 'shipped'].includes(order.status) && (
+                        <Image
+                          width={14}
+                          height={15}
+                          alt=""
+                          src="/check.svg"
+                          className="w-3.5 h-[15px]"
+                        />
+                      )}
+                      <span>
+                        {order.status === 'pending' ? 'Pending' : 
+                         order.status.charAt(0).toUpperCase() + order.status.slice(1).toLowerCase()}
+                      </span>
                     </div>
                   </div>
                   {/* Buyer Info and Tracking ID */}
@@ -557,18 +574,18 @@ const SellerOrderManagement: NextPage = () => {
                       <div className="text-sm">Tracking ID:</div>
                       <div className="w-full rounded-lg bg-[#f1f1f1] border border-[#989898] flex items-center p-2.5">
                         <input
-                          className="flex-1 bg-transparent border-none outline-none text-sm"
+                          className="flex-1 bg-transparent border-none outline-none text-sm text-black"
                           type="text"
-                          value={order.status === 'pending' && activeTab === 'seller' ? trackingNumbers[order.id] || '' : order.tracking_number || ''}
+                          value={activeTab === 'seller' ? (trackingNumbers[order.id] || '') : (order.tracking_number || '')}
                           onChange={(e) => {
-                            if (order.status === 'pending' && activeTab === 'seller') {
-                              const value = e.target.value;
+                            if (activeTab === 'seller' && order.status === 'pending') {
                               setTrackingNumbers(prev => ({
                                 ...prev,
-                                [order.id]: value
+                                [order.id]: e.target.value
                               }));
                             }
                           }}
+                          disabled={order.status !== 'pending' || activeTab !== 'seller'}
                           placeholder="Enter tracking ID"
                         />
                         {order.tracking_number && (
@@ -587,13 +604,13 @@ const SellerOrderManagement: NextPage = () => {
                   </div>
 
                   {/* Mark as Shipped Button */}
-                  {(activeTab === 'seller' && order.status === 'pending') ? (
-                    <div>
+                  {activeTab === 'seller' && order.status === 'pending' && (
+                    <>
                       <div className="w-full h-px bg-[#989898] my-2" />
                       <button 
                         className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={() => markAsShipped(order.id)}
-                        disabled={!trackingNumbers[order.id]}
+                        disabled={!trackingNumbers[order.id] || loading}
                       >
                         <Image
                           className="w-[22px] h-[18px]"
@@ -606,8 +623,8 @@ const SellerOrderManagement: NextPage = () => {
                           Mark as shipped
                         </span>
                       </button>
-                    </div>
-                  ) : null}
+                    </>
+                  )}
                       
                   {order.status === 'shipped' && activeTab === 'seller' && (
                     <button 
