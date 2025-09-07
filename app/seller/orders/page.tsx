@@ -51,40 +51,60 @@ interface BuyerOrder {
 }
 
 const SellerOrderManagement: NextPage = () => {
+  // State management
   const [activeTab, setActiveTab] = useState<'seller' | 'buyer'>('seller');
   const [sellerOrders, setSellerOrders] = useState<SellerOrder[]>([]);
   const [buyerOrders, setBuyerOrders] = useState<BuyerOrder[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start with false to avoid flash
   const [refreshing, setRefreshing] = useState(false);
   const [trackingNumbers, setTrackingNumbers] = useState<{ [orderId: string]: string }>({});
   const [filteredOrders, setFilteredOrders] = useState<Array<SellerOrder | BuyerOrder>>([]);
+  
+  // Hooks
   const { context } = useMiniKit();
   const { address, isConnected } = useAccount();
   const router = useRouter();
 
+  // Debug log on mount
+  useEffect(() => {
+    console.log('Component mounted with context:', context);
+    console.log('Initial connection state:', { isConnected, address });
+  }, []);
+
   const fetchOrders = useCallback(async () => {
+    console.log('Fetching orders with context:', context);
+    
     if (!context?.user?.fid) {
       console.error('No Farcaster ID available');
       toast.error('Please connect your Farcaster account');
+      setLoading(false);
       return;
     }
 
     try {
       setRefreshing(true);
-      const [sellerResponse, buyerResponse] = await Promise.all([
-        fetch(`/api/seller/orders?fid=${context.user.fid}`),
-        fetch(`/api/buyer/orders?fid=${context.user.fid}`)
-      ]);
-      
-      if (!sellerResponse.ok || !buyerResponse.ok) {
-        throw new Error('Failed to fetch orders');
-      }
+      setLoading(true);
 
-      const [sellerData, buyerData] = await Promise.all([
-        sellerResponse.json(),
-        buyerResponse.json()
-      ]);
+      // Fetch seller orders first
+      console.log('Fetching seller orders...');
+      const sellerResponse = await fetch(`/api/seller/orders?fid=${context.user.fid}`);
+      if (!sellerResponse.ok) {
+        throw new Error(`Failed to fetch seller orders: ${sellerResponse.statusText}`);
+      }
+      const sellerData = await sellerResponse.json();
+      console.log('Seller orders response:', sellerData);
+      setSellerOrders(sellerData || []);
+
+      // Then fetch buyer orders
+      console.log('Fetching buyer orders...');
+      const buyerResponse = await fetch(`/api/buyer/orders?fid=${context.user.fid}`);
+      if (!buyerResponse.ok) {
+        throw new Error(`Failed to fetch buyer orders: ${buyerResponse.statusText}`);
+      }
+      const buyerData = await buyerResponse.json();
+      console.log('Buyer orders response:', buyerData);
+      setBuyerOrders(buyerData || []);
 
       console.log('Fetched seller orders:', sellerData);
       console.log('Fetched buyer orders:', buyerData);
@@ -108,21 +128,20 @@ const SellerOrderManagement: NextPage = () => {
   }, [isConnected, address, context?.user?.fid, fetchOrders]);
 
   useEffect(() => {
-    // Reset loading when changing tabs if we already have data
-    if (activeTab === 'seller' && sellerOrders.length > 0) {
-      setLoading(false);
-    } else if (activeTab === 'buyer' && buyerOrders.length > 0) {
-      setLoading(false);
-    }
-
+    console.log('Tab changed:', activeTab);
+    console.log('Current orders:', { sellerOrders, buyerOrders });
+    
     // Update filtered orders based on active tab and search term
     const orders = activeTab === 'seller' ? sellerOrders : buyerOrders;
-    setFilteredOrders(
-      orders.filter(order =>
-        order.product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.id.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+    console.log('Orders to filter:', orders);
+    
+    const filtered = orders.filter(order =>
+      order.product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.id.toLowerCase().includes(searchTerm.toLowerCase())
     );
+    console.log('Filtered orders:', filtered);
+    
+    setFilteredOrders(filtered);
   }, [activeTab, sellerOrders, buyerOrders, searchTerm]);
 
   const copyToClipboard = useCallback((text: string | null) => {
@@ -241,10 +260,14 @@ const SellerOrderManagement: NextPage = () => {
             </div>
           </div>
 
-          {loading ? (
+          {!isConnected || !context?.user?.fid ? (
+            <div className="text-center py-8">Please connect your wallet and Farcaster account</div>
+          ) : loading ? (
             <div className="text-center py-8">Loading orders...</div>
-          ) : filteredOrders.length === 0 ? (
-            <div className="text-center py-8">No orders found</div>
+          ) : (activeTab === 'seller' ? sellerOrders : buyerOrders).length === 0 ? (
+            <div className="text-center py-8">No {activeTab === 'seller' ? 'sales' : 'purchases'} found</div>
+          ) : filteredOrders.length === 0 && searchTerm ? (
+            <div className="text-center py-8">No orders match your search</div>
           ) : (
             <div className="w-full space-y-4">
               {filteredOrders.map((order) => (
