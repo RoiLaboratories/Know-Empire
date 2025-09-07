@@ -82,7 +82,6 @@ const SellerOrderManagement: NextPage = () => {
 
       setSellerOrders(sellerData);
       setBuyerOrders(buyerData);
-      setFilteredOrders(activeTab === 'seller' ? sellerData : buyerData);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -90,7 +89,7 @@ const SellerOrderManagement: NextPage = () => {
     } finally {
       setRefreshing(false);
     }
-  }, [activeTab]);
+  }, []);
 
   useEffect(() => {
     if (isConnected && address) {
@@ -99,6 +98,14 @@ const SellerOrderManagement: NextPage = () => {
   }, [isConnected, address, fetchOrders]);
 
   useEffect(() => {
+    // Reset loading when changing tabs if we already have data
+    if (activeTab === 'seller' && sellerOrders.length > 0) {
+      setLoading(false);
+    } else if (activeTab === 'buyer' && buyerOrders.length > 0) {
+      setLoading(false);
+    }
+
+    // Update filtered orders based on active tab and search term
     const orders = activeTab === 'seller' ? sellerOrders : buyerOrders;
     setFilteredOrders(
       orders.filter(order =>
@@ -226,6 +233,8 @@ const SellerOrderManagement: NextPage = () => {
 
           {loading ? (
             <div className="text-center py-8">Loading orders...</div>
+          ) : filteredOrders.length === 0 ? (
+            <div className="text-center py-8">No orders found</div>
           ) : (
             <div className="w-full space-y-4">
               {filteredOrders.map((order) => (
