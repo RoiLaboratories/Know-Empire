@@ -58,111 +58,9 @@ const SellerOrderManagement: NextPage = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [trackingNumbers, setTrackingNumbers] = useState<{ [orderId: string]: string }>({});
-  const [filteredOrders, setFilteredOrders] = useState<Array<SellerOrder | BuyerOrder>>([]);
   const { context } = useMiniKit();
   const { address, isConnected } = useAccount();
   const router = useRouter();
-
-  const fetchOrders = useCallback(async () => {
-    try {
-      setRefreshing(true);
-      const [sellerResponse, buyerResponse] = await Promise.all([
-        fetch('/api/seller/orders'),
-        fetch('/api/buyer/orders')
-      ]);
-      
-      if (!sellerResponse.ok || !buyerResponse.ok) {
-        throw new Error('Failed to fetch orders');
-      }
-
-      const [sellerData, buyerData] = await Promise.all([
-        sellerResponse.json(),
-        buyerResponse.json()
-      ]);
-
-      setSellerOrders(sellerData);
-      setBuyerOrders(buyerData);
-      setFilteredOrders(activeTab === 'seller' ? sellerData : buyerData);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      toast.error('Failed to fetch orders');
-    } finally {
-      setRefreshing(false);
-    }
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (isConnected && address) {
-      fetchOrders();
-    }
-  }, [isConnected, address, fetchOrders]);
-
-  useEffect(() => {
-    const orders = activeTab === 'seller' ? sellerOrders : buyerOrders;
-    setFilteredOrders(
-      orders.filter(order =>
-        order.product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.id.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    );
-  }, [activeTab, sellerOrders, buyerOrders, searchTerm]);
-
-  const copyToClipboard = useCallback((text: string | null) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text)
-      .then(() => toast.success('Copied to clipboard!'))
-      .catch(() => toast.error('Failed to copy'));
-  }, []);
-
-  const markAsShipped = useCallback(async (orderId: string) => {
-    try {
-      const response = await fetch(`/api/seller/orders/${orderId}/ship`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tracking_number: trackingNumbers[orderId] })
-      });
-      if (!response.ok) throw new Error('Failed to mark as shipped');
-      toast.success('Order marked as shipped!');
-      // Refresh orders
-      fetchOrders();
-    } catch (error) {
-      console.error('Error marking order as shipped:', error);
-      toast.error('Failed to mark order as shipped');
-    }
-  }, [trackingNumbers]);
-
-  const markAsDelivered = useCallback(async (orderId: string, escrowId: string) => {
-    try {
-      const response = await fetch(`/api/seller/orders/${orderId}/deliver`, {
-        method: 'POST'
-      });
-      if (!response.ok) throw new Error('Failed to mark as delivered');
-
-      // Call smart contract
-      await confirmDeliveryBySeller(escrowId);
-      
-      toast.success('Order marked as delivered!');
-      fetchOrders();
-    } catch (error) {
-      console.error('Error marking order as delivered:', error);
-      toast.error('Failed to mark order as delivered');
-    }
-  }, []);
-
-  const markAsCompleted = useCallback(async (orderId: string) => {
-    try {
-      const response = await fetch(`/api/seller/orders/${orderId}/complete`, {
-        method: 'POST'
-      });
-      if (!response.ok) throw new Error('Failed to mark as completed');
-      toast.success('Order marked as completed!');
-      fetchOrders();
-    } catch (error) {
-      console.error('Error marking order as completed:', error);
-      toast.error('Failed to mark order as completed');
-    }
-  }, []);
 
   // Your existing fetchOrders and other functions...
 
@@ -253,7 +151,7 @@ const SellerOrderManagement: NextPage = () => {
                         </div>
                         {activeTab === 'buyer' && (
                           <div className="text-xs text-gray-500">
-                            Seller: @{(order as unknown as BuyerOrder).product.user.farcaster_username}
+                            Seller: @{(order as BuyerOrder).product.user.farcaster_username}
                           </div>
                         )}
                       </div>
