@@ -362,39 +362,47 @@ const SellerOrderManagement: NextPage = () => {
                       <label htmlFor={`tracking-${order.id}`} className="text-sm font-medium">
                         Tracking ID:
                       </label>
-                      <form 
-                        className="flex items-center gap-2"
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          if (trackingIds[order.id]) {
-                            markAsShipped(order.id);
-                          }
-                        }}
-                      >
-                        <input
-                          type="text"
-                          id={`tracking-${order.id}`}
-                          name={`tracking-${order.id}`}
-                          placeholder={order.status === 'pending' ? "Enter tracking ID" : ""}
-                          value={trackingIds[order.id] || ''}
-                          onChange={(e) => {
-                            setTrackingIds(prev => ({
-                              ...prev,
-                              [order.id]: e.target.value
-                            }));
+                      {order.status === 'pending' ? (
+                        <form 
+                          className="flex items-center gap-2"
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            if (trackingIds[order.id]) {
+                              markAsShipped(order.id);
+                            }
                           }}
-                          readOnly={order.status !== 'pending'}
-                          className="flex-1 p-2.5 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        {order.status === 'pending' && trackingIds[order.id] && (
-                          <button
-                            type="submit"
-                            className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            Save
-                          </button>
-                        )}
-                      </form>
+                        >
+                          <input
+                            type="text"
+                            id={`tracking-${order.id}`}
+                            name={`tracking-${order.id}`}
+                            autoComplete="off"
+                            placeholder="Enter tracking ID"
+                            defaultValue={trackingIds[order.id] || ''}
+                            onInput={(e) => {
+                              const target = e.target as HTMLInputElement;
+                              setTrackingIds(prev => ({
+                                ...prev,
+                                [order.id]: target.value
+                              }));
+                            }}
+                            className="flex-1 p-2.5 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            style={{ WebkitAppearance: 'none' }}
+                          />
+                          {trackingIds[order.id] && (
+                            <button
+                              type="submit"
+                              className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                              Save
+                            </button>
+                          )}
+                        </form>
+                      ) : (
+                        <div className="p-2.5 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-500">
+                          {order.tracking_number || 'No tracking ID available'}
+                        </div>
+                      )}
                     </div>
                   </div>
 
