@@ -59,7 +59,8 @@ const SellerOrderManagement: NextPage = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [filteredOrders, setFilteredOrders] = useState<Array<SellerOrder | BuyerOrder>>([]);
-  const [trackingNumbers, setTrackingNumbers] = useState<{ [orderId: string]: string }>({});
+  const [trackingNumbers, setTrackingNumbers] = useState<Record<string, string>>({});
+  const [editableOrders, setEditableOrders] = useState<Set<string>>(new Set());
   
   // Hooks
   const { context } = useMiniKit();
@@ -105,18 +106,22 @@ const SellerOrderManagement: NextPage = () => {
       const buyerData: BuyerOrder[] = await buyerResponse.json();
       setBuyerOrders(buyerData || []);
       
-      // Initialize tracking numbers from seller orders that have them
-      const initialTrackingNumbers: { [key: string]: string } = {};
+      // Set up tracking numbers and editable states
+      const initialTrackingNumbers: Record<string, string> = {};
+      const editableOrderIds = new Set<string>();
+      
       sellerData.forEach(order => {
-        if (order.tracking_number) {
-          initialTrackingNumbers[order.id] = order.tracking_number;
-        } else if (order.status === 'pending') {
-          // Initialize empty string for pending orders without tracking numbers
-          initialTrackingNumbers[order.id] = '';
+        // Initialize tracking number state
+        initialTrackingNumbers[order.id] = order.tracking_number || '';
+        
+        // Mark pending orders as editable
+        if (order.status === 'pending') {
+          editableOrderIds.add(order.id);
         }
       });
+      
       setTrackingNumbers(initialTrackingNumbers);
-
+      setEditableOrders(editableOrderIds);
       setSellerOrders(sellerData);
       setBuyerOrders(buyerData);
       setLoading(false);
@@ -355,23 +360,31 @@ const SellerOrderManagement: NextPage = () => {
                     {/* Tracking ID */}
                     <div className="flex flex-col gap-2">
                       <div className="text-sm">Tracking ID:</div>
-                      <div className="w-full rounded-lg bg-white border border-[#989898] flex items-center p-2.5">
-                        {order.status === 'pending' ? (
-                          <input
-                            type="text"
-                            className="w-full border-0 outline-none text-sm text-black placeholder:text-gray-400"
-                            value={trackingNumbers[order.id] || ''}
-                            onChange={e => setTrackingNumbers(prev => ({
-                              ...prev,
-                              [order.id]: e.target.value
-                            }))}
-                            placeholder="Enter tracking ID"
-                          />
-                        ) : (
-                          <div className="w-full text-sm text-gray-500">
-                            {order.tracking_number || 'No tracking ID available'}
-                          </div>
-                        )}
+                      <div 
+                        className={`w-full rounded-lg border ${editableOrders.has(order.id) ? 'bg-white border-blue-500' : 'bg-gray-50 border-[#989898]'} flex items-center p-2.5`}
+                      >
+                        <input
+                          type="text"
+                          className={`w-full border-0 outline-none text-sm ${editableOrders.has(order.id) ? 'bg-white text-black' : 'bg-gray-50 text-gray-500'}`}
+                          value={trackingNumbers[order.id]}
+                          onChange={(e) => {
+                            console.log('Input change:', e.target.value); // Debug log
+                            if (editableOrders.has(order.id)) {
+                              setTrackingNumbers(prev => ({
+                                ...prev,
+                                [order.id]: e.target.value
+                              }));
+                            }
+                          }}
+                          onFocus={(e) => {
+                            console.log('Input focused:', order.id); // Debug log
+                            if (editableOrders.has(order.id)) {
+                              e.target.select();
+                            }
+                          }}
+                          placeholder={editableOrders.has(order.id) ? "Enter tracking ID" : "No tracking ID available"}
+                          readOnly={!editableOrders.has(order.id)}
+                        />
                         {trackingNumbers[order.id] && (
                           <button
                             onClick={() => copyToClipboard(trackingNumbers[order.id])}
