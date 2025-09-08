@@ -56,10 +56,10 @@ const SellerOrderManagement: NextPage = () => {
   const [sellerOrders, setSellerOrders] = useState<SellerOrder[]>([]);
   const [buyerOrders, setBuyerOrders] = useState<BuyerOrder[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(false); // Start with false to avoid flash
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [trackingNumbers, setTrackingNumbers] = useState<{ [orderId: string]: string }>({});
   const [filteredOrders, setFilteredOrders] = useState<Array<SellerOrder | BuyerOrder>>([]);
+  const [trackingNumbers, setTrackingNumbers] = useState<{ [orderId: string]: string }>({});
   
   // Hooks
   const { context } = useMiniKit();
@@ -161,7 +161,7 @@ const SellerOrderManagement: NextPage = () => {
       console.error('Error marking order as shipped:', error);
       toast.error('Failed to mark order as shipped');
     }
-  }, [trackingNumbers]);
+  }, [trackingNumbers, fetchOrders]);
 
   const markAsDelivered = useCallback(async (orderId: string, escrowId: string) => {
     try {
@@ -179,7 +179,7 @@ const SellerOrderManagement: NextPage = () => {
       console.error('Error marking order as delivered:', error);
       toast.error('Failed to mark order as delivered');
     }
-  }, []);
+  }, [fetchOrders]);
 
   const markAsCompleted = useCallback(async (orderId: string) => {
     try {
@@ -193,7 +193,7 @@ const SellerOrderManagement: NextPage = () => {
       console.error('Error marking order as completed:', error);
       toast.error('Failed to mark order as completed');
     }
-  }, []);
+  }, [fetchOrders]);
 
   // Your existing fetchOrders and other functions...
 
@@ -377,64 +377,66 @@ const SellerOrderManagement: NextPage = () => {
                   </div>
 
                   {/* Mark as Shipped Button */}
-                  {order.status === 'pending' && (
+                  {activeTab === 'seller' && (order.status === 'pending' || order.status === 'shipped' || order.status === 'delivered') && (
                     <>
                       <div className="w-full h-px bg-[#989898] my-2" />
-                      <button 
-                        className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
-                        onClick={() => markAsShipped(order.id)}
-                        disabled={!trackingNumbers[order.id]}
-                      >
-                        <Image
-                          className="w-[22px] h-[18px]"
-                          width={22}
-                          height={18}
-                          alt=""
-                          src="/Vector-11.svg"
-                        />
-                        <span className="text-sm font-semibold">
-                          Mark as shipped
-                        </span>
-                      </button>
-                    </>
-                  )}
+                      {order.status === 'pending' && (
+                        <button 
+                          className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => markAsShipped(order.id)}
+                          disabled={loading || !context?.user?.fid}
+                        >
+                          <Image
+                            className="w-[22px] h-[18px]"
+                            width={22}
+                            height={18}
+                            alt=""
+                            src="/Vector-11.svg"
+                          />
+                          <span className="text-sm font-semibold">
+                            Mark as shipped
+                          </span>
+                        </button>
+                      )}
                       
-                  {order.status === 'shipped' && activeTab === 'seller' && (
-                    <button 
-                      className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={() => markAsDelivered(order.id, order.escrow_id)}
-                      disabled={loading || !isConnected || !context?.user?.fid}
-                    >
-                      <Image
-                        className="w-[22px] h-[18px]"
-                        width={22}
-                        height={18}
-                        alt=""
-                        src="/Vector-11.svg"
-                      />
-                      <span className="text-sm font-semibold">
-                        Mark as delivered
-                      </span>
-                    </button>
-                  )}
+                      {order.status === 'shipped' && (
+                        <button 
+                          className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => markAsDelivered(order.id, order.escrow_id)}
+                          disabled={loading || !isConnected || !context?.user?.fid}
+                        >
+                          <Image
+                            className="w-[22px] h-[18px]"
+                            width={22}
+                            height={18}
+                            alt=""
+                            src="/Vector-11.svg"
+                          />
+                          <span className="text-sm font-semibold">
+                            Mark as delivered
+                          </span>
+                        </button>
+                      )}
 
-                  {order.status === 'delivered' && activeTab === 'seller' && (
-                    <button 
-                      className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={() => markAsCompleted(order.id)}
-                      disabled={loading || !context?.user?.fid}
-                    >
-                      <Image
-                        className="w-[22px] h-[18px]"
-                        width={22}
-                        height={18}
-                        alt=""
-                        src="/check.svg"
-                      />
-                      <span className="text-sm font-semibold">
-                        Mark as completed
-                      </span>
-                    </button>
+                      {order.status === 'delivered' && (
+                        <button 
+                          className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => markAsCompleted(order.id)}
+                          disabled={loading || !context?.user?.fid}
+                        >
+                          <Image
+                            className="w-[22px] h-[18px]"
+                            width={22}
+                            height={18}
+                            alt=""
+                            src="/check.svg"
+                          />
+                          <span className="text-sm font-semibold">
+                            Mark as completed
+                          </span>
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               ))}
