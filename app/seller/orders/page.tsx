@@ -359,32 +359,44 @@ const SellerOrderManagement: NextPage = () => {
 
                     {/* Tracking ID */}
                     <div className="flex flex-col gap-2">
-                      <label htmlFor={`tracking-${order.id}`} className="text-sm font-medium">
-                        Tracking ID:
-                      </label>
+                      <div className="text-sm font-medium">Tracking ID:</div>
                       {order.status === 'pending' ? (
                         <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            id={`tracking-${order.id}`}
+                          <textarea
+                            rows={1}
                             placeholder="Enter tracking ID"
-                            defaultValue=""
+                            value={trackingInputs[order.id] || ''}
                             onChange={(e) => {
-                              const newValue = e.target.value;
                               setTrackingInputs(prev => ({
                                 ...prev,
-                                [order.id]: newValue
+                                [order.id]: e.target.value
                               }));
                             }}
-                            className="flex-1 p-2.5 rounded-lg border border-gray-300 text-sm"
+                            onTouchStart={(e) => e.currentTarget.focus()}
+                            className="flex-1 p-2.5 rounded-lg border border-gray-300 text-sm resize-none overflow-hidden leading-tight min-h-[40px] active:outline-none focus:outline-none active:border-blue-500 focus:border-blue-500"
+                            style={{
+                              WebkitAppearance: 'none',
+                              WebkitBorderRadius: '8px',
+                              WebkitUserSelect: 'text',
+                              WebkitTapHighlightColor: 'transparent',
+                            }}
                           />
                           <button
+                            type="button"
                             onClick={() => {
-                              if (trackingInputs[order.id]?.trim()) {
+                              const trackingId = trackingInputs[order.id]?.trim();
+                              if (trackingId) {
                                 markAsShipped(order.id);
+                              } else {
+                                toast.error('Please enter a tracking ID first');
                               }
                             }}
-                            className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600"
+                            className="whitespace-nowrap min-h-[40px] px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium active:bg-blue-600 focus:outline-none"
+                            style={{
+                              WebkitTapHighlightColor: 'transparent',
+                              WebkitTouchCallout: 'none',
+                              WebkitUserSelect: 'none',
+                            }}
                           >
                             Mark as Shipped
                           </button>
