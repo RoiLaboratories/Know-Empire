@@ -355,22 +355,23 @@ const SellerOrderManagement: NextPage = () => {
                     {/* Tracking ID */}
                     <div className="flex flex-col gap-2">
                       <div className="text-sm">Tracking ID:</div>
-                      <div className="w-full rounded-lg bg-[#f1f1f1] border border-[#989898] flex items-center p-2.5">
-                        <input
-                          type="text"
-                          className="w-full bg-transparent border-0 outline-none text-sm text-black disabled:bg-gray-100"
-                          value={trackingNumbers[order.id] ?? ''}
-                          onChange={(e) => {
-                            if (order.status === 'pending') {
-                              setTrackingNumbers(prev => ({
-                                ...prev,
-                                [order.id]: e.target.value
-                              }));
-                            }
-                          }}
-                          disabled={order.status !== 'pending'}
-                          placeholder={order.status === 'pending' ? "Enter tracking ID" : "No tracking ID available"}
-                        />
+                      <div className="w-full rounded-lg bg-white border border-[#989898] flex items-center p-2.5">
+                        {order.status === 'pending' ? (
+                          <input
+                            type="text"
+                            className="w-full border-0 outline-none text-sm text-black placeholder:text-gray-400"
+                            value={trackingNumbers[order.id] || ''}
+                            onChange={e => setTrackingNumbers(prev => ({
+                              ...prev,
+                              [order.id]: e.target.value
+                            }))}
+                            placeholder="Enter tracking ID"
+                          />
+                        ) : (
+                          <div className="w-full text-sm text-gray-500">
+                            {order.tracking_number || 'No tracking ID available'}
+                          </div>
+                        )}
                         {trackingNumbers[order.id] && (
                           <button
                             onClick={() => copyToClipboard(trackingNumbers[order.id])}
