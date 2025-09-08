@@ -34,6 +34,9 @@ interface SellerOrder {
   };
 }
 
+// Simple type for tracking ID updates
+type TrackingIds = { [orderId: string]: string };
+
 interface BuyerOrder {
   id: string;
   status: 'pending' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
@@ -59,7 +62,7 @@ const SellerOrderManagement: NextPage = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [filteredOrders, setFilteredOrders] = useState<Array<SellerOrder | BuyerOrder>>([]);
-  const [trackingInputs, setTrackingInputs] = useState<{[key: string]: string}>({});
+  const [trackingIds, setTrackingIds] = useState<TrackingIds>({});
   
   // Hooks
   const { context } = useMiniKit();
@@ -105,13 +108,14 @@ const SellerOrderManagement: NextPage = () => {
       const buyerData: BuyerOrder[] = await buyerResponse.json();
       setBuyerOrders(buyerData || []);
       
-      // Initialize tracking inputs for orders
-      const inputs: {[key: string]: string} = {};
+      // Initialize tracking IDs
+      const newTrackingIds = { ...trackingIds };
       sellerData.forEach(order => {
-        inputs[order.id] = order.tracking_number || '';
+        if (order.tracking_number) {
+          newTrackingIds[order.id] = order.tracking_number;
+        }
       });
-      console.log('Initializing tracking inputs:', inputs); // Debug log
-      setTrackingInputs(inputs);
+      setTrackingIds(newTrackingIds);
       setSellerOrders(sellerData);
       setBuyerOrders(buyerData);
       setLoading(false);
@@ -151,23 +155,26 @@ const SellerOrderManagement: NextPage = () => {
 
   const markAsShipped = useCallback(async (orderId: string) => {
     try {
-      const trackingNumber = trackingInputs[orderId];
-      console.log('Marking as shipped:', orderId, 'Tracking number:', trackingNumber);
-      
+      if (!trackingIds[orderId]) {
+        toast.error('Please enter a tracking ID first');
+        return;
+      }
+
       const response = await fetch(`/api/seller/orders/${orderId}/ship`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tracking_number: trackingNumber })
+        body: JSON.stringify({ tracking_number: trackingIds[orderId] })
       });
+
       if (!response.ok) throw new Error('Failed to mark as shipped');
+      
       toast.success('Order marked as shipped!');
-      // Refresh orders
       fetchOrders();
     } catch (error) {
       console.error('Error marking order as shipped:', error);
       toast.error('Failed to mark order as shipped');
     }
-  }, [trackingInputs, fetchOrders]);
+  }, [trackingIds, fetchOrders]);
 
   const markAsDelivered = useCallback(async (orderId: string, escrowId: string) => {
     try {
@@ -352,43 +359,47 @@ const SellerOrderManagement: NextPage = () => {
 
                     {/* Tracking ID */}
                     <div className="flex flex-col gap-2">
-                      <div className="text-sm">Tracking ID:</div>
-                      <div className="flex items-center">
-                        {order.status === 'pending' ? (
-                          <input
-                            type="text"
-                            className="flex-1 p-2.5 rounded-lg border border-blue-500 bg-white text-black text-sm outline-none"
-                            value={trackingInputs[order.id] || ''}
-                            onChange={(e) => {
-                              console.log('Tracking input change for order:', order.id, 'New value:', e.target.value);
-                              setTrackingInputs(prev => {
-                                const updated = {
+                      <div className="text-sm font-medium">Tracking ID:</div>
+                      <div className="flex items-center gap-2">
+                        {order.status === 'pending' && (
+                          <>
+                            <input
+                              type="text"
+                              placeholder="Enter tracking ID"
+                              value={trackingIds[order.id] || ''}
+                              onChange={e => {
+                                const newValue = e.target.value;
+                                setTrackingIds(prev => ({
                                   ...prev,
-                                  [order.id]: e.target.value
-                                };
-                                console.log('Updated tracking inputs:', updated);
-                                return updated;
-                              });
-                            }}
-                            onFocus={() => console.log('Input focused for order:', order.id)}
-                            onBlur={() => console.log('Input blurred for order:', order.id)}
-                            placeholder="Enter tracking ID"
-                          />
-                        ) : (
-                          <div className="flex-1 p-2.5 rounded-lg border border-[#989898] bg-gray-50 text-gray-500 text-sm">
-                            {order.tracking_number || 'No tracking ID available'}
-                          </div>
-                        )}
-                        {trackingInputs[order.id] && (
-                          <button
-                            onClick={() => copyToClipboard(trackingInputs[order.id])}
-                            className="ml-2 p-1 hover:opacity-80 transition-opacity"
-                          >
-                            <Icon 
-                              icon={ICON.COPY} 
-                              fontSize={16}
+                                  [order.id]: newValue
+                                }));
+                              }}
+                              className="flex-1 p-2.5 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-black text-sm outline-none"
                             />
-                          </button>
+                            {trackingIds[order.id] && (
+                              <button
+                                onClick={() => copyToClipboard(trackingIds[order.id])}
+                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                              >
+                                <Icon icon={ICON.COPY} className="w-4 h-4 text-gray-500" />
+                              </button>
+                            )}
+                          </>
+                        )}
+                        {order.status !== 'pending' && (
+                          <>
+                            <div className="flex-1 p-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-500 text-sm">
+                              {order.tracking_number || 'No tracking ID available'}
+                            </div>
+                            {order.tracking_number && (
+                              <button
+                                onClick={() => copyToClipboard(order.tracking_number)}
+                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                              >
+                                <Icon icon={ICON.COPY} className="w-4 h-4 text-gray-500" />
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
@@ -402,7 +413,7 @@ const SellerOrderManagement: NextPage = () => {
                         <button 
                           className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={() => markAsShipped(order.id)}
-                          disabled={!trackingInputs[order.id]}
+                          disabled={!trackingIds[order.id]}
                         >
                           <Image
                             className="w-[22px] h-[18px]"
