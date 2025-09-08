@@ -310,7 +310,7 @@ const SellerOrderManagement: NextPage = () => {
                         src="/Vector.svg"
                         className="w-3.5 h-[15px]"
                       />
-                      <span>Pending</span>
+                      <span>{order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span>
                     </div>
                   </div>
 
@@ -353,7 +353,6 @@ const SellerOrderManagement: NextPage = () => {
                           className="w-full bg-transparent border-0 outline-none text-sm text-black"
                           value={trackingNumbers[order.id] || ''}
                           onChange={(e) => {
-                            e.preventDefault();
                             setTrackingNumbers(prev => ({
                               ...prev,
                               [order.id]: e.target.value
