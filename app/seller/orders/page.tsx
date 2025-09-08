@@ -363,37 +363,32 @@ const SellerOrderManagement: NextPage = () => {
                         Tracking ID:
                       </label>
                       {order.status === 'pending' ? (
-                        <form 
-                          className="flex items-center gap-2"
-                          onSubmit={(e) => {
-                            e.preventDefault();
-                            markAsShipped(order.id);
-                          }}
-                        >
+                        <div className="flex items-center gap-2">
                           <input
                             type="text"
                             id={`tracking-${order.id}`}
-                            name={`tracking-${order.id}`}
-                            autoComplete="off"
                             placeholder="Enter tracking ID"
-                            value={trackingInputs[order.id] || ''}
+                            defaultValue=""
                             onChange={(e) => {
+                              const newValue = e.target.value;
                               setTrackingInputs(prev => ({
                                 ...prev,
-                                [order.id]: e.target.value
+                                [order.id]: newValue
                               }));
                             }}
-                            className="flex-1 p-2.5 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="flex-1 p-2.5 rounded-lg border border-gray-300 text-sm"
                           />
-                          {trackingInputs[order.id]?.trim() && (
-                            <button
-                              type="submit"
-                              className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                              Mark as Shipped
-                            </button>
-                          )}
-                        </form>
+                          <button
+                            onClick={() => {
+                              if (trackingInputs[order.id]?.trim()) {
+                                markAsShipped(order.id);
+                              }
+                            }}
+                            className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600"
+                          >
+                            Mark as Shipped
+                          </button>
+                        </div>
                       ) : (
                         <div className="p-2.5 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-500">
                           {order.tracking_number || 'No tracking ID available'}
