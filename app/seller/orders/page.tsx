@@ -79,6 +79,11 @@ const SellerOrderManagement: NextPage = () => {
       setLoading(false);
       return;
     }
+    if (!isConnected) {
+      toast.error('Please connect your wallet');
+      setLoading(false);
+      return;
+    }
 
     try {
       setRefreshing(true);
@@ -350,20 +355,22 @@ const SellerOrderManagement: NextPage = () => {
                       <div className="w-full rounded-lg bg-[#f1f1f1] border border-[#989898] flex items-center p-2.5">
                         <input
                           type="text"
-                          className="w-full bg-transparent border-0 outline-none text-sm text-black"
-                          value={trackingNumbers[order.id] || ''}
+                          className="flex-1 bg-transparent border-none outline-none text-sm text-[#989898]"
+                          value={order.tracking_number || trackingNumbers[order.id] || ''}
                           onChange={(e) => {
-                            setTrackingNumbers(prev => ({
-                              ...prev,
-                              [order.id]: e.target.value
-                            }));
+                            if (activeTab === 'seller' && order.status === 'pending') {
+                              setTrackingNumbers(prev => ({
+                                ...prev,
+                                [order.id]: e.target.value
+                              }));
+                            }
                           }}
-                          readOnly={order.status !== 'pending'}
+                          readOnly={activeTab !== 'seller' || order.status !== 'pending'}
                           placeholder="Enter tracking ID"
                         />
-                        {order.tracking_number && (
+                        {(order.tracking_number || trackingNumbers[order.id]) && (
                           <button
-                            onClick={() => copyToClipboard(order.tracking_number)}
+                            onClick={() => copyToClipboard(order.tracking_number || trackingNumbers[order.id])}
                             className="ml-2 p-1 hover:opacity-80 transition-opacity"
                           >
                             <Icon 
@@ -376,15 +383,15 @@ const SellerOrderManagement: NextPage = () => {
                     </div>
                   </div>
 
-                  {/* Mark as Shipped Button */}
-                  {activeTab === 'seller' && (order.status === 'pending' || order.status === 'shipped' || order.status === 'delivered') && (
-                    <>
+                  {/* Action Buttons */}
+                  {activeTab === 'seller' && (
+                    <div className="flex flex-col gap-2">
                       <div className="w-full h-px bg-[#989898] my-2" />
                       {order.status === 'pending' && (
                         <button 
                           className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={() => markAsShipped(order.id)}
-                          disabled={loading || !context?.user?.fid}
+                          disabled={!trackingNumbers[order.id]}
                         >
                           <Image
                             className="w-[22px] h-[18px]"
@@ -436,7 +443,7 @@ const SellerOrderManagement: NextPage = () => {
                           </span>
                         </button>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
               ))}
