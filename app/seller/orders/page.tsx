@@ -110,9 +110,12 @@ const SellerOrderManagement: NextPage = () => {
       sellerData.forEach(order => {
         if (order.tracking_number) {
           initialTrackingNumbers[order.id] = order.tracking_number;
+        } else if (order.status === 'pending') {
+          // Initialize empty string for pending orders without tracking numbers
+          initialTrackingNumbers[order.id] = '';
         }
       });
-      setTrackingNumbers(prev => ({ ...prev, ...initialTrackingNumbers }));
+      setTrackingNumbers(initialTrackingNumbers);
 
       setSellerOrders(sellerData);
       setBuyerOrders(buyerData);
@@ -355,14 +358,18 @@ const SellerOrderManagement: NextPage = () => {
                       <div className="w-full rounded-lg bg-[#f1f1f1] border border-[#989898] flex items-center p-2.5">
                         <input
                           type="text"
-                          className="w-full bg-transparent border-0 outline-none text-sm text-black"
-                          value={trackingNumbers[order.id] || ''}
-                          onChange={(e) => setTrackingNumbers(prev => ({
-                            ...prev,
-                            [order.id]: e.target.value
-                          }))}
-                          readOnly={order.status !== 'pending'}
-                          placeholder="Enter tracking ID"
+                          className="w-full bg-transparent border-0 outline-none text-sm text-black disabled:bg-gray-100"
+                          value={trackingNumbers[order.id] ?? ''}
+                          onChange={(e) => {
+                            if (order.status === 'pending') {
+                              setTrackingNumbers(prev => ({
+                                ...prev,
+                                [order.id]: e.target.value
+                              }));
+                            }
+                          }}
+                          disabled={order.status !== 'pending'}
+                          placeholder={order.status === 'pending' ? "Enter tracking ID" : "No tracking ID available"}
                         />
                         {trackingNumbers[order.id] && (
                           <button
