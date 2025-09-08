@@ -359,49 +359,42 @@ const SellerOrderManagement: NextPage = () => {
 
                     {/* Tracking ID */}
                     <div className="flex flex-col gap-2">
-                      <div className="text-sm font-medium">Tracking ID:</div>
-                      <div className="flex items-center gap-2">
-                        {order.status === 'pending' && (
-                          <>
-                            <input
-                              type="text"
-                              placeholder="Enter tracking ID"
-                              value={trackingIds[order.id] || ''}
-                              onChange={e => {
-                                const newValue = e.target.value;
-                                setTrackingIds(prev => ({
-                                  ...prev,
-                                  [order.id]: newValue
-                                }));
-                              }}
-                              className="flex-1 p-2.5 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-black text-sm outline-none"
-                            />
-                            {trackingIds[order.id] && (
-                              <button
-                                onClick={() => copyToClipboard(trackingIds[order.id])}
-                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                              >
-                                <Icon icon={ICON.COPY} className="w-4 h-4 text-gray-500" />
-                              </button>
-                            )}
-                          </>
+                      <label htmlFor={`tracking-${order.id}`} className="text-sm font-medium">
+                        Tracking ID:
+                      </label>
+                      <form 
+                        className="flex items-center gap-2"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          if (trackingIds[order.id]) {
+                            markAsShipped(order.id);
+                          }
+                        }}
+                      >
+                        <input
+                          type="text"
+                          id={`tracking-${order.id}`}
+                          name={`tracking-${order.id}`}
+                          placeholder={order.status === 'pending' ? "Enter tracking ID" : ""}
+                          value={trackingIds[order.id] || ''}
+                          onChange={(e) => {
+                            setTrackingIds(prev => ({
+                              ...prev,
+                              [order.id]: e.target.value
+                            }));
+                          }}
+                          readOnly={order.status !== 'pending'}
+                          className="flex-1 p-2.5 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        {order.status === 'pending' && trackingIds[order.id] && (
+                          <button
+                            type="submit"
+                            className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            Save
+                          </button>
                         )}
-                        {order.status !== 'pending' && (
-                          <>
-                            <div className="flex-1 p-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-500 text-sm">
-                              {order.tracking_number || 'No tracking ID available'}
-                            </div>
-                            {order.tracking_number && (
-                              <button
-                                onClick={() => copyToClipboard(order.tracking_number)}
-                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                              >
-                                <Icon icon={ICON.COPY} className="w-4 h-4 text-gray-500" />
-                              </button>
-                            )}
-                          </>
-                        )}
-                      </div>
+                      </form>
                     </div>
                   </div>
 
