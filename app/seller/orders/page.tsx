@@ -355,22 +355,18 @@ const SellerOrderManagement: NextPage = () => {
                       <div className="w-full rounded-lg bg-[#f1f1f1] border border-[#989898] flex items-center p-2.5">
                         <input
                           type="text"
-                          className="flex-1 bg-transparent border-none outline-none text-sm text-[#989898]"
-                          value={order.tracking_number || trackingNumbers[order.id] || ''}
-                          onChange={(e) => {
-                            if (activeTab === 'seller' && order.status === 'pending') {
-                              setTrackingNumbers(prev => ({
-                                ...prev,
-                                [order.id]: e.target.value
-                              }));
-                            }
-                          }}
-                          readOnly={activeTab !== 'seller' || order.status !== 'pending'}
+                          className="w-full bg-transparent border-0 outline-none text-sm text-black"
+                          value={trackingNumbers[order.id] || ''}
+                          onChange={(e) => setTrackingNumbers(prev => ({
+                            ...prev,
+                            [order.id]: e.target.value
+                          }))}
+                          readOnly={order.status !== 'pending'}
                           placeholder="Enter tracking ID"
                         />
-                        {(order.tracking_number || trackingNumbers[order.id]) && (
+                        {trackingNumbers[order.id] && (
                           <button
-                            onClick={() => copyToClipboard(order.tracking_number || trackingNumbers[order.id])}
+                            onClick={() => copyToClipboard(trackingNumbers[order.id])}
                             className="ml-2 p-1 hover:opacity-80 transition-opacity"
                           >
                             <Icon 
