@@ -1,15 +1,7 @@
 'use client';
 
 import type { NextPage } from "next";
-  // State management
-  const [activeTab, setActiveTab] = useState<'seller' | 'buyer'>('seller');
-  const [sellerOrders, setSellerOrders] = useState<SellerOrder[]>([]);
-  const [buyerOrders, setBuyerOrders] = useState<BuyerOrder[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [filteredOrders, setFilteredOrders] = useState<Array<SellerOrder | BuyerOrder>>([]);
-  const [trackingId, setTrackingId] = useState("");age from "next/image";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
@@ -155,10 +147,12 @@ const SellerOrderManagement: NextPage = () => {
       .catch(() => toast.error('Failed to copy'));
   }, []);
 
-  const markAsShipped = useCallback(async (orderId: string, tracking: string) => {
+  const markAsShipped = useCallback(async (orderId: string) => {
     try {
-      console.log('Marking as shipped:', { orderId, tracking });
-      if (!tracking?.trim()) {
+      const trackingNumber = trackingInputs[orderId];
+      console.log('Marking as shipped:', { orderId, trackingNumber });
+      
+      if (!trackingNumber?.trim()) {
         toast.error('Please enter a tracking ID first');
         return;
       }
@@ -166,19 +160,23 @@ const SellerOrderManagement: NextPage = () => {
       const response = await fetch(`/api/seller/orders/${orderId}/ship`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tracking_number: tracking })
+        body: JSON.stringify({ tracking_number: trackingNumber })
       });
 
       if (!response.ok) throw new Error('Failed to mark as shipped');
       
       toast.success('Order marked as shipped!');
-      setTrackingId('');
+      setTrackingInputs(prev => {
+        const updated = { ...prev };
+        delete updated[orderId];
+        return updated;
+      });
       fetchOrders();
     } catch (error) {
       console.error('Error marking order as shipped:', error);
       toast.error('Failed to mark order as shipped');
     }
-  }, [fetchOrders]);
+  }, [trackingInputs, fetchOrders]);
 
   const markAsDelivered = useCallback(async (orderId: string, escrowId: string) => {
     try {
@@ -369,10 +367,13 @@ const SellerOrderManagement: NextPage = () => {
                           <input
                             type="text"
                             placeholder="Enter tracking ID"
-                            value={trackingId}
+                            value={trackingInputs[order.id] || ''}
                             onChange={(e) => {
                               console.log('Input changed:', e.target.value);
-                              setTrackingId(e.target.value);
+                              setTrackingInputs(prev => ({
+                                ...prev,
+                                [order.id]: e.target.value
+                              }));
                             }}
                             className="w-full p-2.5 rounded-lg border border-gray-300 text-sm"
                             style={{
@@ -380,9 +381,9 @@ const SellerOrderManagement: NextPage = () => {
                               fontSize: '16px' // Prevents zoom on mobile
                             }}
                           />
-                          {trackingId.trim() && (
+                          {trackingInputs[order.id]?.trim() && (
                             <button
-                              onClick={() => markAsShipped(order.id, trackingId)}
+                              onClick={() => markAsShipped(order.id)}
                               className="w-full bg-blue-500 text-white rounded-lg py-3 text-sm font-medium"
                             >
                               Mark as Shipped
