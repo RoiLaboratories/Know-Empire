@@ -368,6 +368,16 @@ const SellerOrderManagement: NextPage = () => {
                     {/* Tracking ID */}
                     <div className="flex flex-col gap-2">
                       <div className="text-sm font-medium">Tracking ID:</div>
+                      {(() => {
+                        console.log('Order status debug:', { 
+                          activeTab, 
+                          status: order.status, 
+                          isPending: order.status === 'pending',
+                          isSeller: activeTab === 'seller',
+                          order 
+                        });
+                        return null;
+                      })()}
                       {(activeTab === 'seller' && order.status === 'pending') ? (
                         <div className="flex flex-col gap-2">
                           <div className="relative">
@@ -391,9 +401,13 @@ const SellerOrderManagement: NextPage = () => {
                         <div className="p-2.5 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900">
                           {order.tracking_number}
                         </div>
+                      ) : (activeTab === 'seller' && order.status === 'pending') ? (
+                        <div className="p-2.5 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-500">
+                          Enter tracking ID
+                        </div>
                       ) : activeTab === 'seller' ? (
                         <div className="p-2.5 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-500">
-                          Order not pending
+                          Order {order.status}
                         </div>
                       ) : (
                         <div className="p-2.5 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-500">
