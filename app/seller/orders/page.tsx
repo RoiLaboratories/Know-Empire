@@ -362,33 +362,18 @@ const SellerOrderManagement: NextPage = () => {
                     {/* Tracking ID */}
                     <div className="flex flex-col gap-2">
                       <div className="text-sm font-medium">Tracking ID:</div>
-                      {order.status === 'pending' ? (
+                      {activeTab === 'seller' && order.status === 'pending' ? (
                         <div className="flex flex-col gap-2">
                           <input
                             type="text"
                             placeholder="Enter tracking ID"
                             value={trackingInputs[order.id] || ''}
-                            onChange={(e) => {
-                              console.log('Input changed:', e.target.value);
-                              setTrackingInputs(prev => ({
-                                ...prev,
-                                [order.id]: e.target.value
-                              }));
-                            }}
-                            className="w-full p-2.5 rounded-lg border border-gray-300 text-sm"
-                            style={{
-                              minHeight: '44px',
-                              fontSize: '16px' // Prevents zoom on mobile
-                            }}
+                            onChange={(e) => setTrackingInputs(prev => ({
+                              ...prev,
+                              [order.id]: e.target.value
+                            }))}
+                            className="w-full p-2.5 rounded-lg border border-gray-300 text-sm text-gray-900"
                           />
-                          {trackingInputs[order.id]?.trim() && (
-                            <button
-                              onClick={() => markAsShipped(order.id)}
-                              className="w-full bg-blue-500 text-white rounded-lg py-3 text-sm font-medium"
-                            >
-                              Mark as Shipped
-                            </button>
-                          )}
                         </div>
                       ) : (
                         <div className="p-2.5 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-500">
@@ -402,11 +387,10 @@ const SellerOrderManagement: NextPage = () => {
                   {activeTab === 'seller' && (
                     <div className="flex flex-col gap-2">
                       <div className="w-full h-px bg-[#989898] my-2" />
-                      {order.status === 'pending' && (
+                      {order.status === 'pending' && trackingInputs[order.id]?.trim() && (
                         <button 
-                          className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5"
                           onClick={() => markAsShipped(order.id)}
-                          disabled={!trackingInputs[order.id]?.trim()}
                         >
                           <Image
                             className="w-[22px] h-[18px]"
