@@ -1,7 +1,15 @@
 'use client';
 
 import type { NextPage } from "next";
-import Image from "next/image";
+  // State management
+  const [activeTab, setActiveTab] = useState<'seller' | 'buyer'>('seller');
+  const [sellerOrders, setSellerOrders] = useState<SellerOrder[]>([]);
+  const [buyerOrders, setBuyerOrders] = useState<BuyerOrder[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [filteredOrders, setFilteredOrders] = useState<Array<SellerOrder | BuyerOrder>>([]);
+  const [trackingId, setTrackingId] = useState("");age from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
@@ -147,10 +155,10 @@ const SellerOrderManagement: NextPage = () => {
       .catch(() => toast.error('Failed to copy'));
   }, []);
 
-  const markAsShipped = useCallback(async (orderId: string) => {
+  const markAsShipped = useCallback(async (orderId: string, tracking: string) => {
     try {
-      const trackingId = trackingInputs[orderId];
-      if (!trackingId?.trim()) {
+      console.log('Marking as shipped:', { orderId, tracking });
+      if (!tracking?.trim()) {
         toast.error('Please enter a tracking ID first');
         return;
       }
@@ -158,23 +166,19 @@ const SellerOrderManagement: NextPage = () => {
       const response = await fetch(`/api/seller/orders/${orderId}/ship`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tracking_number: trackingId })
+        body: JSON.stringify({ tracking_number: tracking })
       });
 
       if (!response.ok) throw new Error('Failed to mark as shipped');
       
       toast.success('Order marked as shipped!');
-      setTrackingInputs(prev => {
-        const updated = { ...prev };
-        delete updated[orderId];
-        return updated;
-      });
+      setTrackingId('');
       fetchOrders();
     } catch (error) {
       console.error('Error marking order as shipped:', error);
       toast.error('Failed to mark order as shipped');
     }
-  }, [trackingInputs, fetchOrders]);
+  }, [fetchOrders]);
 
   const markAsDelivered = useCallback(async (orderId: string, escrowId: string) => {
     try {
@@ -361,45 +365,29 @@ const SellerOrderManagement: NextPage = () => {
                     <div className="flex flex-col gap-2">
                       <div className="text-sm font-medium">Tracking ID:</div>
                       {order.status === 'pending' ? (
-                        <div className="flex items-center gap-2">
-                          <textarea
-                            rows={1}
+                        <div className="flex flex-col gap-2">
+                          <input
+                            type="text"
                             placeholder="Enter tracking ID"
-                            value={trackingInputs[order.id] || ''}
+                            value={trackingId}
                             onChange={(e) => {
-                              setTrackingInputs(prev => ({
-                                ...prev,
-                                [order.id]: e.target.value
-                              }));
+                              console.log('Input changed:', e.target.value);
+                              setTrackingId(e.target.value);
                             }}
-                            onTouchStart={(e) => e.currentTarget.focus()}
-                            className="flex-1 p-2.5 rounded-lg border border-gray-300 text-sm resize-none overflow-hidden leading-tight min-h-[40px] active:outline-none focus:outline-none active:border-blue-500 focus:border-blue-500"
+                            className="w-full p-2.5 rounded-lg border border-gray-300 text-sm"
                             style={{
-                              WebkitAppearance: 'none',
-                              WebkitBorderRadius: '8px',
-                              WebkitUserSelect: 'text',
-                              WebkitTapHighlightColor: 'transparent',
+                              minHeight: '44px',
+                              fontSize: '16px' // Prevents zoom on mobile
                             }}
                           />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const trackingId = trackingInputs[order.id]?.trim();
-                              if (trackingId) {
-                                markAsShipped(order.id);
-                              } else {
-                                toast.error('Please enter a tracking ID first');
-                              }
-                            }}
-                            className="whitespace-nowrap min-h-[40px] px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium active:bg-blue-600 focus:outline-none"
-                            style={{
-                              WebkitTapHighlightColor: 'transparent',
-                              WebkitTouchCallout: 'none',
-                              WebkitUserSelect: 'none',
-                            }}
-                          >
-                            Mark as Shipped
-                          </button>
+                          {trackingId.trim() && (
+                            <button
+                              onClick={() => markAsShipped(order.id, trackingId)}
+                              className="w-full bg-blue-500 text-white rounded-lg py-3 text-sm font-medium"
+                            >
+                              Mark as Shipped
+                            </button>
+                          )}
                         </div>
                       ) : (
                         <div className="p-2.5 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-500">
