@@ -385,7 +385,7 @@ const SellerOrderManagement: NextPage = () => {
                     {/* Tracking ID */}
                     <div className="flex flex-col gap-2">
                       <div className="text-sm font-medium">Tracking ID:</div>
-                      {activeTab === 'seller' && (order as SellerOrder).status === 'pending' ? (
+                      {activeTab === 'seller' && order.status === 'pending' ? (
                         // Editable input for pending orders (seller view)
                         <div className="relative">
                           <input
@@ -393,6 +393,7 @@ const SellerOrderManagement: NextPage = () => {
                             name={`tracking-${order.id}`}
                             placeholder="Enter tracking ID"
                             value={trackingInputs[order.id] || ''}
+                            className="block w-full p-2.5 rounded-lg border-2 border-gray-300 text-base text-black bg-white hover:border-blue-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             onChange={(e) => {
                               const value = e.target.value;
                               console.log('[Input Change]', { orderId: order.id, value });
@@ -404,7 +405,6 @@ const SellerOrderManagement: NextPage = () => {
                             onFocus={() => console.log('[Input Focus]', { orderId: order.id })}
                             autoComplete="off"
                             inputMode="text"
-                            className="block w-full p-2.5 rounded-lg border-2 border-gray-300 text-base text-black bg-white hover:border-blue-500 focus:border-blue-500 focus:outline-none"
                             style={{
                               minHeight: '44px',
                               WebkitAppearance: 'none',
@@ -448,7 +448,7 @@ const SellerOrderManagement: NextPage = () => {
                   {activeTab === 'seller' && (
                     <div className="flex flex-col gap-2">
                       <div className="w-full h-px bg-[#989898] my-2" />
-                      {order.status === 'pending' && (
+                      {activeTab === 'seller' && order.status === 'pending' && (
                         <button 
                           className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={() => markAsShipped(order.id)}
