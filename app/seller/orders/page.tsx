@@ -108,8 +108,7 @@ const SellerOrderManagement: NextPage = () => {
       const buyerData: BuyerOrder[] = await buyerResponse.json();
       setBuyerOrders(buyerData || []);
       
-      // Reset tracking inputs when orders are fetched
-      setTrackingInputs({});
+      // Update orders
       setSellerOrders(sellerData);
       setBuyerOrders(buyerData);
       setLoading(false);
@@ -149,10 +148,10 @@ const SellerOrderManagement: NextPage = () => {
 
   const markAsShipped = useCallback(async (orderId: string) => {
     try {
-      const trackingNumber = trackingInputs[orderId];
-      console.log('Marking as shipped:', { orderId, trackingNumber });
+      setLoading(true);
+      const trackingNumber = trackingInputs[orderId]?.trim();
       
-      if (!trackingNumber?.trim()) {
+      if (!trackingNumber) {
         toast.error('Please enter a tracking ID first');
         return;
       }
@@ -163,18 +162,25 @@ const SellerOrderManagement: NextPage = () => {
         body: JSON.stringify({ tracking_number: trackingNumber })
       });
 
-      if (!response.ok) throw new Error('Failed to mark as shipped');
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Failed to mark as shipped');
+      }
       
-      toast.success('Order marked as shipped!');
+      // Only clear the tracking input if the API call was successful
       setTrackingInputs(prev => {
         const updated = { ...prev };
         delete updated[orderId];
         return updated;
       });
-      fetchOrders();
+      
+      toast.success('Order marked as shipped!');
+      await fetchOrders();
     } catch (error) {
       console.error('Error marking order as shipped:', error);
-      toast.error('Failed to mark order as shipped');
+      toast.error(error instanceof Error ? error.message : 'Failed to mark order as shipped');
+    } finally {
+      setLoading(false);
     }
   }, [trackingInputs, fetchOrders]);
 
@@ -366,13 +372,19 @@ const SellerOrderManagement: NextPage = () => {
                         <div className="flex flex-col gap-2">
                           <input
                             type="text"
+                            name={`tracking-${order.id}`}
                             placeholder="Enter tracking ID"
                             value={trackingInputs[order.id] || ''}
-                            onChange={(e) => setTrackingInputs(prev => ({
-                              ...prev,
-                              [order.id]: e.target.value
-                            }))}
-                            className="w-full p-2.5 rounded-lg border border-gray-300 text-sm text-gray-900"
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setTrackingInputs(prev => ({
+                                ...prev,
+                                [order.id]: value
+                              }));
+                            }}
+                            className="w-full p-2.5 rounded-lg border border-gray-300 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            autoComplete="off"
+                            aria-label="Enter tracking ID"
                           />
                         </div>
                       ) : (
@@ -387,10 +399,11 @@ const SellerOrderManagement: NextPage = () => {
                   {activeTab === 'seller' && (
                     <div className="flex flex-col gap-2">
                       <div className="w-full h-px bg-[#989898] my-2" />
-                      {order.status === 'pending' && trackingInputs[order.id]?.trim() && (
+                      {order.status === 'pending' && (
                         <button 
-                          className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5"
+                          className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={() => markAsShipped(order.id)}
+                          disabled={!trackingInputs[order.id]?.trim()}
                         >
                           <Image
                             className="w-[22px] h-[18px]"
