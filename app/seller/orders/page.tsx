@@ -368,49 +368,44 @@ const SellerOrderManagement: NextPage = () => {
                     {/* Tracking ID */}
                     <div className="flex flex-col gap-2">
                       <div className="text-sm font-medium">Tracking ID:</div>
-                      {(() => {
-                        console.log('Order status debug:', { 
-                          activeTab, 
-                          status: order.status, 
-                          isPending: order.status === 'pending',
-                          isSeller: activeTab === 'seller',
-                          order 
-                        });
-                        return null;
-                      })()}
-                      {(activeTab === 'seller' && order.status === 'pending') ? (
-                        <div className="flex flex-col gap-2">
-                          <div className="relative">
-                            <input
-                              type="text"
-                              placeholder="Enter tracking ID"
-                              value={trackingInputs[order.id] || ''}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                console.log('Setting tracking ID:', value);
-                                setTrackingInputs(prev => ({
-                                  ...prev,
-                                  [order.id]: value
-                                }));
-                              }}
-                              className="block w-full p-2.5 rounded-lg border border-gray-300 text-sm text-black bg-white hover:border-blue-500 focus:border-blue-500 focus:outline-none"
-                            />
-                          </div>
-                        </div>
+                      {activeTab === 'seller' && order.status === 'pending' ? (
+                        // Editable input for pending orders (seller view)
+                        <input
+                          type="text"
+                          placeholder="Enter tracking ID"
+                          value={trackingInputs[order.id] || ''}
+                          onChange={(e) => setTrackingInputs(prev => ({
+                            ...prev,
+                            [order.id]: e.target.value
+                          }))}
+                          className="w-full p-2.5 rounded-lg border border-gray-300 text-sm text-black bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
                       ) : order.tracking_number ? (
-                        <div className="p-2.5 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900">
-                          {order.tracking_number}
-                        </div>
-                      ) : (activeTab === 'seller' && order.status === 'pending') ? (
-                        <div className="p-2.5 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-500">
-                          Enter tracking ID
+                        // Read-only view with copy button when tracking number exists
+                        <div className="flex items-center w-full">
+                          <div className="flex-grow p-2.5 rounded-l-lg border border-r-0 border-gray-300 bg-gray-50 text-sm text-gray-900">
+                            {order.tracking_number}
+                          </div>
+                          <button
+                            onClick={() => copyToClipboard(order.tracking_number)}
+                            className="px-3 rounded-r-lg border border-l-0 border-gray-300 bg-gray-50 hover:bg-gray-100"
+                          >
+                            <Image
+                              src="/assets/images/copy.png"
+                              alt="Copy"
+                              width={16}
+                              height={16}
+                            />
+                          </button>
                         </div>
                       ) : activeTab === 'seller' ? (
-                        <div className="p-2.5 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-500">
-                          Order {order.status}
+                        // Message for seller when no tracking ID and not pending
+                        <div className="w-full p-2.5 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-500">
+                          {order.status === 'pending' ? 'Enter tracking ID' : `Order ${order.status}`}
                         </div>
                       ) : (
-                        <div className="p-2.5 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-500">
+                        // Message for buyer when no tracking ID
+                        <div className="w-full p-2.5 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-500">
                           No tracking ID yet
                         </div>
                       )}
