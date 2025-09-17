@@ -127,16 +127,33 @@ const SellerOrderManagement: NextPage = () => {
     }
   }, [isConnected, address, context?.user?.fid, fetchOrders]);
 
+  // Debug logging for tracking ID state
+  useEffect(() => {
+    filteredOrders.forEach(order => {
+      console.log('[Tracking ID Debug]', {
+        activeTab,
+        status: order.status,
+        id: order.id,
+        isSeller: activeTab === 'seller',
+        isPending: order.status === 'pending'
+      });
+    });
+  }, [activeTab, filteredOrders]);
+
   useEffect(() => {
     // Update filtered orders based on active tab and search term
     const orders = activeTab === 'seller' ? sellerOrders : buyerOrders;
     
-    const filtered = orders.filter(order =>
-      order.product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.id.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Cast orders array based on active tab
+    const filtered = orders.filter(order => {
+      const title = order.product.title.toLowerCase();
+      const id = order.id.toLowerCase();
+      const searchLower = searchTerm.toLowerCase();
+      return title.includes(searchLower) || id.includes(searchLower);
+    });
     
-    setFilteredOrders(filtered);
+    // Explicitly type the filtered orders based on active tab
+    setFilteredOrders(activeTab === 'seller' ? filtered as SellerOrder[] : filtered as BuyerOrder[]);
   }, [activeTab, sellerOrders, buyerOrders, searchTerm]);
 
   const copyToClipboard = useCallback((text: string | null) => {
@@ -368,18 +385,33 @@ const SellerOrderManagement: NextPage = () => {
                     {/* Tracking ID */}
                     <div className="flex flex-col gap-2">
                       <div className="text-sm font-medium">Tracking ID:</div>
-                      {activeTab === 'seller' && order.status === 'pending' ? (
+                      {activeTab === 'seller' && (order as SellerOrder).status === 'pending' ? (
                         // Editable input for pending orders (seller view)
-                        <input
-                          type="text"
-                          placeholder="Enter tracking ID"
-                          value={trackingInputs[order.id] || ''}
-                          onChange={(e) => setTrackingInputs(prev => ({
-                            ...prev,
-                            [order.id]: e.target.value
-                          }))}
-                          className="w-full p-2.5 rounded-lg border border-gray-300 text-sm text-black bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
+                        <div className="relative">
+                          <input
+                            type="text"
+                            name={`tracking-${order.id}`}
+                            placeholder="Enter tracking ID"
+                            value={trackingInputs[order.id] || ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              console.log('[Input Change]', { orderId: order.id, value });
+                              setTrackingInputs(prev => ({
+                                ...prev,
+                                [order.id]: value
+                              }));
+                            }}
+                            onFocus={() => console.log('[Input Focus]', { orderId: order.id })}
+                            autoComplete="off"
+                            inputMode="text"
+                            className="block w-full p-2.5 rounded-lg border-2 border-gray-300 text-base text-black bg-white hover:border-blue-500 focus:border-blue-500 focus:outline-none"
+                            style={{
+                              minHeight: '44px',
+                              WebkitAppearance: 'none',
+                              fontSize: '16px'
+                            }}
+                          />
+                        </div>
                       ) : order.tracking_number ? (
                         // Read-only view with copy button when tracking number exists
                         <div className="flex items-center w-full">
