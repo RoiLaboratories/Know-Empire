@@ -1,4 +1,4 @@
-DO NOT COPY AND PASTE----GO THROUGH THIS AND MAKE CHANGES TO THE MAIN CDDE.
+DO NOT COPY AND PASTE----GO THROUGH THIS AND MAKE CHANGES TO THE MAIN CODE.
 CHANGES MADE:
 Tracking ID input bug: caused by readOnly - Fixed by using disabled only after shipping/delivery.
 Mark as shipped button missing: caused by strict order.status === 'pending' - Fixed by normalizing with .toLowerCase().
