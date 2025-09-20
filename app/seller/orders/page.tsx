@@ -198,7 +198,7 @@ const SellerOrderManagement: NextPage = () => {
         body: JSON.stringify({ 
           tracking_number: trackingNumber,
           fid: context.user.fid,
-          select: 'id,status,tracking_number,total_amount,escrow_id,is_paid,product:products(*)'
+          select: 'id,status,tracking_number,total_amount,escrow_id,is_paid,buyer:users!orders_buyer_id_fkey(farcaster_username,phone_number,shipping_address),product:products(id,title,photos)'
         })
       });
 
