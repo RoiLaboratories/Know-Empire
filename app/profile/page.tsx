@@ -52,12 +52,42 @@ function Profile() {
   const [isLoading, setIsLoading] = useState(true);
   const [showWalletDropdown, setShowWalletDropdown] = useState(false);
   const [walletError, setWalletError] = useState<string | null>(null);
+  const [connectionTimeout, setConnectionTimeout] = useState<NodeJS.Timeout>();
   const [reviews, setReviews] = useState<Review[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
   const { address, isConnecting, isConnected } = useAccount();
+  
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
+
+  // Monitor connection state changes
+  useEffect(() => {
+    if (isConnected && address) {
+      console.log('Wallet connected successfully:', address);
+      setWalletError(null);
+      if (connectionTimeout) {
+        clearTimeout(connectionTimeout);
+        setConnectionTimeout(undefined);
+      }
+    }
+  }, [isConnected, address, connectionTimeout]);
+
+  // Handle connection errors and timeouts
+  useEffect(() => {
+    if (isConnecting) {
+      // Set a timeout to clear the connecting state if it takes too long
+      const timeout = setTimeout(() => {
+        if (isConnecting && !isConnected) {
+          setWalletError('Connection attempt timed out. Please try again.');
+          console.error('Connection timeout');
+        }
+      }, 5000); // 5 second timeout
+      
+      setConnectionTimeout(timeout);
+      return () => clearTimeout(timeout);
+    }
+  }, [isConnecting, isConnected]);
 
   // Handle wallet connection and user initialization
   useEffect(() => {
@@ -264,38 +294,83 @@ function Profile() {
                       onClick={async (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        if (connectors.length > 0) {
-                          try {
-                            // Find the Farcaster connector specifically
-                            const farcasterConnector = connectors.find(c => c.id === 'farcaster');
-                            if (!farcasterConnector) {
-                              setWalletError('Farcaster connector not found');
-                              console.error('Farcaster connector not found');
-                              return;
-                            }
-                            console.log('Starting connection with:', farcasterConnector);
-                            setShowWalletDropdown(false); // Close dropdown immediately
-                            await connect({ connector: farcasterConnector });
-                            setWalletError(null);
-                            setTimeout(() => {
-                              console.log('isConnected:', isConnected, 'address:', address);
-                              if (!isConnected || !address) {
-                                setWalletError('Farcaster wallet did not connect. Please make sure you are in Warpcast and have a verified wallet.');
-                              }
-                            }, 1000);
-                            console.log('Connected successfully');
-                          } catch (error: any) {
-                            setWalletError('Connection error: ' + (error?.message || 'Unknown error'));
-                            console.error('Detailed connection error:', {
-                              message: error.message,
-                              name: error.name,
-                              details: error.details,
-                              stack: error.stack
-                            });
+                        
+                        console.log('Available connectors:', connectors.map(c => ({ id: c.id, name: c.name })));
+                        
+                        if (!context?.user?.fid) {
+                          setWalletError('Please connect your Farcaster account first');
+                          console.error('No Farcaster account connected');
+                          return;
+                        }
+
+                        if (connectors.length === 0) {
+                          setWalletError('No wallet connectors available');
+                          console.error('No connectors found');
+                          return;
+                        }
+
+                        try {
+                          // Find the Farcaster connector specifically
+                          const farcasterConnector = connectors.find(c => c.id === 'farcaster');
+                          if (!farcasterConnector) {
+                            console.error('Available connectors:', connectors.map(c => c.id));
+                            setWalletError('Farcaster connector not available. Please make sure you are in Warpcast.');
+                            return;
                           }
-                        } else {
-                          setWalletError('No connectors available');
-                          console.log('No connectors available');
+
+                          // Log the connection attempt
+                          console.log('Attempting to connect with Farcaster connector:', {
+                            connectorId: farcasterConnector.id,
+                            connectorName: farcasterConnector.name,
+                            ready: farcasterConnector.ready,
+                            fid: context.user.fid
+                          });
+
+                          // Close dropdown and clear previous errors
+                          setShowWalletDropdown(false);
+                          setWalletError(null);
+
+                          // Attempt connection
+                          await connect({ connector: farcasterConnector });
+
+                          // Check connection status after a delay
+                          setTimeout(() => {
+                            console.log('Connection status check:', {
+                              isConnecting,
+                              isConnected,
+                              address,
+                              userFid: context?.user?.fid
+                            });
+
+                            if (!isConnected || !address) {
+                              setWalletError(
+                                'Connection failed. Please ensure you:\n' +
+                                '1. Are using Warpcast\n' +
+                                '2. Have a verified wallet\n' +
+                                '3. Approved the connection request'
+                              );
+                            }
+                          }, 2000);
+
+                        } catch (error: any) {
+                          console.error('Connection error details:', {
+                            message: error?.message,
+                            name: error?.name,
+                            code: error?.code,
+                            details: error?.details,
+                            stack: error?.stack
+                          });
+                          
+                          let errorMessage = 'Failed to connect wallet. ';
+                          if (error?.message?.includes('user rejected')) {
+                            errorMessage += 'You rejected the connection request.';
+                          } else if (error?.message?.includes('not found')) {
+                            errorMessage += 'Farcaster wallet not found. Please use Warpcast.';
+                          } else {
+                            errorMessage += error?.message || 'Unknown error occurred.';
+                          }
+                          
+                          setWalletError(errorMessage);
                         }
                       }}
                       className="w-full px-4 py-2 text-sm text-white bg-primary hover:bg-primary-dark rounded-lg transition-colors"

@@ -32,6 +32,10 @@ interface SellerOrder {
     phone_number: string;
     shipping_address: string;
   };
+  seller: {
+      username: string;
+      wallet_address: string;
+    };
 }
 
 // Simple type for tracking ID updates
@@ -179,6 +183,49 @@ const SellerOrderManagement: NextPage = () => {
       .then(() => toast.success("Copied to clipboard!"))
       .catch(() => toast.error("Failed to copy"));
   }, []);
+
+  // Update tracking number
+  const updateTrackingNumber = useCallback(async (orderId: string, trackingNumber: string) => {
+    try {
+      if (!context?.user?.fid) {
+        toast.error('Please connect with Farcaster first');
+        return;
+      }
+
+      const response = await fetch(`/api/seller/orders/${orderId}/tracking`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          tracking_number: trackingNumber,
+          fid: context.user.fid,
+          select: 'id,status,tracking_number,total_amount,escrow_id,is_paid,product:products(*)'
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update tracking number');
+      }
+      
+      const updatedOrder = await response.json();
+      
+      // Update the appropriate order list based on active tab
+      if (activeTab === 'seller') {
+        setSellerOrders(prevOrders => 
+          prevOrders.map(order => order.id === orderId ? updatedOrder : order)
+        );
+      } else {
+        setBuyerOrders(prevOrders => 
+          prevOrders.map(order => order.id === orderId ? updatedOrder : order)
+        );
+      }
+      
+      toast.success('Tracking number updated');
+    } catch (error) {
+      console.error('Error updating tracking:', error);
+      toast.error('Failed to update tracking number');
+    }
+  }, [context?.user?.fid, activeTab, setSellerOrders, setBuyerOrders]);
 
   const markAsShipped = useCallback(
     async (orderId: string) => {
@@ -343,7 +390,6 @@ const SellerOrderManagement: NextPage = () => {
           ) : (
             <div className="w-full space-y-4">
               {filteredOrders.map((order: SellerOrder | BuyerOrder) => (
-                // Order management card
                 <div
                   key={order.id}
                   className="w-full rounded-lg bg-white border border-[#989898] p-4 flex flex-col gap-4"
@@ -403,13 +449,13 @@ const SellerOrderManagement: NextPage = () => {
                         className="w-3.5 h-[15px]"
                       />
                       <span>
-                        {order.status.charAt(0).toUpperCase() +
+                        {order.status.charAt(0).toLowerCase() +
                           order.status.slice(1)}
                       </span>
                     </div>
                   </div>
 
-                  {/* Buyer Info and Tracking ID */}
+                    {/* Buyer Info and Tracking ID */}
                   <div className="flex flex-col gap-4 w-full text-[#6b88b5]">
                     {/* Buyer Details - only show for seller orders */}
                     {activeTab === "seller" && (
@@ -453,53 +499,21 @@ const SellerOrderManagement: NextPage = () => {
                     )}
 
                     {/* Tracking ID */}
-                    <div className="flex flex-col gap-2">
-                      <div className="text-sm font-medium">Tracking ID:</div>
-                      {activeTab === "seller" && order.status === "pending" ? (
-                        // Editable input for pending orders (seller view)
-                        <div className="relative">
-                          <input
-                            type="text"
-                            name={`tracking-${order.id}`}
-                            placeholder="Enter tracking ID"
-                            value={trackingInputs[String(order.id)] || ""}
-                            className="block w-full p-2.5 rounded-lg border-2 border-gray-300 text-base text-black bg-white hover:border-blue-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              console.log("[Input Change]", {
-                                orderId: order.id,
-                                value,
-                              });
-                              setTrackingInputs((prev) => ({
-                                ...prev,
-                                [String(order.id)]: value,
-                              }));
-                            }}
-                            onFocus={() =>
-                              console.log("[Input Focus]", {
-                                orderId: order.id,
-                              })
-                            }
-                            autoComplete="off"
-                            inputMode="text"
-                            style={{
-                              minHeight: "44px",
-                              WebkitAppearance: "none",
-                              fontSize: "16px",
-                            }}
-                          />
-                        </div>
-                      ) : order.tracking_number ? (
-                        // Read-only view with copy button when tracking number exists
-                        <div className="flex items-center w-full">
-                          <div className="flex-grow p-2.5 rounded-l-lg border border-r-0 border-gray-300 bg-gray-50 text-sm text-gray-900">
-                            {order.tracking_number}
-                          </div>
+                    <div className="flex flex-col gap-2 w-full text-[#6b88b5]">
+                      <div className="text-sm">Tracking ID:</div>
+                      <div className="w-full rounded-lg bg-[#f1f1f1] border border-[#989898] flex items-center p-2.5">
+                        <input
+                          className="flex-1 bg-transparent border-none outline-none text-sm text-[#414141]"
+                          type="text"
+                          placeholder="Enter tracking number"
+                          value={order.tracking_number || ''}
+                          onChange={(e) => updateTrackingNumber(order.id, e.target.value)}
+                          disabled={order.status.toLowerCase() === 'shipped' || order.status.toLowerCase() === 'delivered'}
+                        />
+                        {order.tracking_number && order.status.toLowerCase() !== 'pending' && (
                           <button
-                            onClick={() =>
-                              copyToClipboard(order.tracking_number)
-                            }
-                            className="px-3 rounded-r-lg border border-l-0 border-gray-300 bg-gray-50 hover:bg-gray-100"
+                            onClick={() => copyToClipboard(order.tracking_number!)}
+                            className="ml-2 p-1 hover:opacity-80 transition-opacity"
                           >
                             <Image
                               src="/assets/images/copy.png"
@@ -508,32 +522,19 @@ const SellerOrderManagement: NextPage = () => {
                               height={16}
                             />
                           </button>
-                        </div>
-                      ) : activeTab === "seller" ? (
-                        // Message for seller when no tracking ID and not pending
-                        <div className="w-full p-2.5 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-500">
-                          {order.status === "pending"
-                            ? "Enter tracking ID"
-                            : `Order ${order.status}`}
-                        </div>
-                      ) : (
-                        // Message for buyer when no tracking ID
-                        <div className="w-full p-2.5 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-500">
-                          No tracking ID yet
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  {activeTab === "seller" && (
-                    <div className="flex flex-col gap-2">
+                  </div>                    {/* Action buttons */}
+                    {(order.status.toLowerCase() === 'pending' || order.status.toLowerCase() === 'shipped' || order.status.toLowerCase() === 'delivered') && (
+                    <>
                       <div className="w-full h-px bg-[#989898] my-2" />
-                      {activeTab === "seller" && order.status === "pending" && (
-                        <button
+
+                      {order.status.toLowerCase() === 'pending' && (
+                        <button 
                           className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={() => markAsShipped(order.id)}
-                          disabled={!trackingInputs[order.id]?.trim()}
+                          disabled={loading || !context?.user?.fid}
                         >
                           <Image
                             className="w-[22px] h-[18px]"
@@ -548,15 +549,11 @@ const SellerOrderManagement: NextPage = () => {
                         </button>
                       )}
 
-                      {order.status === "shipped" && (
-                        <button
+                      {order.status.toLowerCase() === 'shipped' && (
+                        <button 
                           className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
-                          onClick={() =>
-                            markAsDelivered(order.id, order.escrow_id)
-                          }
-                          disabled={
-                            loading || !isConnected || !context?.user?.fid
-                          }
+                          onClick={() => markAsDelivered(order.id, order.escrow_id)}
+                          disabled={loading || !isConnected || !context?.user?.fid}
                         >
                           <Image
                             className="w-[22px] h-[18px]"
@@ -571,25 +568,28 @@ const SellerOrderManagement: NextPage = () => {
                         </button>
                       )}
 
-                      {order.status === "delivered" && (
-                        <button
-                          className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
-                          onClick={() => markAsCompleted(order.id)}
-                          disabled={loading || !context?.user?.fid}
-                        >
-                          <Image
-                            className="w-[22px] h-[18px]"
-                            width={22}
-                            height={18}
-                            alt=""
-                            src="/check.svg"
-                          />
-                          <span className="text-sm font-semibold">
-                            Mark as completed
-                          </span>
-                        </button>
+                      {order.status.toLowerCase() === 'delivered' && (
+                        <>
+                          <button 
+                            className="w-full flex items-center justify-center gap-2.5 bg-[#ef4444] text-white rounded-lg py-2.5 px-5 mb-2"
+                            onClick={() => router.push(`/raise-dispute?orderId=${order.id}`)}
+                          >
+                            <span className="text-sm font-semibold">
+                              Raise a dispute
+                            </span>
+                          </button>
+                          {!(order as SellerOrder).is_paid && (
+                            <button 
+                              className="w-full flex items-center justify-center gap-2.5 bg-[#22c55e] text-white rounded-lg py-2.5 px-5"
+                            >
+                              <span className="text-sm font-semibold">
+                                Mark as paid
+                              </span>
+                            </button>
+                          )}
+                        </>
                       )}
-                    </div>
+                    </>
                   )}
                 </div>
               ))}
@@ -602,3 +602,7 @@ const SellerOrderManagement: NextPage = () => {
 };
 
 export default SellerOrderManagement;
+
+
+
+
