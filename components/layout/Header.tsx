@@ -12,7 +12,9 @@ import { useEffect, useState } from 'react';
 // Default routes
 const defaultRoutes = [
   { title: "Buy Products", icon: ICON.BUY, path: "/marketplace" },
-  { title: "Sell Products", icon: ICON.SELL, path: "/marketplace/sell" }
+  { title: "Sell Products", icon: ICON.SELL, path: "/marketplace/sell" },
+  // { title: "My Orders", icon: ICON.PACKAGE, path: "/buyer/order_management" },
+  // { title: "Seller Orders", icon: ICON.MANAGE_PRODUCTS, path: "/seller/orders" }
 ];
 
 interface FarcasterUser {
@@ -48,13 +50,24 @@ function Header() {
         
         // Store account status in localStorage
         localStorage.setItem('is_seller', JSON.stringify(isSeller));
+
+        // Update routes based on account status
+        let updatedRoutes = [...defaultRoutes];
+        if (isBuyer) {
+          updatedRoutes.push({ title: "My Orders", icon: ICON.PACKAGE, path: "/buyer/order_management" });
+        }
+        if (isSeller) {
+          updatedRoutes.push({ title: "Seller Orders", icon: ICON.MANAGE_PRODUCTS, path: "/seller/orders" });
+        }
+        setRoutes(updatedRoutes);
         localStorage.setItem('is_buyer', JSON.stringify(isBuyer));
         
         // Update routes based on account status
         if (isSeller) {
           setRoutes([
             { title: "Buy Products", icon: ICON.BUY, path: "/marketplace" },
-            { title: "List Product", icon: ICON.SELL, path: "/list_product" }
+            { title: "List Product", icon: ICON.SELL, path: "/list_product" },
+            { title: "My Products", icon: ICON.MANAGE_PRODUCTS, path: "/seller/products" }
           ]);
         } else if (isBuyer) {
           setRoutes([

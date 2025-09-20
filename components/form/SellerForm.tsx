@@ -50,9 +50,6 @@ function SellerForm() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const modalContext = useContext(ModalContext);
-
-
-
   const { context } = useMiniKit();
   const [user, setUser] = useState<FarcasterUser | null>(null);
 

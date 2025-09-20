@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Category from "../../components/Category";
 import Header from "../../components/layout/Header";
 import Tab from "../../components/layout/Tab";
@@ -19,10 +20,14 @@ function MarketPage() {
       <Search />
 
       {/*category */}
-      <Category />
+      <Suspense>
+        <Category />
+      </Suspense>
 
       {/*curated */}
-      <Products />
+      <Suspense>
+        <Products />
+      </Suspense>
     </div>
   );
 }

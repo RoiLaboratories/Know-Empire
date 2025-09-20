@@ -1,7 +1,13 @@
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
+import { Review } from "../../types/review";
+import { format } from "date-fns";
 
-function ReviewsCard() {
+interface ReviewsCardProps {
+  review: Review;
+}
+
+function ReviewsCard({ review }: ReviewsCardProps) {
   return (
     <li className="space-y-2">
       <div className="flex justify-between">
@@ -9,25 +15,24 @@ function ReviewsCard() {
           {Array.from({ length: 5 }).map((_, i) => (
             <Icon
               icon={ICON.STAR}
-              // fontSize={26}
+              className={i < review.rating ? "text-yellow-400" : "text-gray-300"}
               key={i}
             />
           ))}
         </span>
-        <p className="text-xs">16-07-2025</p>
+        <p className="text-xs">{format(new Date(review.created_at), 'dd-MM-yyyy')}</p>
       </div>
       <p className="font-semibold text-sm flex items-center">
-        Sarah Chen&nbsp;&nbsp;
-        <span className="text-[10px] font-light">@sarahweb3</span>
+        {review.reviewer?.display_name || 'Anonymous'}&nbsp;&nbsp;
+        <span className="text-[10px] font-light">@{review.reviewer?.farcaster_username}</span>
       </p>
       <span className="flex items-center justify-center rounded-full px-1 py-[1px] border-[1.5px] w-fit border-gray-light font-medium text-[10px]">
-        Vintage Crypto Poster
+        {review.product?.title || 'Product'}
       </span>
       {/*review */}
       <div className="flex items-start gap-5 text-[10px]">
         <p className="text-gray-500">
-          Amazing seller! Item wasexactly as described and shpped super
-          fast.highly reccomended
+          {review.comment}
         </p>
         <p className="text-nowrap flex items-center gap-x-1 text-green-500">
           <span>

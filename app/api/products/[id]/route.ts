@@ -6,6 +6,7 @@ export async function GET(request: Request) {
   const id = pathname.split('/').pop();
   const supabaseAdmin = createServiceClient();
   try {
+    // First get the product with seller info
     const { data: product, error } = await supabaseAdmin
       .from('products')
       .select(`
@@ -16,11 +17,31 @@ export async function GET(request: Request) {
           avatar_url,
           rating,
           review_count,
-          wallet_address
+          wallet_address,
+          farcaster_id
         )
       `)
       .eq('id', id)
       .single();
+      
+    if (product) {
+      // Get seller's trade count (both as seller and buyer)
+      const [sellerOrdersResponse, buyerOrdersResponse] = await Promise.all([
+        supabaseAdmin
+          .from('orders')
+          .select('id', { count: 'exact' })
+          .eq('seller_id', product.seller.farcaster_id)
+          .eq('status', 'completed'),
+        supabaseAdmin
+          .from('orders')
+          .select('id', { count: 'exact' })
+          .eq('buyer_id', product.seller.farcaster_id)
+          .eq('status', 'completed')
+      ]);
+      
+      const totalTrades = (sellerOrdersResponse.count || 0) + (buyerOrdersResponse.count || 0);
+      product.seller.is_verified = totalTrades >= 6;
+    }
 
     if (error) {
       throw error;
@@ -48,7 +69,9 @@ export async function GET(request: Request) {
         username: product.seller.farcaster_username,
         rating: product.seller.rating,
         review_count: product.seller.review_count,
-        wallet_address: product.seller.wallet_address
+        wallet_address: product.seller.wallet_address,
+        farcaster_id: product.seller.farcaster_id,
+        is_verified: product.seller.is_verified
       }
     };
 

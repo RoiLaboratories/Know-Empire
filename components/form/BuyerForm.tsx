@@ -1,5 +1,4 @@
 "use client";
-import React from "react";
 import { useFormik } from "formik";
 import { useContext, useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
@@ -10,8 +9,9 @@ import InputField from "./InputField";
 import InputTextArea from "./InputTextArea";
 import Button from "../../ui/Button";
 import Modal, { ModalContext } from "../../context/ModalContext";
-import LoadingCard from "../popups/loading-buyer-card";
+import LoadingCard from "../popups/loading-card";
 import BuyerCongratsPopup from "../popups/buyer-congrats-popup";
+import FormInput from "./FormInput";
 
 interface MiniKitAccount {
   address: string;
@@ -45,24 +45,20 @@ interface BuyerInput {
 }
 
 export default function BuyerForm(): React.ReactElement {
-  const [isSuccess, setIsSuccess] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { context } = useMiniKit();
   const modalContext = useContext(ModalContext);
+  const { context } = useMiniKit();
   const [user, setUser] = useState<FarcasterUser | null>(null);
 
-  const userContext = context?.user as any;
-  const verifiedAddress = userContext?.verified_accounts?.[0]?.address;
-
   useEffect(() => {
-    if (userContext) {
+    if (context?.user) {
+      const contextUser = context.user as MiniKitUser;
       const farcasterUser: FarcasterUser = {
-        fid: userContext.fid,
-        username: userContext.username,
-        displayName: userContext.displayName,
-        pfpUrl: userContext.pfpUrl,
-        verifiedAccounts: userContext.verified_accounts
+        fid: contextUser.fid,
+        username: contextUser.username,
+        displayName: contextUser.displayName,
+        pfpUrl: contextUser.pfpUrl
       };
       setUser(farcasterUser);
     } else {
@@ -72,7 +68,7 @@ export default function BuyerForm(): React.ReactElement {
         setUser(parsedUser);
       }
     }
-  }, [userContext]);
+  }, [context]);
 
   const formik = useFormik<BuyerInput>({
     initialValues: {
@@ -82,7 +78,7 @@ export default function BuyerForm(): React.ReactElement {
     },
     validationSchema: BUYER_SCHEMA,
     onSubmit: async (values) => {
-      if (!verifiedAddress) {
+      if (!formik.isValid) {
         return;
       }
 
@@ -91,105 +87,132 @@ export default function BuyerForm(): React.ReactElement {
           throw new Error('Please make sure you are connected with Farcaster');
         }
 
+        // Open loading modal first
         modalContext?.open("loading-modal");
-        const response = await fetch(`/api/buyer?fid=${user.fid}`, {
-          method: "POST",
+
+        const response = await fetch('/api/buyer', {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             ...values,
             fid: user.fid,
-            farcaster_username: user.username,
-            display_name: user.displayName,
-            avatar_url: user.pfpUrl,
+            username: user.username,
+            displayName: user.displayName,
+            pfpUrl: user.pfpUrl
           }),
         });
 
         if (!response.ok) {
-          throw new Error("Failed to create buyer account");
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create buyer account');
         }
 
-        setIsSuccess(true);
+        const result = await response.json();
+        
+        // Close loading modal and show congrats
+        modalContext?.close();
         modalContext?.open("buyer-congrats-modal");
       } catch (error) {
         console.error("Error creating buyer account:", error);
-        setError(error instanceof Error ? error.message : "Failed to create buyer account");
         modalContext?.close();
+        setError(error instanceof Error ? error.message : "Failed to create buyer account");
       }
     },
   });
 
   return (
-    <form onSubmit={formik.handleSubmit} className="w-full space-y-4">
-      <InputField
-        label="Email"
-        config={{
-          name: "email",
-          type: "email",
-          placeholder: "Enter your email",
-          value: formik.values.email,
-          onChange: formik.handleChange,
-          onBlur: formik.handleBlur
-        }}
-        error={!!formik.touched.email && !!formik.errors.email}
-        errorMessage={formik.touched.email ? formik.errors.email : undefined}
-      />
+    <>
+      <FormInput config={{ onSubmit: formik.handleSubmit }}>
+        <div className="w-full space-y-4">
+          <InputField
+            label="Email"
+            config={{
+              name: "email",
+              type: "email",
+              placeholder: "Enter your email",
+              value: formik.values.email,
+              onChange: formik.handleChange,
+              onBlur: formik.handleBlur
+            }}
+            error={!!formik.touched.email && !!formik.errors.email}
+            errorMessage={formik.touched.email ? formik.errors.email : undefined}
+          />
 
-      <InputField
-        label="Phone Number"
-        config={{
-          name: "phone_number",
-          type: "tel",
-          placeholder: "Enter your phone number",
-          value: formik.values.phone_number,
-          onChange: formik.handleChange,
-          onBlur: formik.handleBlur
-        }}
-        error={!!formik.touched.phone_number && !!formik.errors.phone_number}
-        errorMessage={formik.touched.phone_number ? formik.errors.phone_number : undefined}
-      />
+          <InputField
+            label="Phone Number"
+            config={{
+              name: "phone_number",
+              type: "tel",
+              placeholder: "Enter your phone number",
+              value: formik.values.phone_number,
+              onChange: formik.handleChange,
+              onBlur: formik.handleBlur
+            }}
+            error={!!formik.touched.phone_number && !!formik.errors.phone_number}
+            errorMessage={formik.touched.phone_number ? formik.errors.phone_number : undefined}
+          />
 
-      <InputTextArea
-        label="Shipping Address"
-        config={{
-          name: "shipping_address",
-          placeholder: "Enter your shipping address",
-          value: formik.values.shipping_address,
-          onChange: formik.handleChange,
-          onBlur: formik.handleBlur
-        }}
-        error={!!formik.touched.shipping_address && !!formik.errors.shipping_address}
-        errorMessage={formik.touched.shipping_address ? formik.errors.shipping_address : undefined}
-      />
+          <InputTextArea
+            label="Shipping Address"
+            config={{
+              name: "shipping_address",
+              placeholder: "Enter your shipping address",
+              value: formik.values.shipping_address,
+              onChange: formik.handleChange,
+              onBlur: formik.handleBlur
+            }}
+            error={!!formik.touched.shipping_address && !!formik.errors.shipping_address}
+            errorMessage={formik.touched.shipping_address ? formik.errors.shipping_address : undefined}
+          />
 
-      <span className="flex gap-2 mt-1 items-center">
-        <Icon
-          icon={!acceptedTerms ? ICON.CIRCLE : ICON.CHECK}
-          onClick={() => setAcceptedTerms(!acceptedTerms)}
-          className="text-primary cursor-pointer"
-          fontSize={20}
-        />
-        <p className="text-xs font-medium">
-          I agree to the terms and conditions for purchases and understand how escrow works*
-        </p>
-      </span>
+          <span className="flex gap-2 mt-1 items-center">
+            <Icon
+              icon={!acceptedTerms ? ICON.CIRCLE : ICON.CHECK}
+              onClick={() => setAcceptedTerms(!acceptedTerms)}
+              className="text-primary cursor-pointer"
+              fontSize={20}
+            />
+            <p className="text-xs font-medium">
+              I agree to the terms and conditions for purchases and understand how escrow works*
+            </p>
+          </span>
 
-      <Button
-        type="submit"
-        disabled={!formik.isValid || !verifiedAddress || !acceptedTerms || 
-                 !formik.values.email || !formik.values.phone_number || !formik.values.shipping_address}
-        className="w-full"
-      >
-        Create Buyer Account
-      </Button>
+          {error && (
+            <div className="text-red-500 text-sm mt-2">
+              {error}
+            </div>
+          )}
 
-      {modalContext?.openNames.includes("loading-modal") && <LoadingCard />}
-      {modalContext?.openNames.includes("buyer-congrats-modal") && (
-        <Modal>
-          <BuyerCongratsPopup />
-        </Modal>
-      )}
-    </form>
+          <Button
+            type="submit"
+            disabled={!acceptedTerms || !formik.isValid}
+            variant="primary_gradient"
+            size="xs"
+            className="text-gray-medium mt-2 disabled:bg-[#989898]"
+            onClick={() => {
+              if (!formik.isValid) {
+                // Show validation errors
+                Object.keys(formik.values).forEach(key => {
+                  formik.setFieldTouched(key);
+                });
+              }
+            }}
+          >
+            Create Buyer Account
+          </Button>
+        </div>
+      </FormInput>
+
+      {/* Modal Windows */}
+      <Modal.Window name="loading-modal" showBg={false}>
+        <LoadingCard message="Creating account..." />
+      </Modal.Window>
+
+      <Modal.Window name="buyer-congrats-modal" showBg={false}>
+        <BuyerCongratsPopup />
+      </Modal.Window>
+    </>
   );
 }

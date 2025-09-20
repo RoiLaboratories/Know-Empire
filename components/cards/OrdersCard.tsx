@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import Button from "../../ui/Button";
 import { getStatusColor } from "../../utils/helpers";
+import { toast } from "react-hot-toast";
 
 export interface OrdersCardProps {
   status: string;
@@ -23,6 +24,16 @@ function OrdersCard({
   price,
 }: OrdersCardProps) {
   const icon = status === "shipped" ? ICON.TRUCK : ICON.PACKAGE;
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Copied to clipboard');
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      toast.error('Failed to copy');
+    }
+  };
 
   return (
     <li className="flex flex-col justify-between gap-y-2 bg-white rounded-lg p-4 border border-[#989898] ">
@@ -67,10 +78,15 @@ function OrdersCard({
         {/*tracking details */}
         <div className="flex flex-col text-gray gap-1 pb-4">
           <p className="text-[#6b88b5]">Tracking ID:</p>
-          <p className="rounded-lg border border-[#989898] p-2 flex justify-between items-center bg-[#f2f2f2] text-[#989898]">
+          <div className="rounded-lg border border-[#989898] p-2 flex justify-between items-center bg-[#f2f2f2] text-[#989898]">
             <span>{id}</span>
-            <Icon icon={ICON.COPY} />
-          </p>
+            <button
+              onClick={() => copyToClipboard(id)}
+              className="hover:opacity-80 transition-opacity"
+            >
+              <Icon icon={ICON.COPY} fontSize={16} />
+            </button>
+          </div>
         </div>
         {/*dispute */}
         {status === "shipped" ? (
@@ -82,18 +98,18 @@ function OrdersCard({
               to="/raise-dispute"
             >
               <Icon icon={ICON.CAUTION} fontSize={16} />
-              Raised a Dispute
+              Raise a Dispute
             </Button>
 
             <Button variant="success" size="xs" className="rounded-lg">
               <Icon icon={ICON.ARROW_CHECKED} fontSize={16} />
-              Confirmed
+              Confirm Delivery
             </Button>
           </>
         ) : (
           <Button variant="warning" size="xs" className="rounded-lg">
             <Icon icon={ICON.CAUTION} fontSize={16} />
-            Raised a Dispute
+            Raise a Dispute
           </Button>
         )}
       </div>

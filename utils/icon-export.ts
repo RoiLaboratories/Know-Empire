@@ -19,6 +19,7 @@ export enum ICON {
   CAUTION = "icon-park-outline:caution",
   CAUTION2 = "streamline-pixel:interface-essential-alert-caution",
   TRUCK = "tabler:truck-delivery",
+  MANAGE_PRODUCTS = "solar:list-check-bold",
   PACKAGE = "ph:package",
   STAR = "noto:star",
   STAR_EMPTY = "mdi:star-outline",
