@@ -9,15 +9,36 @@ const nextConfig = {
         },
       ],
     },
-    async redirects() {
+    async headers() {
       return [
         {
-          source: '/.well-known/farcaster.json',
-          destination: `https://api.farcaster.xyz/miniapps/hosted-manifest/${process.env.FARCASTER_MANIFEST_ID}`,
-          permanent: false,
-          statusCode: 307
+          source: '/:path*',
+          headers: [
+            {
+              key: 'Permissions-Policy',
+              value: 'clipboard-write=self'
+            }
+          ],
+        },
+        {
+          source: '/seller/orders',
+          headers: [
+            {
+              key: 'Permissions-Policy',
+              value: 'clipboard-write=self'
+            }
+          ],
+        },
+        {
+          source: '/buyer/order_management',
+          headers: [
+            {
+              key: 'Permissions-Policy',
+              value: 'clipboard-write=self'
+            }
+          ],
         }
-      ];
+      ]
     }
   };
 

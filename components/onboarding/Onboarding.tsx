@@ -57,7 +57,7 @@ function Onboarding() {
   // Handle the Enter Marketplace button click
   const handleMarketplaceEnter = () => {
     localStorage.removeItem("onboardingStep"); // Clear onboarding state
-    router.push("/marketplace");
+    window.location.href = "https://farcaster.xyz/miniapps/Q1p_pb-tbyYB/knowempire";
   };
 
   if (isLoading) {

@@ -1,0 +1,10 @@
+{
+  "accountAssociation": {
+    "header": "",
+    "payload": "",
+    "signature": ""
+  },
+  "baseBuilder": {
+    "allowedAddresses": ["0xEd01DA1FB9203Ef937BcC4F3055505fFf78F1D93"]
+  }
+}

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import ProductCard from "./cards/ProductCard";
 import Session from "./Session";
 import Phone from "../assets/images/prod1.png"; // Fallback image
@@ -35,6 +36,7 @@ interface APIProduct extends Omit<BaseProduct, 'price'> {
     rating?: number;
     review_count?: number;
     wallet_address: string;
+    farcaster_id: string;
   };
 }
 
@@ -42,11 +44,16 @@ function useProducts() {
   const [products, setProducts] = useState<APIProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const category = searchParams?.get('category');
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch("/api/products/list");
+        const url = category 
+          ? `/api/products/list?category=${encodeURIComponent(category)}`
+          : "/api/products/list";
+        const response = await fetch(url);
         if (!response.ok) {
           throw new Error("Failed to fetch products");
         }
@@ -63,13 +70,13 @@ function useProducts() {
     };
 
     fetchProducts();
-  }, []);
+  }, [category]);
 
-  return { products, loading, error };
+  return { products, loading, error, category };
 }
 
 function Products() {
-  const { products, loading, error } = useProducts();
+  const { products, loading, error, category } = useProducts();
 
   if (loading) {
     return <div>Loading...</div>;
@@ -83,9 +90,15 @@ function Products() {
 
   return (
     <Modal>
-      <Session title="Curated for you" link="See more">
-        <ul className="grid grid-cols-2 gap-2">
-          {products.map((apiProduct) => {
+      <Session title={category ? `${category} Products` : "Curated for you"} link="See more">
+        {products.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 text-center">
+            <p className="text-gray-500 mb-2">No products listed {category ? `in ${category}` : 'here'} yet</p>
+            <p className="text-sm text-gray-400">Check back later for new items</p>
+          </div>
+        ) : (
+          <ul className="grid grid-cols-2 gap-2">
+            {products.map((apiProduct) => {
             console.log('Processing product:', apiProduct);
             const product: ProductWithSeller = {
               ...apiProduct,
@@ -94,7 +107,8 @@ function Products() {
                 username: apiProduct.seller.farcaster_username,
                 rating: apiProduct.seller.rating,
                 review_count: apiProduct.seller.review_count,
-                wallet_address: apiProduct.seller.wallet_address
+                wallet_address: apiProduct.seller.wallet_address,
+                farcaster_id: apiProduct.seller.farcaster_id
               }
             };
             return (
@@ -104,7 +118,8 @@ function Products() {
               />
             );
           })}
-        </ul>
+          </ul>
+        )}
       </Session>
     </Modal>
   );

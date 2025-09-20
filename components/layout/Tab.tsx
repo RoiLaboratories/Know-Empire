@@ -22,7 +22,13 @@ interface TabItem {
 
 const defaultTabs = [
   { title: "Discover", icon: ICON.SEARCH, link: "/marketplace" },
-  { title: "Orders", icon: ICON.GIFT_CARD, link: "/orders" },
+  { title: "Orders", icon: ICON.GIFT_CARD, link: "/buyer/empty-order" },
+  { title: "Top", icon: ICON.ORGANISATION, link: "/leaderboard" },
+];
+
+const buyerTabs = [
+  { title: "Discover", icon: ICON.SEARCH, link: "/marketplace" },
+  { title: "Orders", icon: ICON.GIFT_CARD, link: "/buyer/order_management" },
   { title: "Top", icon: ICON.ORGANISATION, link: "/leaderboard" },
 ];
 
@@ -38,42 +44,117 @@ function Tab({ name, description, showRoutes = true }: ITab) {
   const { context } = useMiniKit();
   const { hasOrders } = useOrders();
   const [isSellerAccount, setIsSellerAccount] = useState(false);
+  const [isBuyerAccount, setIsBuyerAccount] = useState(false);
   const [tabs, setTabs] = useState<TabItem[]>(defaultTabs);
 
   const excludeRoutes = ["/marketplace/sell"];
 
   useEffect(() => {
-    const checkSellerStatus = async (fid: number) => {
+    const checkAccountStatus = async (fid: number) => {
       try {
-        const response = await fetch(`/api/seller/${fid}`);
-        const data = await response.json();
-        setIsSellerAccount(!!data);
-        setTabs(!!data ? sellerTabs : defaultTabs);
+        console.log('Checking account status for FID:', fid);
+        
+        // Check seller status first
+        const sellerResponse = await fetch(`/api/seller/${fid}`);
+        const sellerData = await sellerResponse.json();
+        const isSeller = !!sellerData;
+        console.log('Seller status:', isSeller);
+        setIsSellerAccount(isSeller);
+
+        if (isSeller) {
+          setTabs(sellerTabs);
+          return; // Exit early for seller accounts
+        }
+
+        // If not a seller, check for orders first
+        console.log('Not a seller, checking for orders...');
+        const ordersResponse = await fetch(`/api/buyer/orders?fid=${fid}`);
+        if (!ordersResponse.ok) {
+          throw new Error('Failed to fetch orders');
+        }
+        const ordersData = await ordersResponse.json();
+        console.log('Orders data:', ordersData);
+        const hasOrders = Array.isArray(ordersData) && ordersData.length > 0;
+
+        if (hasOrders) {
+          console.log('Found orders, setting buyer tabs');
+          setTabs(buyerTabs);
+          setIsBuyerAccount(true);
+        } else {
+          console.log('No orders found, setting default tabs');
+          setTabs(defaultTabs);
+          setIsBuyerAccount(false);
+        }
       } catch (error) {
-        console.error('Error checking seller status:', error);
+        console.error('Error checking account status:', error);
         setIsSellerAccount(false);
+        setIsBuyerAccount(false);
         setTabs(defaultTabs);
       }
     };
 
     if (context?.user?.fid) {
-      checkSellerStatus(context.user.fid);
+      checkAccountStatus(context.user.fid);
+    } else {
+      setTabs(defaultTabs);
     }
   }, [context?.user?.fid]);
 
-  const handleOrdersClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    const isBuyerOrdersPage = pathname === "/orders";
-    const isSellerOrdersPage = pathname === "/seller/orders";
+  const handleOrdersClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
     
-    if ((isBuyerOrdersPage && !isSellerAccount) || (isSellerOrdersPage && isSellerAccount)) {
-      // If we're already on the correct orders page, prevent navigation
-      e.preventDefault();
+    if (!context?.user?.fid) {
+      console.log('No FID found, redirecting to empty order');
+      router.push("/buyer/empty-order");
       return;
     }
 
-    e.preventDefault();
-    // Navigate to the appropriate orders page based on account type
-    router.push(isSellerAccount ? "/seller/orders" : "/orders");
+    console.log('Current user FID:', context.user.fid);
+    console.log('Account status - isSeller:', isSellerAccount, 'isBuyer:', isBuyerAccount);
+
+    if (isSellerAccount) {
+      try {
+        console.log('Checking seller orders...');
+        const sellerOrdersResponse = await fetch(`/api/seller/orders?fid=${context.user.fid}`);
+        const sellerOrdersData = await sellerOrdersResponse.json();
+        console.log('Seller orders data:', sellerOrdersData);
+        
+        if (Array.isArray(sellerOrdersData) && sellerOrdersData.length > 0) {
+          router.push("/seller/orders");
+        } else {
+          router.push("/seller/empty-orders");
+        }
+      } catch (error) {
+        console.error('Error checking seller orders:', error);
+        router.push("/seller/empty-orders");
+      }
+      return;
+    }
+
+    // Check for any orders first
+    try {
+      console.log('Checking for buyer orders...');
+      const ordersResponse = await fetch(`/api/buyer/orders?fid=${context.user.fid}`);
+      
+      if (!ordersResponse.ok) {
+        console.error('Orders API responded with status:', ordersResponse.status);
+        throw new Error('Failed to fetch orders');
+      }
+      
+      const ordersData = await ordersResponse.json();
+      console.log('Buyer orders data:', ordersData);
+      
+      if (Array.isArray(ordersData) && ordersData.length > 0) {
+        console.log('Found orders, redirecting to order management');
+        router.push("/buyer/order_management");
+      } else {
+        console.log('No orders found, redirecting to empty state');
+        router.push("/buyer/empty-order");
+      }
+    } catch (error) {
+      console.error('Error checking orders:', error);
+      router.push("/buyer/empty-order");
+    }
   };
 
   return (
