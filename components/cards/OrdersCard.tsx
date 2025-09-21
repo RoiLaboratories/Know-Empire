@@ -14,6 +14,8 @@ export interface OrdersCardProps {
   price: string;
   id: string;
   trackingNumber?: string | null;
+  onConfirmDelivery?: () => void;
+  escrowId?: string;
 }
 
 function OrdersCard({
@@ -24,6 +26,8 @@ function OrdersCard({
   id,
   price,
   trackingNumber,
+  onConfirmDelivery,
+  escrowId
 }: OrdersCardProps) {
   const icon = status === "shipped" ? ICON.TRUCK : ICON.PACKAGE;
 
@@ -81,8 +85,12 @@ function OrdersCard({
         <div className="flex flex-col text-gray gap-1 pb-4">
           <p className="text-[#6b88b5]">Tracking ID:</p>
           <div className="rounded-lg border border-[#989898] p-2 flex justify-between items-center bg-[#f2f2f2] text-[#989898]">
-            <span>{trackingNumber || 'No tracking number yet'}</span>
-            {trackingNumber && (
+            <span className="text-gray-700">{
+              status.toLowerCase() === 'pending'
+                ? 'No tracking number yet'
+                : trackingNumber || 'Not available'
+            }</span>
+            {trackingNumber && status.toLowerCase() !== 'pending' && (
               <button
                 onClick={() => copyToClipboard(trackingNumber)}
                 className="hover:opacity-80 transition-opacity"
@@ -93,25 +101,37 @@ function OrdersCard({
           </div>
         </div>
         {/*dispute */}
-        {status === "shipped" ? (
+        {/* Action Buttons */}
+        {status.toLowerCase() === "shipped" && (
           <>
+            <Button
+              variant="success" 
+              size="xs" 
+              className="rounded-lg mb-2"
+              onClick={() => onConfirmDelivery && onConfirmDelivery()}
+            >
+              <Icon icon={ICON.ARROW_CHECKED} fontSize={16} />
+              Confirm Delivery
+            </Button>
+
             <Button
               variant="warning"
               size="xs"
               className="rounded-lg"
-              to="/raise-dispute"
+              to={`/raise-dispute?orderId=${id}`}
             >
               <Icon icon={ICON.CAUTION} fontSize={16} />
               Raise a Dispute
             </Button>
-
-            <Button variant="success" size="xs" className="rounded-lg">
-              <Icon icon={ICON.ARROW_CHECKED} fontSize={16} />
-              Confirm Delivery
-            </Button>
           </>
-        ) : (
-          <Button variant="warning" size="xs" className="rounded-lg">
+        )}
+        {status.toLowerCase() !== "shipped" && status.toLowerCase() !== "completed" && (
+          <Button
+            variant="warning"
+            size="xs"
+            className="rounded-lg"
+            to={`/raise-dispute?orderId=${id}`}
+          >
             <Icon icon={ICON.CAUTION} fontSize={16} />
             Raise a Dispute
           </Button>

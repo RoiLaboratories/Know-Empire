@@ -590,7 +590,7 @@ const SellerOrderManagement: NextPage = () => {
                         <input
                           className="flex-1 bg-transparent border-none outline-none text-sm text-[#414141]"
                           type="text"
-                          placeholder="Enter tracking number"
+                          placeholder={order.status.toLowerCase() === 'pending' ? "Enter tracking number" : ""}
                           value={
                             order.status.toLowerCase() === 'pending'
                               ? trackingInputs[order.id] || ''
@@ -602,7 +602,7 @@ const SellerOrderManagement: NextPage = () => {
                               [order.id]: e.target.value
                             }));
                           }}
-                          disabled={order.status.toLowerCase() === 'shipped' || order.status.toLowerCase() === 'delivered'}
+                          disabled={order.status.toLowerCase() !== 'pending'}
                         />
                         {order.tracking_number && order.status.toLowerCase() !== 'pending' && (
                           <button
