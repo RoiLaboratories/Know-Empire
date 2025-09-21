@@ -299,24 +299,70 @@ const SellerOrderManagement: NextPage = () => {
     async (orderId: string, escrowId: string) => {
       try {
         setDeliveringLoading(true);
-        const response = await fetch(`/api/seller/orders/${orderId}/deliver`, {
+        console.log("[Mark as Delivered] Starting request:", { orderId, escrowId, fid: context?.user?.fid });
+
+        if (!context?.user?.fid) {
+          toast.error("Please connect your Farcaster account");
+          return;
+        }
+
+        if (!isConnected) {
+          toast.error("Please connect your wallet");
+          return;
+        }
+
+        const response = await fetch(`/api/seller/orders/${orderId}/status`, {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            status: "delivered",
+            fid: context.user.fid
+          }),
         });
-        if (!response.ok) throw new Error("Failed to mark as delivered");
+
+        console.log("[Mark as Delivered] API response status:", response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("[Mark as Delivered] API error response:", {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorText
+          });
+          try {
+            const errorJson = JSON.parse(errorText);
+            throw new Error(errorJson.error || errorText);
+          } catch (e) {
+            throw new Error(errorText || "Failed to update order status");
+          }
+        }
+
+        const result = await response.json();
+        console.log("[Mark as Delivered] API success:", result);
 
         // Call smart contract
+        console.log("[Mark as Delivered] Calling smart contract with escrowId:", escrowId);
         await confirmDeliveryBySeller(escrowId);
+        console.log("[Mark as Delivered] Smart contract call successful");
 
         toast.success("Order marked as delivered!");
-        fetchOrders();
+        await fetchOrders();
       } catch (error) {
-        console.error("Error marking order as delivered:", error);
-        toast.error("Failed to mark order as delivered");
+        console.error("[Mark as Delivered] Error:", {
+          error,
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined
+        });
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to mark order as delivered"
+        );
       } finally {
         setDeliveringLoading(false);
       }
     },
-    [fetchOrders]
+    [fetchOrders, context?.user?.fid, isConnected]
   );
 
   const markAsCompleted = useCallback(
