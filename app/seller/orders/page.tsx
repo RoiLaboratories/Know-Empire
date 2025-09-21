@@ -9,7 +9,6 @@ import { formatCurrency } from "@/utils/helpers";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { confirmDeliveryBySeller } from "@/utils/contractHelpers";
 import { useAccount } from "wagmi";
-import { generateTrackingId } from "@/utils/tracking";
 import Button from "@/ui/Button";
 import BackButton from "@/ui/BackButton";
 import { Icon } from "@iconify/react";
@@ -197,8 +196,7 @@ const SellerOrderManagement: NextPage = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           tracking_number: trackingNumber,
-          fid: context.user.fid,
-          select: 'id,status,tracking_number,total_amount,escrow_id,is_paid,buyer:users!orders_buyer_id_fkey(farcaster_username,phone_number,shipping_address),product:products(id,title,photos)'
+          fid: context.user.fid
         })
       });
 
@@ -207,20 +205,9 @@ const SellerOrderManagement: NextPage = () => {
         throw new Error(error.message || 'Failed to update tracking number');
       }
       
-      const updatedOrder = await response.json();
-      
-      // Update the appropriate order list based on active tab
-      if (activeTab === 'seller') {
-        setSellerOrders(prevOrders => 
-          prevOrders.map(order => order.id === orderId ? updatedOrder : order)
-        );
-      } else {
-        setBuyerOrders(prevOrders => 
-          prevOrders.map(order => order.id === orderId ? updatedOrder : order)
-        );
-      }
-      
       toast.success('Tracking number updated');
+      // Refresh orders to get the latest data
+      await fetchOrders();
     } catch (error) {
       console.error('Error updating tracking:', error);
       toast.error('Failed to update tracking number');
