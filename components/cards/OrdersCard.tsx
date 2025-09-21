@@ -102,18 +102,31 @@ function OrdersCard({
         {/* Action Buttons */}
         <div className="flex flex-col gap-2">
           {/* Confirm Delivery Button - Only show for shipped orders when onConfirmDelivery is provided */}
-          {status.toLowerCase() === "shipped" && onConfirmDelivery && (
-            <Button
-              variant="success" 
-              size="xs" 
-              className="rounded-lg w-full"
-              onClick={onConfirmDelivery}
-              disabled={!trackingNumber}
-            >
-              <Icon icon={ICON.ARROW_CHECKED} fontSize={16} />
-              Confirm Delivery
-            </Button>
-          )}          {/* Dispute Button - Show for all non-completed orders */}
+          {(() => {
+            // Debug log for Confirm Delivery Button
+            console.log("[OrdersCard] Confirm Delivery Button Debug:", {
+              status,
+              hasTrackingNumber: !!trackingNumber,
+              hasOnConfirmDelivery: !!onConfirmDelivery,
+              isShipped: status.toLowerCase() === "shipped",
+              showButton: status.toLowerCase() === "shipped" && !!onConfirmDelivery
+            });
+            
+            return status.toLowerCase() === "shipped" && onConfirmDelivery && (
+              <Button
+                variant="success" 
+                size="xs" 
+                className="rounded-lg w-full"
+                onClick={onConfirmDelivery}
+                disabled={!trackingNumber}
+              >
+                <Icon icon={ICON.ARROW_CHECKED} fontSize={16} />
+                Confirm Delivery
+              </Button>
+            );
+          })()}
+
+          {/* Dispute Button - Show for all non-completed orders */}
           {status.toLowerCase() !== "completed" && (
             <Button
               variant="warning"

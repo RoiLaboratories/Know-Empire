@@ -166,24 +166,33 @@ export default function OrderManagementPage() {
         </div>
 
         <ul className="grid grid-cols-1 gap-5 mt-2.5">
-          {orders.map((order) => (
-            <OrdersCard
-              key={order.id}
-              status={order.status.toLowerCase()}
-              name={order.product.title}
-              img={order.product.photos[0] || '/placeholder.png'}
-              seller={order.product.user.farcaster_username}
-              price={order.total_amount.toFixed(2)}
-              id={order.id}
-              escrowId={order.escrow_id}
-              trackingNumber={order.status.toLowerCase() !== 'pending' ? order.tracking_number : undefined}
-              onConfirmDelivery={
-                order.status === 'shipped'
-                  ? () => handleConfirmDelivery(order.id, order.escrow_id)
-                  : undefined
-              }
-            />
-          ))}
+          {orders.map((order) => {
+            console.log("[BuyerOrderManagement] Order Debug:", {
+              orderId: order.id,
+              status: order.status,
+              tracking: order.tracking_number,
+              escrowId: order.escrow_id,
+              shouldShowConfirmDelivery: order.status.toLowerCase() === 'shipped'
+            });
+            return (
+              <OrdersCard
+                key={order.id}
+                status={order.status.toLowerCase()}
+                name={order.product.title}
+                img={order.product.photos[0] || '/placeholder.png'}
+                seller={order.product.user.farcaster_username}
+                price={order.total_amount.toFixed(2)}
+                id={order.id}
+                escrowId={order.escrow_id}
+                trackingNumber={order.status.toLowerCase() !== 'pending' ? order.tracking_number : undefined}
+                onConfirmDelivery={
+                  order.status.toLowerCase() === 'shipped'
+                    ? () => handleConfirmDelivery(order.id, order.escrow_id)
+                    : undefined
+                }
+                />
+            );
+          })}
         </ul>
       </div>
     </section>
