@@ -311,9 +311,23 @@ const SellerOrderManagement: NextPage = () => {
           return;
         }
 
-        // First get the current order to preserve its tracking number
-        const order = filteredOrders.find(o => o.id === orderId);
-        if (!order) throw new Error("Order not found");
+        // Get the order from sellerOrders since we're in seller view
+        const order = sellerOrders.find(o => o.id === orderId);
+        console.log("[Mark as Delivered] Found order:", { 
+          orderId, 
+          orderFound: !!order,
+          sellerOrdersCount: sellerOrders.length,
+          matchingOrders: sellerOrders.filter(o => o.id === orderId).length,
+        });
+
+        if (!order) {
+          console.error("[Mark as Delivered] Order not found in sellerOrders:", {
+            orderId,
+            availableOrderIds: sellerOrders.map(o => o.id),
+          });
+          toast.error("Failed to find order details. Please try again.");
+          return;
+        }
 
         const response = await fetch(`/api/seller/orders/${orderId}/status`, {
           method: "POST",
@@ -321,7 +335,7 @@ const SellerOrderManagement: NextPage = () => {
           body: JSON.stringify({ 
             status: "delivered",
             fid: context.user.fid,
-            tracking_number: order.tracking_number // Preserve the existing tracking number
+            tracking_number: order.tracking_number
           }),
         });
 
@@ -367,7 +381,7 @@ const SellerOrderManagement: NextPage = () => {
         setDeliveringLoading(false);
       }
     },
-    [fetchOrders, context?.user?.fid, isConnected]
+    [fetchOrders, context?.user?.fid, isConnected, sellerOrders]
   );
 
   const markAsCompleted = useCallback(
