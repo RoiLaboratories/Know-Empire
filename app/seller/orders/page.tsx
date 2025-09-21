@@ -311,12 +311,17 @@ const SellerOrderManagement: NextPage = () => {
           return;
         }
 
+        // First get the current order to preserve its tracking number
+        const order = filteredOrders.find(o => o.id === orderId);
+        if (!order) throw new Error("Order not found");
+
         const response = await fetch(`/api/seller/orders/${orderId}/status`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
             status: "delivered",
-            fid: context.user.fid
+            fid: context.user.fid,
+            tracking_number: order.tracking_number // Preserve the existing tracking number
           }),
         });
 

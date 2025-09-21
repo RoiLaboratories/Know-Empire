@@ -52,14 +52,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Order not found or unauthorized' }, { status: 404 });
     }
 
-    // Update order status
+    // Update order status with tracking number only if provided
+    const updateData: any = {
+      status,
+      shipped_at: status === 'shipped' ? new Date().toISOString() : null,
+      delivered_at: status === 'delivered' ? new Date().toISOString() : null
+    };
+    
+    // Only update tracking_number if it's provided in the request
+    if (tracking_number !== undefined) {
+      updateData.tracking_number = tracking_number;
+    }
+
     const { data, error } = await supabaseAdmin
       .from('orders')
-      .update({ 
-        status,
-        tracking_number: tracking_number || null,
-        shipped_at: status === 'shipped' ? new Date().toISOString() : null
-      })
+      .update(updateData)
       .eq('id', orderId)
       .select(`
         id,
