@@ -16,6 +16,7 @@ export interface OrdersCardProps {
   trackingNumber?: string | null;
   onConfirmDelivery?: () => void;
   escrowId?: string;
+  disableConfirm?: boolean;
 }
 
 function OrdersCard({
@@ -27,7 +28,8 @@ function OrdersCard({
   price,
   trackingNumber,
   onConfirmDelivery,
-  escrowId
+  escrowId,
+  disableConfirm = false
 }: OrdersCardProps) {
   const icon = status === "shipped" ? ICON.TRUCK : ICON.PACKAGE;
 
@@ -101,7 +103,7 @@ function OrdersCard({
           {/*dispute */}
         {/* Action Buttons */}
         <div className="flex flex-col gap-2">
-          {/* Confirm Delivery Button - Only show for shipped orders when onConfirmDelivery is provided */}
+          {/* Confirm Delivery Button - Show for shipped or delivered orders */}
           {(() => {
             // Debug log for Confirm Delivery Button
             console.log("[OrdersCard] Confirm Delivery Button Debug:", {
@@ -109,19 +111,21 @@ function OrdersCard({
               hasTrackingNumber: !!trackingNumber,
               hasOnConfirmDelivery: !!onConfirmDelivery,
               isShipped: status.toLowerCase() === "shipped",
-              showButton: status.toLowerCase() === "shipped" && !!onConfirmDelivery
+              isDelivered: status.toLowerCase() === "delivered",
+              showButton: (status.toLowerCase() === "shipped" || status.toLowerCase() === "delivered") && !!onConfirmDelivery,
+              disableConfirm
             });
             
-            return status.toLowerCase() === "shipped" && onConfirmDelivery && (
+            return (status.toLowerCase() === "shipped" || status.toLowerCase() === "delivered") && onConfirmDelivery && (
               <Button
                 variant="success" 
                 size="xs" 
                 className="rounded-lg w-full"
                 onClick={onConfirmDelivery}
-                disabled={!trackingNumber}
+                disabled={disableConfirm || !trackingNumber}
               >
                 <Icon icon={ICON.ARROW_CHECKED} fontSize={16} />
-                Confirm Delivery
+                {status.toLowerCase() === "shipped" ? "Mark as Delivered" : "Confirm Delivery"}
               </Button>
             );
           })()}
