@@ -13,6 +13,7 @@ import Button from "@/ui/Button";
 import BackButton from "@/ui/BackButton";
 import { Icon } from "@iconify/react";
 import { ICON } from "@/utils/icon-export";
+import LoadingCard from "@/components/popups/loading-card";
 
 interface SellerOrder {
   id: string;
@@ -64,6 +65,8 @@ const SellerOrderManagement: NextPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [deliveringLoading, setDeliveringLoading] = useState(false);
   const [filteredOrders, setFilteredOrders] = useState<
     Array<SellerOrder | BuyerOrder>
   >([]);
@@ -188,7 +191,7 @@ const SellerOrderManagement: NextPage = () => {
   const markAsShipped = useCallback(
     async (orderId: string) => {
       try {
-        setLoading(true);
+        setShippingLoading(true);
         const trackingNumber = trackingInputs[orderId]?.trim();
 
         console.log("[Mark as Shipped] Starting request:", {
@@ -286,15 +289,16 @@ const SellerOrderManagement: NextPage = () => {
             : "Failed to mark order as shipped"
         );
       } finally {
-        setLoading(false);
+        setShippingLoading(false);
       }
     },
-    [trackingInputs, fetchOrders]
+    [trackingInputs, fetchOrders, context?.user?.fid]
   );
 
   const markAsDelivered = useCallback(
     async (orderId: string, escrowId: string) => {
       try {
+        setDeliveringLoading(true);
         const response = await fetch(`/api/seller/orders/${orderId}/deliver`, {
           method: "POST",
         });
@@ -308,6 +312,8 @@ const SellerOrderManagement: NextPage = () => {
       } catch (error) {
         console.error("Error marking order as delivered:", error);
         toast.error("Failed to mark order as delivered");
+      } finally {
+        setDeliveringLoading(false);
       }
     },
     [fetchOrders]
@@ -334,6 +340,17 @@ const SellerOrderManagement: NextPage = () => {
 
   return (
     <section className="min-h-screen bg-white">
+      {/* Loading States */}
+      {shippingLoading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+          <LoadingCard message="Marking order as shipped..." />
+        </div>
+      )}
+      {deliveringLoading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+          <LoadingCard message="Marking order as delivered..." />
+        </div>
+      )}
       <div className="max-w-lg mx-auto px-4 pt-8">
         {refreshing && (
           <div className="fixed top-0 left-0 right-0 z-50 flex justify-center">
@@ -399,7 +416,9 @@ const SellerOrderManagement: NextPage = () => {
               Please connect your wallet and Farcaster account
             </div>
           ) : loading ? (
-            <div className="text-center py-8">Loading orders...</div>
+            <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+              <LoadingCard message="Loading orders..." />
+            </div>
           ) : (activeTab === "seller" ? sellerOrders : buyerOrders).length ===
             0 ? (
             <div className="text-center py-8">
@@ -563,7 +582,7 @@ const SellerOrderManagement: NextPage = () => {
                         <button 
                           className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={() => markAsShipped(order.id)}
-                          disabled={!trackingInputs[order.id]?.trim() || loading || !context?.user?.fid}
+                          disabled={!trackingInputs[order.id]?.trim() || shippingLoading || !context?.user?.fid}
                         >
                           <Image
                             className="w-[22px] h-[18px]"
@@ -582,7 +601,7 @@ const SellerOrderManagement: NextPage = () => {
                         <button 
                           className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={() => markAsDelivered(order.id, order.escrow_id)}
-                          disabled={loading || !isConnected || !context?.user?.fid}
+                          disabled={deliveringLoading || !isConnected || !context?.user?.fid}
                         >
                           <Image
                             className="w-[22px] h-[18px]"

@@ -5,6 +5,7 @@ import BackButton from "../../../ui/BackButton";
 import Search from "../../../components/Search";
 import Tab from "../../../components/layout/Tab";
 import OrdersCard from "../../../components/cards/OrdersCard";
+import LoadingCard from "../../../components/popups/loading-card";
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { toast } from "react-hot-toast";
 
@@ -82,8 +83,8 @@ export default function OrderManagementPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center w-full h-full min-h-[200px]">
-        <p>Loading orders...</p>
+      <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+        <LoadingCard message="Loading orders..." />
       </div>
     );
   }
