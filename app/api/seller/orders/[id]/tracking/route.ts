@@ -4,9 +4,16 @@ import { createServiceClient } from '../../../../../../utils/supabase';
 export async function POST(request: Request) {
   try {
     const { pathname } = new URL(request.url);
-    const id = pathname.split('/').pop();
+    const orderId = pathname.match(/\/orders\/([^\/]+)\/tracking/)?.[1];
+    
+    if (!orderId) {
+      return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 });
+    }
+
     const { tracking_number, fid } = await request.json();
     const supabaseAdmin = createServiceClient();
+
+    console.log('[Tracking Update] Request:', { orderId, tracking_number, fid });
 
     if (!fid) {
       return NextResponse.json({ error: 'Farcaster ID is required' }, { status: 400 });
@@ -27,7 +34,7 @@ export async function POST(request: Request) {
     const { data, error } = await supabaseAdmin
       .from('orders')
       .update({ tracking_number })
-      .eq('id', id)
+      .eq('id', orderId)
       .eq('products.seller_id', seller.id) // Note: products not product
       .select(`
         id,
