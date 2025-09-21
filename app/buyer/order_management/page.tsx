@@ -119,6 +119,7 @@ export default function OrderManagementPage() {
               seller={order.product.user.farcaster_username}
               price={order.total_amount.toFixed(2)}
               id={order.id}
+              trackingNumber={order.tracking_number}
             />
           ))}
         </ul>

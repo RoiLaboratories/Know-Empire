@@ -469,8 +469,8 @@ const SellerOrderManagement: NextPage = () => {
                         className="w-3.5 h-[15px]"
                       />
                       <span>
-                        {order.status.charAt(0).toLowerCase() +
-                          order.status.slice(1)}
+                        {order.status.charAt(0).toUpperCase() +
+                          order.status.slice(1).toLowerCase()}
                       </span>
                     </div>
                   </div>
@@ -526,7 +526,11 @@ const SellerOrderManagement: NextPage = () => {
                           className="flex-1 bg-transparent border-none outline-none text-sm text-[#414141]"
                           type="text"
                           placeholder="Enter tracking number"
-                          value={trackingInputs[order.id] || ''}
+                          value={
+                            order.status.toLowerCase() === 'pending'
+                              ? trackingInputs[order.id] || ''
+                              : order.tracking_number || ''
+                          }
                           onChange={(e) => {
                             setTrackingInputs(prev => ({
                               ...prev,
@@ -540,11 +544,11 @@ const SellerOrderManagement: NextPage = () => {
                             onClick={() => copyToClipboard(order.tracking_number!)}
                             className="ml-2 p-1 hover:opacity-80 transition-opacity"
                           >
-                            <Image
-                              src="/assets/images/copy.png"
-                              alt="Copy"
-                              width={16}
-                              height={16}
+                            <Icon 
+                              icon={ICON.COPY} 
+                              width={20} 
+                              height={20}
+                              className="text-gray-600"
                             />
                           </button>
                         )}

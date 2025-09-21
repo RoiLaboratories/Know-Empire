@@ -13,6 +13,7 @@ export interface OrdersCardProps {
   seller: string;
   price: string;
   id: string;
+  trackingNumber?: string | null;
 }
 
 function OrdersCard({
@@ -22,6 +23,7 @@ function OrdersCard({
   seller,
   id,
   price,
+  trackingNumber,
 }: OrdersCardProps) {
   const icon = status === "shipped" ? ICON.TRUCK : ICON.PACKAGE;
 
@@ -79,13 +81,15 @@ function OrdersCard({
         <div className="flex flex-col text-gray gap-1 pb-4">
           <p className="text-[#6b88b5]">Tracking ID:</p>
           <div className="rounded-lg border border-[#989898] p-2 flex justify-between items-center bg-[#f2f2f2] text-[#989898]">
-            <span>{id}</span>
-            <button
-              onClick={() => copyToClipboard(id)}
-              className="hover:opacity-80 transition-opacity"
-            >
-              <Icon icon={ICON.COPY} fontSize={16} />
-            </button>
+            <span>{trackingNumber || 'No tracking number yet'}</span>
+            {trackingNumber && (
+              <button
+                onClick={() => copyToClipboard(trackingNumber)}
+                className="hover:opacity-80 transition-opacity"
+              >
+                <Icon icon={ICON.COPY} fontSize={16} />
+              </button>
+            )}
           </div>
         </div>
         {/*dispute */}
