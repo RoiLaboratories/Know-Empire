@@ -191,21 +191,79 @@ const SellerOrderManagement: NextPage = () => {
         setLoading(true);
         const trackingNumber = trackingInputs[orderId]?.trim();
 
+        console.log("[Mark as Shipped] Starting request:", {
+          orderId,
+          trackingNumber,
+          fid: context?.user?.fid
+        });
+
+        if (!context?.user?.fid) {
+          toast.error("Please connect your Farcaster account");
+          return;
+        }
+
         if (!trackingNumber) {
           toast.error("Please enter a tracking ID first");
           return;
         }
 
-        const response = await fetch(`/api/seller/orders/${orderId}/ship`, {
+        // First update the tracking number
+        const trackingResponse = await fetch(`/api/seller/orders/${orderId}/tracking`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tracking_number: trackingNumber }),
+          body: JSON.stringify({ 
+            tracking_number: trackingNumber,
+            fid: context.user.fid
+          }),
         });
 
-        if (!response.ok) {
-          const error = await response.text();
-          throw new Error(error || "Failed to mark as shipped");
+        console.log("[Mark as Shipped] Tracking response status:", trackingResponse.status);
+
+        if (!trackingResponse.ok) {
+          const errorText = await trackingResponse.text();
+          console.error("[Mark as Shipped] Tracking error response:", {
+            status: trackingResponse.status,
+            statusText: trackingResponse.statusText,
+            error: errorText
+          });
+          try {
+            const errorJson = JSON.parse(errorText);
+            throw new Error(errorJson.error || errorText);
+          } catch (e) {
+            throw new Error(errorText || "Failed to update tracking number");
+          }
         }
+
+        // Then update the status to shipped
+        const statusResponse = await fetch(`/api/seller/orders/${orderId}/status`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            status: "shipped",
+            tracking_number: trackingNumber,
+            fid: context.user.fid
+          }),
+        });
+
+        console.log("[Mark as Shipped] Status response status:", statusResponse.status);
+
+        if (!statusResponse.ok) {
+          const errorText = await statusResponse.text();
+          console.error("[Mark as Shipped] Status error response:", {
+            status: statusResponse.status,
+            statusText: statusResponse.statusText,
+            error: errorText
+          });
+          try {
+            const errorJson = JSON.parse(errorText);
+            throw new Error(errorJson.error || errorText);
+          } catch (e) {
+            throw new Error(errorText || "Failed to update order status");
+          }
+        }
+
+        const result = await statusResponse.json();
+        console.log("[Mark as Shipped] Success:", result);
 
         // Only clear the tracking input if the API call was successful
         setTrackingInputs((prev) => {
@@ -217,7 +275,11 @@ const SellerOrderManagement: NextPage = () => {
         toast.success("Order marked as shipped!");
         await fetchOrders();
       } catch (error) {
-        console.error("Error marking order as shipped:", error);
+        console.error("[Mark as Shipped] Caught error:", {
+          error,
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined
+        });
         toast.error(
           error instanceof Error
             ? error.message
