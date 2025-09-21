@@ -597,14 +597,16 @@ const SellerOrderManagement: NextPage = () => {
                               : order.tracking_number || ''
                           }
                           onChange={(e) => {
-                            setTrackingInputs(prev => ({
-                              ...prev,
-                              [order.id]: e.target.value
-                            }));
+                            if (order.status.toLowerCase() === 'pending') {
+                              setTrackingInputs(prev => ({
+                                ...prev,
+                                [order.id]: e.target.value
+                              }));
+                            }
                           }}
-                          disabled={order.status.toLowerCase() !== 'pending'}
+                          readOnly={order.status.toLowerCase() !== 'pending'}
                         />
-                        {order.tracking_number && order.status.toLowerCase() !== 'pending' && (
+                        {order.tracking_number && (
                           <button
                             onClick={() => copyToClipboard(order.tracking_number!)}
                             className="ml-2 p-1 hover:opacity-80 transition-opacity"

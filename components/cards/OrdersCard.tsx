@@ -85,12 +85,10 @@ function OrdersCard({
         <div className="flex flex-col text-gray gap-1 pb-4">
           <p className="text-[#6b88b5]">Tracking ID:</p>
           <div className="rounded-lg border border-[#989898] p-2 flex justify-between items-center bg-[#f2f2f2] text-[#989898]">
-            <span className="text-gray-700">{
-              status.toLowerCase() === 'pending'
-                ? 'No tracking number yet'
-                : trackingNumber || 'Not available'
-            }</span>
-            {trackingNumber && status.toLowerCase() !== 'pending' && (
+            <span className="text-gray-700">
+              {trackingNumber || 'No tracking number yet'}
+            </span>
+            {trackingNumber && (
               <button
                 onClick={() => copyToClipboard(trackingNumber)}
                 className="hover:opacity-80 transition-opacity"
@@ -102,18 +100,22 @@ function OrdersCard({
         </div>
         {/*dispute */}
         {/* Action Buttons */}
-        {status.toLowerCase() === "shipped" && (
-          <>
+        <div className="flex flex-col gap-2">
+          {/* Confirm Delivery Button - Only show for shipped orders when onConfirmDelivery is provided */}
+          {status.toLowerCase() === "shipped" && onConfirmDelivery && (
             <Button
               variant="success" 
               size="xs" 
-              className="rounded-lg mb-2"
-              onClick={() => onConfirmDelivery && onConfirmDelivery()}
+              className="rounded-lg"
+              onClick={onConfirmDelivery}
             >
               <Icon icon={ICON.ARROW_CHECKED} fontSize={16} />
               Confirm Delivery
             </Button>
+          )}
 
+          {/* Dispute Button - Show for all non-completed orders */}
+          {status.toLowerCase() !== "completed" && (
             <Button
               variant="warning"
               size="xs"
@@ -123,19 +125,8 @@ function OrdersCard({
               <Icon icon={ICON.CAUTION} fontSize={16} />
               Raise a Dispute
             </Button>
-          </>
-        )}
-        {status.toLowerCase() !== "shipped" && status.toLowerCase() !== "completed" && (
-          <Button
-            variant="warning"
-            size="xs"
-            className="rounded-lg"
-            to={`/raise-dispute?orderId=${id}`}
-          >
-            <Icon icon={ICON.CAUTION} fontSize={16} />
-            Raise a Dispute
-          </Button>
-        )}
+          )}
+        </div>
       </div>
     </li>
   );
