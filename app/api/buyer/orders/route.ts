@@ -62,6 +62,7 @@ export async function GET(request: Request) {
         status,
         total_amount,
         escrow_id,
+        tracking_number,
         shipped_at,
         delivered_at,
         is_paid,
@@ -91,7 +92,7 @@ export async function GET(request: Request) {
       id: order.id,
       status: (order.status || '').toUpperCase(),
       created_at: order.created_at,
-      tracking_number: order.id,  // Using order.id as tracking number
+      tracking_number: order.tracking_number,  // Use the actual tracking number from the database
       shipped_at: order.shipped_at,
       delivered_at: order.delivered_at,
       total_amount: order.total_amount,
