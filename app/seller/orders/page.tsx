@@ -183,36 +183,7 @@ const SellerOrderManagement: NextPage = () => {
       .catch(() => toast.error("Failed to copy"));
   }, []);
 
-  // Update tracking number
-  const updateTrackingNumber = useCallback(async (orderId: string, trackingNumber: string) => {
-    try {
-      if (!context?.user?.fid) {
-        toast.error('Please connect with Farcaster first');
-        return;
-      }
 
-      const response = await fetch(`/api/seller/orders/${orderId}/tracking`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          tracking_number: trackingNumber,
-          fid: context.user.fid
-        })
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to update tracking number');
-      }
-      
-      toast.success('Tracking number updated');
-      // Refresh orders to get the latest data
-      await fetchOrders();
-    } catch (error) {
-      console.error('Error updating tracking:', error);
-      toast.error('Failed to update tracking number');
-    }
-  }, [context?.user?.fid, activeTab, setSellerOrders, setBuyerOrders]);
 
   const markAsShipped = useCallback(
     async (orderId: string) => {
@@ -493,8 +464,13 @@ const SellerOrderManagement: NextPage = () => {
                           className="flex-1 bg-transparent border-none outline-none text-sm text-[#414141]"
                           type="text"
                           placeholder="Enter tracking number"
-                          value={order.tracking_number || ''}
-                          onChange={(e) => updateTrackingNumber(order.id, e.target.value)}
+                          value={trackingInputs[order.id] || ''}
+                          onChange={(e) => {
+                            setTrackingInputs(prev => ({
+                              ...prev,
+                              [order.id]: e.target.value
+                            }));
+                          }}
                           disabled={order.status.toLowerCase() === 'shipped' || order.status.toLowerCase() === 'delivered'}
                         />
                         {order.tracking_number && order.status.toLowerCase() !== 'pending' && (
@@ -521,7 +497,7 @@ const SellerOrderManagement: NextPage = () => {
                         <button 
                           className="w-full flex items-center justify-center gap-2.5 bg-[#2563eb] text-white rounded-lg py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={() => markAsShipped(order.id)}
-                          disabled={loading || !context?.user?.fid}
+                          disabled={!trackingInputs[order.id]?.trim() || loading || !context?.user?.fid}
                         >
                           <Image
                             className="w-[22px] h-[18px]"
