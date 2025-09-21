@@ -169,14 +169,14 @@ export default function OrderManagementPage() {
           {orders.map((order) => (
             <OrdersCard
               key={order.id}
-              status={order.status}
+              status={order.status.toLowerCase()}
               name={order.product.title}
               img={order.product.photos[0] || '/placeholder.png'}
               seller={order.product.user.farcaster_username}
               price={order.total_amount.toFixed(2)}
               id={order.id}
               escrowId={order.escrow_id}
-              trackingNumber={order.tracking_number}
+              trackingNumber={order.status.toLowerCase() !== 'pending' ? order.tracking_number : undefined}
               onConfirmDelivery={
                 order.status === 'shipped'
                   ? () => handleConfirmDelivery(order.id, order.escrow_id)

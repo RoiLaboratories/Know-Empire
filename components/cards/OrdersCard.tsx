@@ -98,7 +98,7 @@ function OrdersCard({
             )}
           </div>
         </div>
-        {/*dispute */}
+          {/*dispute */}
         {/* Action Buttons */}
         <div className="flex flex-col gap-2">
           {/* Confirm Delivery Button - Only show for shipped orders when onConfirmDelivery is provided */}
@@ -106,15 +106,14 @@ function OrdersCard({
             <Button
               variant="success" 
               size="xs" 
-              className="rounded-lg"
+              className="rounded-lg w-full"
               onClick={onConfirmDelivery}
+              disabled={!trackingNumber}
             >
               <Icon icon={ICON.ARROW_CHECKED} fontSize={16} />
               Confirm Delivery
             </Button>
-          )}
-
-          {/* Dispute Button - Show for all non-completed orders */}
+          )}          {/* Dispute Button - Show for all non-completed orders */}
           {status.toLowerCase() !== "completed" && (
             <Button
               variant="warning"

@@ -590,7 +590,7 @@ const SellerOrderManagement: NextPage = () => {
                         <input
                           className="flex-1 bg-transparent border-none outline-none text-sm text-[#414141]"
                           type="text"
-                          placeholder={order.status.toLowerCase() === 'pending' ? "Enter tracking number" : ""}
+                          placeholder={order.status.toLowerCase() === 'pending' ? "Enter tracking number" : "No tracking number"}
                           value={
                             order.status.toLowerCase() === 'pending'
                               ? trackingInputs[order.id] || ''
@@ -600,15 +600,15 @@ const SellerOrderManagement: NextPage = () => {
                             if (order.status.toLowerCase() === 'pending') {
                               setTrackingInputs(prev => ({
                                 ...prev,
-                                [order.id]: e.target.value
+                                [order.id]: e.target.value.trim()
                               }));
                             }
                           }}
                           readOnly={order.status.toLowerCase() !== 'pending'}
                         />
-                        {order.tracking_number && (
+                        {order.tracking_number && order.status.toLowerCase() !== 'pending' && (
                           <button
-                            onClick={() => copyToClipboard(order.tracking_number!)}
+                            onClick={() => copyToClipboard(order.tracking_number)}
                             className="ml-2 p-1 hover:opacity-80 transition-opacity"
                           >
                             <Icon 
