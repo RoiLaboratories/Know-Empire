@@ -86,7 +86,9 @@ export async function createEscrow(seller: string, amount: string, orderId: stri
 
 export async function confirmDelivery(escrowId: string) {
   try {
-    const { client: walletClient } = await getWallet();
+    console.log("[Contract] Starting confirmDelivery:", { escrowId });
+    const { address, client: walletClient } = await getWallet();
+    console.log("[Contract] Got wallet client:", { address });
 
     const hash = await walletClient.writeContract({
       address: ESCROW_CONTRACT_ADDRESS,
@@ -94,8 +96,14 @@ export async function confirmDelivery(escrowId: string) {
       functionName: 'confirmDelivery',
       args: [escrowId],
     });
+    console.log("[Contract] Transaction sent:", { hash });
 
-    await publicClient.waitForTransactionReceipt({ hash });
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    console.log("[Contract] Transaction confirmed:", { 
+      hash,
+      status: receipt.status,
+      gasUsed: receipt.gasUsed.toString()
+    });
 
     return hash;
   } catch (error) {

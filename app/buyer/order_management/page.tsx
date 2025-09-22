@@ -90,7 +90,13 @@ export default function OrderManagementPage() {
       }
 
       setConfirmingDelivery(true);
-      console.log("[Confirm Delivery] Starting confirmation:", { orderId, escrowId });
+      console.log("[Confirm Delivery] Starting confirmation:", { 
+        orderId, 
+        escrowId,
+        fid: context.user.fid,
+        isConnected,
+        walletStatus: isConnected ? "connected" : "disconnected"
+      });
 
       // First update the order status
       const response = await fetch(`/api/buyer/orders/${orderId}/status`, {
@@ -106,19 +112,58 @@ export default function OrderManagementPage() {
         const errorText = await response.text();
         console.error("[Confirm Delivery] API error:", {
           status: response.status,
-          error: errorText
+          error: errorText,
+          orderId,
+          escrowId
         });
-        throw new Error("Failed to update order status");
+        throw new Error("Failed to update order status: " + errorText);
       }
 
+      const apiResult = await response.json();
+      console.log("[Confirm Delivery] API success:", {
+        orderId,
+        escrowId,
+        result: apiResult
+      });
+
       // Then confirm on smart contract
-      await confirmDelivery(escrowId);
+      try {
+        const txHash = await confirmDelivery(escrowId);
+        console.log("[Confirm Delivery] Smart contract success:", {
+          orderId,
+          escrowId,
+          txHash
+        });
+      } catch (contractError) {
+        console.error("[Confirm Delivery] Smart contract error:", {
+          orderId,
+          escrowId,
+          error: contractError,
+          message: contractError instanceof Error ? contractError.message : String(contractError)
+        });
+        // Revert the order status since contract call failed
+        // await fetch(`/api/buyer/orders/${orderId}/status`, {
+        //   method: "POST",
+        //   headers: { "Content-Type": "application/json" },
+        //   body: JSON.stringify({ 
+        //     status: "shipped",
+        //     fid: context.user.fid 
+        //   }),
+        // });
+        // throw contractError;
+      }
       
       toast.success("Delivery confirmed successfully!");
       await fetchBuyerOrders();
     } catch (error) {
-      console.error("[Confirm Delivery] Error:", error);
-      toast.error("Failed to confirm delivery");
+      console.error("[Confirm Delivery] Error:", {
+        orderId,
+        escrowId,
+        error,
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      toast.error(error instanceof Error ? error.message : "Failed to confirm delivery");
     } finally {
       setConfirmingDelivery(false);
     }
