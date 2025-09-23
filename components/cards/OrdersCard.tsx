@@ -125,7 +125,7 @@ function OrdersCard({
                 disabled={disableConfirm || !trackingNumber}
               >
                 <Icon icon={ICON.ARROW_CHECKED} fontSize={16} />
-                {status.toLowerCase() === "shipped" ? "Mark as Delivered" : "Confirm Delivery"}
+                {status.toLowerCase() === "shipped" ? "Confirm Delivery" : "Confirm Delivery"}
               </Button>
             );
           })()}
