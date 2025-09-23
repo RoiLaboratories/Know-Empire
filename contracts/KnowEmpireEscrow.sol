@@ -157,7 +157,7 @@ contract KnowEmpireEscrow is ReentrancyGuard, Ownable, Pausable {
         Escrow storage escrow = escrows[escrowId];
         require(escrow.isActive, "Escrow not found");
         require(escrow.buyer == msg.sender, "Only buyer can confirm");
-        require(escrow.state == EscrowState.FUNDED, "Invalid escrow state");
+        require(escrow.state == EscrowState.SHIPPED, "Invalid escrow state");
 
         // Calculate amounts
         uint256 escrowFee = (escrow.amount * escrowFeeBasisPoints) / 10000;
@@ -192,7 +192,7 @@ contract KnowEmpireEscrow is ReentrancyGuard, Ownable, Pausable {
             msg.sender == escrow.buyer || msg.sender == escrow.seller,
             "Only buyer or seller can dispute"
         );
-        require(escrow.state == EscrowState.FUNDED, "Invalid escrow state");
+        require(escrow.state == EscrowState.SHIPPED, "Invalid escrow state");
 
         escrow.state = EscrowState.DISPUTED;
         emit EscrowDisputed(escrowId);
