@@ -13,7 +13,7 @@ import { confirmDelivery } from "@/utils/contractHelpers";
 
 interface Order {
   id: string;
-  status: 'pending' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'pending' | 'shipped' | 'delivered' | 'cancelled' | 'completed';
   created_at: string;
   tracking_number: string;
   shipped_at: string | null;
@@ -98,12 +98,20 @@ export default function OrderManagementPage() {
         walletStatus: isConnected ? "connected" : "disconnected"
       });
 
-      // First update the order status
+      // First confirm on smart contract
+      const txHash = await confirmDelivery(escrowId);
+      console.log("[Confirm Delivery] Smart contract success:", {
+        orderId,
+        escrowId,
+        txHash
+      });
+
+      // After successful contract confirmation, update database status to completed
       const response = await fetch(`/api/buyer/orders/${orderId}/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          status: "delivered",
+          status: "completed",
           fid: context.user.fid 
         }),
       });
@@ -125,33 +133,6 @@ export default function OrderManagementPage() {
         escrowId,
         result: apiResult
       });
-
-      // Then confirm on smart contract
-      try {
-        const txHash = await confirmDelivery(escrowId);
-        console.log("[Confirm Delivery] Smart contract success:", {
-          orderId,
-          escrowId,
-          txHash
-        });
-      } catch (contractError) {
-        console.error("[Confirm Delivery] Smart contract error:", {
-          orderId,
-          escrowId,
-          error: contractError,
-          message: contractError instanceof Error ? contractError.message : String(contractError)
-        });
-        // Revert the order status since contract call failed
-        // await fetch(`/api/buyer/orders/${orderId}/status`, {
-        //   method: "POST",
-        //   headers: { "Content-Type": "application/json" },
-        //   body: JSON.stringify({ 
-        //     status: "shipped",
-        //     fid: context.user.fid 
-        //   }),
-        // });
-        // throw contractError;
-      }
       
       toast.success("Delivery confirmed successfully!");
       await fetchBuyerOrders();
@@ -231,12 +212,12 @@ export default function OrderManagementPage() {
                 escrowId={order.escrow_id}
                 trackingNumber={order.status.toLowerCase() !== 'pending' ? order.tracking_number : undefined}
                 onConfirmDelivery={
-                  (order.status.toLowerCase() === 'shipped' || order.status.toLowerCase() === 'delivered')
-                    ? () => handleConfirmDelivery(order.id, order.escrow_id)
-                    : undefined
-                }
-                disableConfirm={order.status.toLowerCase() === 'shipped'}
-                />
+                order.status.toLowerCase() === 'shipped' 
+                  ? () => handleConfirmDelivery(order.id, order.escrow_id)
+                  : undefined
+              }
+              disableConfirm={order.status.toLowerCase() !== 'shipped'}
+            />
             );
           })}
         </ul>
