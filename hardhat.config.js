@@ -12,6 +12,9 @@ module.exports = {
       }
     }
   },
+  mocha: {
+    timeout: 100000 // 100 seconds
+  },
   networks: {
     baseSepolia: {
       url: process.env.BASE_SEPOLIA_URL || "",
@@ -25,16 +28,13 @@ module.exports = {
     }
   },
   etherscan: {
-    apiKey: {
-      base: process.env.BASESCAN_API_KEY,
-      baseSepolia: process.env.BASESCAN_API_KEY
-    },
+    apiKey: process.env.BASESCAN_API_KEY,
     customChains: [
       {
         network: "base",
         chainId: 8453,
         urls: {
-          apiURL: "https://api.basescan.org/api",
+          apiURL: "https://api.basescan.org/api/v2",
           browserURL: "https://basescan.org"
         }
       },
