@@ -103,29 +103,32 @@ function OrdersCard({
           {/*dispute */}
         {/* Action Buttons */}
         <div className="flex flex-col gap-2">
-          {/* Confirm Delivery Button - Show for shipped or delivered orders */}
+          {/* Confirm Delivery Button */}
           {(() => {
+            const statusLower = status.toLowerCase();
+            const shouldShow = ['pending', 'shipped', 'delivered', 'completed'].includes(statusLower);
+            const isActive = statusLower === 'delivered';
+
             // Debug log for Confirm Delivery Button
             console.log("[OrdersCard] Confirm Delivery Button Debug:", {
-              status,
+              status: statusLower,
               hasTrackingNumber: !!trackingNumber,
               hasOnConfirmDelivery: !!onConfirmDelivery,
-              isShipped: status.toLowerCase() === "shipped",
-              isDelivered: status.toLowerCase() === "delivered",
-              showButton: (status.toLowerCase() === "shipped" || status.toLowerCase() === "delivered") && !!onConfirmDelivery,
-              disableConfirm
+              shouldShow,
+              isActive,
+              showButton: shouldShow && !!onConfirmDelivery,
             });
             
-            return (status.toLowerCase() === "shipped" || status.toLowerCase() === "delivered") && onConfirmDelivery && (
+            return shouldShow && onConfirmDelivery && (
               <Button
                 variant="success" 
                 size="xs" 
                 className="rounded-lg w-full"
                 onClick={onConfirmDelivery}
-                disabled={disableConfirm || !trackingNumber}
+                disabled={!isActive || !trackingNumber}
               >
                 <Icon icon={ICON.ARROW_CHECKED} fontSize={16} />
-                {status.toLowerCase() === "shipped" ? "Confirm Delivery" : "Confirm Delivery"}
+                Confirm Delivery
               </Button>
             );
           })()}

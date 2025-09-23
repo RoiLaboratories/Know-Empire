@@ -212,11 +212,10 @@ export default function OrderManagementPage() {
                 escrowId={order.escrow_id}
                 trackingNumber={order.status.toLowerCase() !== 'pending' ? order.tracking_number : undefined}
                 onConfirmDelivery={
-                order.status.toLowerCase() === 'shipped' 
-                  ? () => handleConfirmDelivery(order.id, order.escrow_id)
-                  : undefined
-              }
-              disableConfirm={order.status.toLowerCase() !== 'shipped'}
+                  ['pending', 'shipped', 'delivered', 'completed'].includes(order.status.toLowerCase())
+                    ? () => handleConfirmDelivery(order.id, order.escrow_id)
+                    : undefined
+                }
             />
             );
           })}
