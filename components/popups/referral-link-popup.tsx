@@ -18,7 +18,7 @@ function ReferralPopup({ onCloseModal }: ReferralPopupProps) {
   const { context } = useMiniKit();
   const { composeCast } = useComposeCast();
   const fid = context?.user?.fid;
-  const referralLink = fid ? `${typeof window !== 'undefined' ? window.location.origin : ''}/marketplace?ref=${fid}` : 'https://knowempire.xyz';
+  const referralLink = fid ? `${typeof window !== 'undefined' ? window.location.origin : ''}/marketplace?ref=${fid}` : 'https://farcaster.xyz/miniapps/Q1p_pb-tbyYB';
 
   const handleFarcasterShare = async () => {
     try {
@@ -82,8 +82,7 @@ function ReferralPopup({ onCloseModal }: ReferralPopupProps) {
           onClick={() =>
             window.open(
               `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                "I'm trading physical assets securely on @knowempire! 🎯\n\nJoin me and start trading physical assets securely!\n\n" +
-                  referralLink
+                "I'm trading physical assets securely on @knowempire! 🎯\n\nJoin me and start trading physical assets securely!\n\nFarcaster: https://farcaster.xyz/miniapps/Q1p_pb-tbyYB\nWeb: " + referralLink
               )}`
             )
           }
