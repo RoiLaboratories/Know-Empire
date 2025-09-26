@@ -10,19 +10,36 @@ import Modal from "../../context/ModalContext";
 import { copyToClipboard } from "../../utils/helpers";
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
 
+interface MiniKitContextExtended {
+  user?: {
+    fid: number;
+  };
+  openCastComposer?: (params: { text: string; embeds: string[] }) => void;
+}
+
 interface ReferralPopupProps {
   onCloseModal?: () => void;
 }
 
 function ReferralPopup({ onCloseModal }: ReferralPopupProps) {
-  const { context } = useMiniKit();
+  const { context } = useMiniKit() as { context: MiniKitContextExtended };
   const fid = context?.user?.fid;
-  const referralLink = fid ? `${typeof window !== 'undefined' ? window.location.origin : ''}/marketplace?ref=${fid}` : 'https://knowempire.com';
-  
+  const referralLink = fid ? `${typeof window !== 'undefined' ? window.location.origin : ''}/marketplace?ref=${fid}` : 'https://knowempire.xyz';
+
   const handleFarcasterShare = () => {
-    if (!fid) return;
-    const farcasterUrl = `https://warpcast.com/~/compose?text=I'm%20trading%20knowledge%20assets%20on%20@knowempire!%20🎯%0A%0AJoin%20me%20and%20start%20trading%20physical%20assets%20securely!&embeds[]=${referralLink}`;
-    window.open(farcasterUrl, '_blank');
+    if (!context?.openCastComposer) return;
+    
+    const text = "I'm trading knowledge assets on @knowempire! 🎯\\n\\nJoin me and start your journey in the knowledge economy!";
+    
+    context.openCastComposer({
+      text,
+      embeds: [referralLink]
+    });
+
+    // Close the modal after sharing
+    if (onCloseModal) {
+      onCloseModal();
+    }
   };
   return (
     <div className=" py-16 flex flex-col gap-5 justify-between bg-black text-white w-[300px] md:w-[355px] items-center rounded-2xl relative drop-shadow-[0_3px_3px_rgba(180,0,247,1)]">
