@@ -402,7 +402,7 @@ function Profile() {
               <GenericPopup
                 iconStyle="text-green-600"
                 icon={ICON.CHECK_CIRCLE}
-                text="Your referal link has been copied"
+                text="Your referral link has been copied"
               />
             </Modal.Window>
           </Modal>

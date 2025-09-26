@@ -8,12 +8,22 @@ import Image from "next/image";
 import { ICON } from "../../utils/icon-export";
 import Modal from "../../context/ModalContext";
 import { copyToClipboard } from "../../utils/helpers";
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
 
 interface ReferralPopupProps {
   onCloseModal?: () => void;
 }
 
 function ReferralPopup({ onCloseModal }: ReferralPopupProps) {
+  const { context } = useMiniKit();
+  const fid = context?.user?.fid;
+  const referralLink = fid ? `${typeof window !== 'undefined' ? window.location.origin : ''}/marketplace?ref=${fid}` : 'https://knowempire.com';
+  
+  const handleFarcasterShare = () => {
+    if (!fid) return;
+    const farcasterUrl = `https://warpcast.com/~/compose?text=I'm%20trading%20knowledge%20assets%20on%20@knowempire!%20🎯%0A%0AJoin%20me%20and%20start%20trading%20physical%20assets%20securely!&embeds[]=${referralLink}`;
+    window.open(farcasterUrl, '_blank');
+  };
   return (
     <div className=" py-16 flex flex-col gap-5 justify-between bg-black text-white w-[300px] md:w-[355px] items-center rounded-2xl relative drop-shadow-[0_3px_3px_rgba(180,0,247,1)]">
       <button
@@ -29,8 +39,8 @@ function ReferralPopup({ onCloseModal }: ReferralPopupProps) {
       </p>
 
       <div className="flex items-center gap-x-2">
-        <div className="bg-[#202020] p-[10px] font-medium text-sm">
-          https://knowempire.com
+        <div className="bg-[#202020] p-[10px] font-medium text-sm truncate max-w-[200px]">
+          {referralLink}
         </div>
         <Modal.Open opens="referral-link-copied-popup">
           <Image
@@ -39,19 +49,24 @@ function ReferralPopup({ onCloseModal }: ReferralPopupProps) {
             width={35}
             height={28}
             className="cursor-pointer"
-            onClick={() => copyToClipboard("https://knowempire.com")}
+            onClick={() => copyToClipboard(referralLink)}
           />
         </Modal.Open>
       </div>
 
       <div className="flex items-center gap-x-5 justify-between">
-        <Image
-          src={FarcasterShare}
-          alt="farcaster-share"
-          width={126}
-          height={46}
-          className="cursor-pointer"
-        />
+        <button
+          onClick={handleFarcasterShare}
+          className="hover:opacity-80 transition-opacity"
+        >
+          <Image
+            src={FarcasterShare}
+            alt="farcaster-share"
+            width={126}
+            height={46}
+            className="cursor-pointer"
+          />
+        </button>
         <Image
           src={Xshare}
           alt="x-share"
