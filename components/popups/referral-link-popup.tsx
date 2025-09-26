@@ -66,37 +66,37 @@ function ReferralPopup({ onCloseModal }: ReferralPopupProps) {
       </div>
 
       <div className="flex items-center gap-x-5 justify-between">
-        <Button
+        <button
           onClick={handleFarcasterShare}
-          className="p-2 bg-[#855DCD] rounded-lg"
+          className="hover:opacity-80 transition-opacity"
         >
           <Image
             src={FarcasterShare}
             alt="farcaster-share"
-            width={25}
-            height={25}
+            width={126}
+            height={46}
             className="cursor-pointer"
           />
-        </Button>
-        <Button
+        </button>
+        <button
           onClick={() =>
             window.open(
               `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                "I'm trading knowledge assets on @knowempire! 🎯\n\nJoin me and start your journey in the knowledge economy!\n\n" +
+                "I'm trading physical assets securely on @knowempire! 🎯\n\nJoin me and start trading physical assets securely!\n\n" +
                   referralLink
               )}`
             )
           }
-          className="p-2 bg-[#1C9BEF] rounded-lg"
+          className="hover:opacity-80 transition-opacity"
         >
           <Image
             src={Xshare}
             alt="x-share"
-            width={25}
-            height={25}
+            width={126}
+            height={46}
             className="cursor-pointer"
           />
-        </Button>
+        </button>
       </div>
 
       <span className="w-full bg-[#828282] h-[0.5px]" />
