@@ -1,4 +1,3 @@
-import Button from "../../ui/Button";
 import { Icon } from "@iconify/react";
 import ReferFace from "../../assets/images/refer-face.png";
 import Copy from "../../assets/images/copy.png";
@@ -8,41 +7,36 @@ import Image from "next/image";
 import { ICON } from "../../utils/icon-export";
 import Modal from "../../context/ModalContext";
 import { copyToClipboard } from "../../utils/helpers";
-import { useMiniKit } from '@coinbase/onchainkit/minikit';
-
-interface MiniKitContextExtended {
-  user?: {
-    fid: number;
-  };
-  openCastComposer?: (params: { text: string; embeds: string[] }) => void;
-}
+import { useMiniKit, useComposeCast } from '@coinbase/onchainkit/minikit';
+import  Button  from "@/ui/Button";
 
 interface ReferralPopupProps {
   onCloseModal?: () => void;
 }
 
 function ReferralPopup({ onCloseModal }: ReferralPopupProps) {
-  const { context } = useMiniKit() as { context: MiniKitContextExtended };
+  const { context } = useMiniKit();
+  const { composeCast } = useComposeCast();
   const fid = context?.user?.fid;
   const referralLink = fid ? `${typeof window !== 'undefined' ? window.location.origin : ''}/marketplace?ref=${fid}` : 'https://knowempire.xyz';
 
-  const handleFarcasterShare = () => {
-    if (!context?.openCastComposer) return;
-    
-    const text = "I'm trading knowledge assets on @knowempire! 🎯\\n\\nJoin me and start your journey in the knowledge economy!";
-    
-    context.openCastComposer({
-      text,
-      embeds: [referralLink]
-    });
+  const handleFarcasterShare = async () => {
+    try {
+      await composeCast({
+        text: "I'm trading physical assets securely on @knowempire! 🎯\n\nJoin me and start trading physical assets securely!",
+        embeds: [referralLink]
+      });
 
-    // Close the modal after sharing
-    if (onCloseModal) {
-      onCloseModal();
+      if (onCloseModal) {
+        onCloseModal();
+      }
+    } catch (error) {
+      console.error('Failed to open cast composer:', error);
     }
   };
+
   return (
-    <div className=" py-16 flex flex-col gap-5 justify-between bg-black text-white w-[300px] md:w-[355px] items-center rounded-2xl relative drop-shadow-[0_3px_3px_rgba(180,0,247,1)]">
+    <div className="py-16 flex flex-col gap-5 justify-between bg-black text-white w-[300px] md:w-[355px] items-center rounded-2xl relative drop-shadow-[0_3px_3px_rgba(180,0,247,1)]">
       <button
         className="rounded-full grid place-items-center text-gray-800 absolute -top-12 right-0 btn border-2 border-gray-800 size-8.5"
         onClick={onCloseModal}
@@ -72,25 +66,37 @@ function ReferralPopup({ onCloseModal }: ReferralPopupProps) {
       </div>
 
       <div className="flex items-center gap-x-5 justify-between">
-        <button
+        <Button
           onClick={handleFarcasterShare}
-          className="hover:opacity-80 transition-opacity"
+          className="p-2 bg-[#855DCD] rounded-lg"
         >
           <Image
             src={FarcasterShare}
             alt="farcaster-share"
-            width={126}
-            height={46}
+            width={25}
+            height={25}
             className="cursor-pointer"
           />
-        </button>
-        <Image
-          src={Xshare}
-          alt="x-share"
-          width={126}
-          height={46}
-          className="cursor-pointer"
-        />
+        </Button>
+        <Button
+          onClick={() =>
+            window.open(
+              `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                "I'm trading knowledge assets on @knowempire! 🎯\n\nJoin me and start your journey in the knowledge economy!\n\n" +
+                  referralLink
+              )}`
+            )
+          }
+          className="p-2 bg-[#1C9BEF] rounded-lg"
+        >
+          <Image
+            src={Xshare}
+            alt="x-share"
+            width={25}
+            height={25}
+            className="cursor-pointer"
+          />
+        </Button>
       </div>
 
       <span className="w-full bg-[#828282] h-[0.5px]" />
