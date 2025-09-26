@@ -82,7 +82,8 @@ function ReferralPopup({ onCloseModal }: ReferralPopupProps) {
           onClick={() =>
             window.open(
               `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                "I'm trading physical assets securely on @knowempire! 🎯\n\nJoin me and start trading physical assets securely!\n\nFarcaster: https://farcaster.xyz/miniapps/Q1p_pb-tbyYB\nWeb: " + referralLink
+                "I'm trading physical assets securely on @knowempire! 🎯\n\nJoin me and start trading physical assets securely!\n\n" +
+                "https://farcaster.xyz/miniapps/Q1p_pb-tbyYB?ref=" + (fid || '')
               )}`
             )
           }
