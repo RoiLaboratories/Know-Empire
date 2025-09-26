@@ -8,7 +8,8 @@ import { ICON } from "../../utils/icon-export";
 import Modal from "../../context/ModalContext";
 import { copyToClipboard } from "../../utils/helpers";
 import { useMiniKit, useComposeCast } from '@coinbase/onchainkit/minikit';
-import  Button  from "@/ui/Button";
+import Button from "@/ui/Button";
+import { useReferralStats } from "@/hooks/useReferralStats";
 
 interface ReferralPopupProps {
   onCloseModal?: () => void;
@@ -17,6 +18,7 @@ interface ReferralPopupProps {
 function ReferralPopup({ onCloseModal }: ReferralPopupProps) {
   const { context } = useMiniKit();
   const { composeCast } = useComposeCast();
+  const { stats } = useReferralStats();
   const fid = context?.user?.fid;
   const referralLink = `https://farcaster.xyz/miniapps/Q1p_pb-tbyYB${fid ? `?ref=${fid}` : ''}`;
 
@@ -103,12 +105,12 @@ function ReferralPopup({ onCloseModal }: ReferralPopupProps) {
 
       <div className="flex items-center justify-between w-8/10">
         <div className="space-y-2.5 flex flex-col items-center">
-          <p className="text-[#5a5a5a] text-xs font-bold">Total Referals</p>
-          <p className="font-semibold text-3xl text-white">0</p>
+          <p className="text-[#5a5a5a] text-xs font-bold">Total Referrals</p>
+          <p className="font-semibold text-3xl text-white">{stats.referrals}</p>
         </div>
         <div className="space-y-2.5 flex flex-col items-center">
-          <p className="text-[#5a5a5a] text-xs font-bold">Total Earned</p>
-          <p className="font-semibold text-3xl text-white">0</p>
+          <p className="text-[#5a5a5a] text-xs font-bold">Total Points Earned</p>
+          <p className="font-semibold text-3xl text-white">{stats.points}</p>
         </div>
       </div>
     </div>
