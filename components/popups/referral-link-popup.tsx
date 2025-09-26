@@ -18,7 +18,7 @@ function ReferralPopup({ onCloseModal }: ReferralPopupProps) {
   const { context } = useMiniKit();
   const { composeCast } = useComposeCast();
   const fid = context?.user?.fid;
-  const referralLink = fid ? `${typeof window !== 'undefined' ? window.location.origin : ''}/marketplace?ref=${fid}` : 'https://farcaster.xyz/miniapps/Q1p_pb-tbyYB';
+  const referralLink = `https://farcaster.xyz/miniapps/Q1p_pb-tbyYB${fid ? `?ref=${fid}` : ''}`;
 
   const handleFarcasterShare = async () => {
     try {
