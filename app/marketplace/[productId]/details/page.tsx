@@ -7,7 +7,14 @@ import Button from '../../../../ui/Button';
 import { ProductWithSeller } from '../../../../types/product';
 import Map from '../../../../assets/icons/map.svg';
 
-export default function ProductDetails({ params }: { params: { productId: string } }) {
+interface PageProps {
+  params: {
+    productId: string
+  }
+  searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export default function ProductDetails({ params, searchParams }: PageProps) {
   const [product, setProduct] = useState<ProductWithSeller | null>(null);
   const [selectedImage, setSelectedImage] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
