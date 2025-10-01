@@ -1,5 +1,19 @@
+import { Metadata } from 'next';
 import ProductDetailsContent from '../../../../components/product/ProductDetailsContent';
 import { createServiceClient } from '../../../../utils/supabase';
+
+interface Props {
+  params: { productId: string }
+  searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const product = await getProduct(params.productId);
+  return {
+    title: product.title,
+    description: `${product.title} - $${product.price} · Know Empire Marketplace`
+  };
+}
 
 async function getProduct(productId: string) {
   const supabaseAdmin = createServiceClient();
@@ -52,7 +66,8 @@ async function getProduct(productId: string) {
   return product;
 }
 
-export default async function Page({ params }: { params: { productId: string } }) {
+export default async function Page(props: Props) {
+  const { params } = props;
   const product = await getProduct(params.productId);
   
   if (!product) {
