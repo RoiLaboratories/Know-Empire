@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Icon } from '@iconify/react';
 import { ICON } from '../../utils/icon-export';
 import { ProductWithSeller } from '../../types/product';
-import Map from '../../../../assets/icons/map.svg';
+import Map from '../../assets/icons/map.svg';
 
 export default function ProductDetailsContent({ initialProduct }: { initialProduct: ProductWithSeller }) {
   const [selectedImage, setSelectedImage] = useState<number>(0);
