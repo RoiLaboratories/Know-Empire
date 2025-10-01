@@ -1,7 +1,9 @@
 import ProductDetailsContent from '../../../../components/product/ProductDetailsContent';
 
 async function getProduct(productId: string) {
-  const response = await fetch(`/api/products/${productId}`, {
+  // Need absolute URL for server-side fetching
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const response = await fetch(`${baseUrl}/api/products/${productId}`, {
     next: { revalidate: 60 } // Cache for 1 minute
   });
   
