@@ -25,7 +25,7 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
     try {
       await composeCast({
         text: `🛍️ Check out this listing on @knowempire!\n\n${name}\n💰 $${unitPrice}\n📍 ${location}\n\nSecure trading of physical assets on Farcaster! View details ⬇️`,
-        embeds: [`https://knowempire.xyz/marketplace/${productId}`]
+        embeds: [`https://knowempire.xyz/product/${name.toLowerCase().replace(/\s+/g, '-')}`]
       });
     } catch (error) {
       console.error('Failed to open cast composer:', error);
