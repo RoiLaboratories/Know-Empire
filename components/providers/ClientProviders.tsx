@@ -7,6 +7,7 @@ import { FarcasterAuthProvider } from "@/context/FarcasterAuthContext";
 import { MiniKitProvider } from '@coinbase/onchainkit/minikit';
 import { base } from 'wagmi/chains';
 import { WagmiProviderWrapper } from "@/providers/wagmi";
+import Modal from "@/context/ModalContext";
 
 const ClientProviders = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -16,7 +17,9 @@ const ClientProviders = ({ children }: { children: React.ReactNode }) => {
           <FarcasterAuthProvider>
             <CartProvider>
               <OrdersProvider>
-                {children}
+                <Modal>
+                  {children}
+                </Modal>
               </OrdersProvider>
             </CartProvider>
           </FarcasterAuthProvider>
