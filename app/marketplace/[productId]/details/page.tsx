@@ -1,21 +1,58 @@
 import ProductDetailsContent from '../../../../components/product/ProductDetailsContent';
+import { createServiceClient } from '../../../../utils/supabase';
 
 async function getProduct(productId: string) {
-  // Need absolute URL for server-side fetching
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const response = await fetch(`${baseUrl}/api/products/${productId}`, {
-    next: { revalidate: 60 } // Cache for 1 minute
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch product');
+  const supabaseAdmin = createServiceClient();
+
+  // First get the product with seller info
+  const { data: product, error } = await supabaseAdmin
+    .from('products')
+    .select(`
+      *,
+      seller:users!seller_id (
+        farcaster_username,
+        display_name,
+        avatar_url,
+        rating,
+        review_count,
+        wallet_address,
+        farcaster_id
+      )
+    `)
+    .eq('id', productId)
+    .single();
+    
+  if (product) {
+    // Get seller's trade count (both as seller and buyer)
+    const [sellerOrdersResponse, buyerOrdersResponse] = await Promise.all([
+      supabaseAdmin
+        .from('orders')
+        .select('id', { count: 'exact' })
+        .eq('seller_id', product.seller.farcaster_id)
+        .eq('status', 'completed'),
+      supabaseAdmin
+        .from('orders')
+        .select('id', { count: 'exact' })
+        .eq('buyer_id', product.seller.farcaster_id)
+        .eq('status', 'completed')
+    ]);
+    
+    const totalTrades = (sellerOrdersResponse.count || 0) + (buyerOrdersResponse.count || 0);
+    product.seller.is_verified = totalTrades >= 6;
   }
-  
-  return response.json();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!product) {
+    throw new Error('Product not found');
+  }
+
+  return product;
 }
 
-// Remove type annotations and let Next.js infer them
-export default async function Page({ params }: any) {
+export default async function Page({ params }: { params: { productId: string } }) {
   const product = await getProduct(params.productId);
   
   if (!product) {
