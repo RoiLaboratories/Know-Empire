@@ -23,27 +23,11 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
 
   const handleShare = async () => {
     try {
-      // Create metadata object
-      const productMetadata = {
-        image: photos[0],
-        title: name,
-        description: `💰 $${unitPrice} · 📍 ${location}`,
-        url: `https://knowempire.xyz/marketplace/${productId}`
-      };
-
-      // Create a hidden div to store metadata
-      const metadataScript = document.createElement('script');
-      metadataScript.type = 'application/ld+json';
-      metadataScript.textContent = JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "Product",
-        ...productMetadata
-      });
-      document.head.appendChild(metadataScript);
-
+      const productDetailsUrl = `https://knowempire.xyz/marketplace/${productId}/details`;
+      
       await composeCast({
         text: `🛍️ Check out this listing on @knowempire!\n\n${name}\n💰 $${unitPrice}\n📍 ${location}\n\nSecure trading of physical assets on Farcaster! View details ⬇️`,
-        embeds: [photos[0]]
+        embeds: [productDetailsUrl]
       });
     } catch (error) {
       console.error('Failed to open cast composer:', error);
@@ -97,7 +81,7 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
   };
 
   return (
-    <li className="flex flex-col p-1.5 gap-1 rounded-md border border-gray-medium">
+    <li className="flex flex-col p-1.5 gap-1 rounded-md border border-gray-medium cursor-pointer transition-all hover:shadow-md" onClick={() => window.location.href = `/marketplace/${productId}/details`}>
       <div className="h-28 bg-gray-medium aspect-square rounded-md">
         <Image
           alt={name}
