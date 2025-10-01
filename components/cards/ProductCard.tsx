@@ -24,10 +24,17 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
 
   const handleShare = async () => {
     try {
-      const productLink = `https://farcaster.xyz/miniapps/Q1p_pb-tbyYB/marketplace/${productId}`;
+      // Create a URL with rich metadata query parameters
+      const embedUrl = new URL(`https://farcaster.xyz/miniapps/Q1p_pb-tbyYB/marketplace/${productId}`);
+      embedUrl.searchParams.set('image', encodeURIComponent(photos[0]));
+      embedUrl.searchParams.set('title', encodeURIComponent(name));
+      embedUrl.searchParams.set('price', encodeURIComponent(`$${unitPrice}`));
+      embedUrl.searchParams.set('location', encodeURIComponent(location));
+      embedUrl.searchParams.set('seller', encodeURIComponent(`@${product.seller.username}`));
+
       await composeCast({
-        text: `🛍️ Check out my listing on @knowempire!\n\n${name}\n💰 $${unitPrice}\n📍 ${location}\n\nSecure trading of physical assets on Farcaster! 🎯`,
-        embeds: [productLink]
+        text: `🛍️ Check out this listing on @knowempire!\n\n${name}\n💰 $${unitPrice}\n📍 ${location}\n\nSecure trading of physical assets on Farcaster! View details ⬇️`,
+        embeds: [embedUrl.toString()]
       });
     } catch (error) {
       console.error('Failed to open cast composer:', error);
@@ -121,7 +128,7 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
             <Button
               variant="primary_gradient"
               size="xs"
-              className="col-span-2 hover:opacity-80 transition-opacity"
+              className="!p-2 col-span-2 hover:opacity-80 transition-opacity"
               onClick={handleShare}
             >
               <Image
@@ -131,7 +138,6 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
                 height={24}
                 className="cursor-pointer"
               />
-              <span className="ml-2">Share Listing</span>
             </Button>
           ) : (
             <>
