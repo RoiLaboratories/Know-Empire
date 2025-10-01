@@ -1,4 +1,12 @@
+import { Metadata } from 'next';
 import ProductDetailsContent from '../../../../components/product/ProductDetailsContent';
+
+interface PageProps {
+  params: {
+    productId: string;
+  };
+  searchParams: { [key: string]: string | string[] | undefined };
+}
 
 async function getProduct(productId: string) {
   const response = await fetch(`/api/products/${productId}`, {
@@ -12,7 +20,8 @@ async function getProduct(productId: string) {
   return response.json();
 }
 
-export default async function ProductDetailsPage({ params }: { params: { productId: string } }) {
+export default async function ProductDetailsPage(props: PageProps) {
+  const { params } = props;
   const product = await getProduct(params.productId);
   
   if (!product) {
