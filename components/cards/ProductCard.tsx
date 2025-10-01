@@ -11,7 +11,6 @@ import { useCart } from "../../providers/cart";
 import toast from 'react-hot-toast';
 import { ReactElement, useState } from 'react';
 import { ProductWithSeller } from "../../types/product";
-import FarcasterShare from "../../assets/images/farcaster-share.png";
 
 function ProductCard({ product }: { product: ProductWithSeller }): ReactElement {
   const { addToCart } = useCart();
@@ -24,17 +23,9 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
 
   const handleShare = async () => {
     try {
-      // Create a URL with rich metadata query parameters
-      const embedUrl = new URL(`https://farcaster.xyz/miniapps/Q1p_pb-tbyYB/marketplace/${productId}`);
-      embedUrl.searchParams.set('image', encodeURIComponent(photos[0]));
-      embedUrl.searchParams.set('title', encodeURIComponent(name));
-      embedUrl.searchParams.set('price', encodeURIComponent(`$${unitPrice}`));
-      embedUrl.searchParams.set('location', encodeURIComponent(location));
-      embedUrl.searchParams.set('seller', encodeURIComponent(`@${product.seller.username}`));
-
       await composeCast({
         text: `🛍️ Check out this listing on @knowempire!\n\n${name}\n💰 $${unitPrice}\n📍 ${location}\n\nSecure trading of physical assets on Farcaster! View details ⬇️`,
-        embeds: [embedUrl.toString()]
+        embeds: [photos[0], `https://farcaster.xyz/miniapps/Q1p_pb-tbyYB/marketplace/${productId}`]
       });
     } catch (error) {
       console.error('Failed to open cast composer:', error);
@@ -131,13 +122,7 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
               className="!p-2 col-span-2 hover:opacity-80 transition-opacity"
               onClick={handleShare}
             >
-              <Image
-                src={FarcasterShare}
-                alt="share"
-                width={24}
-                height={24}
-                className="cursor-pointer"
-              />
+              <span>Share Listing</span>
             </Button>
           ) : (
             <>
