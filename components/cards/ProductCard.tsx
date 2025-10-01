@@ -6,11 +6,12 @@ import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
 import PurchasePopup from "../popups/purchase-popup";
 import Modal from "../../context/ModalContext";
-import { useMiniKit } from '@coinbase/onchainkit/minikit';
+import { useMiniKit, useComposeCast } from '@coinbase/onchainkit/minikit';
 import { useCart } from "../../providers/cart";
 import toast from 'react-hot-toast';
 import { ReactElement, useState } from 'react';
 import { ProductWithSeller } from "../../types/product";
+import FarcasterShare from "../../assets/images/farcaster-share.png";
 
 function ProductCard({ product }: { product: ProductWithSeller }): ReactElement {
   const { addToCart } = useCart();
@@ -18,6 +19,21 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
   const [updatedProduct, setUpdatedProduct] = useState<ProductWithSeller | null>(null);
   const { photos, title: name, price: unitPrice, id: productId, country: location } = product;
   const { context } = useMiniKit() as { context: { user?: { fid: number } } };
+  const { composeCast } = useComposeCast();
+  const isOwnProduct = context?.user?.fid?.toString() === product.seller.farcaster_id;
+
+  const handleShare = async () => {
+    try {
+      const productLink = `https://farcaster.xyz/miniapps/Q1p_pb-tbyYB/marketplace/${productId}`;
+      await composeCast({
+        text: `🛍️ Check out my listing on @knowempire!\n\n${name}\n💰 $${unitPrice}\n📍 ${location}\n\nSecure trading of physical assets on Farcaster! 🎯`,
+        embeds: [productLink]
+      });
+    } catch (error) {
+      console.error('Failed to open cast composer:', error);
+      toast.error('Failed to share listing');
+    }
+  };
   
   const handleAddToCart = () => {
     const numericPrice = parseFloat(unitPrice);
@@ -101,36 +117,54 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
         </p>
 
         <div className="grid grid-cols-2 gap-x-2 w-full">
-          <Modal.Open opens={`purchase-product-popup-${productId}`}>
+          {isOwnProduct ? (
             <Button
               variant="primary_gradient"
               size="xs"
-              className="text-gray-medium"
-              onClick={fetchUpdatedProduct}
-              disabled={isLoading || (context?.user && product.seller.farcaster_id === context.user.fid.toString())}
-              title={context?.user && product.seller.farcaster_id === context.user.fid.toString() ? "You cannot buy your own product" : ""}
+              className="col-span-2 hover:opacity-80 transition-opacity"
+              onClick={handleShare}
             >
-              {isLoading ? (
-                <Icon icon={ICON.SPINNER} className="animate-spin" fontSize={16} />
-              ) : (
-                <>
-                  <Icon icon={ICON.BUY2} fontSize={16} />
-                  Buy now
-                </>
-              )}
+              <Image
+                src={FarcasterShare}
+                alt="share"
+                width={24}
+                height={24}
+                className="cursor-pointer"
+              />
+              <span className="ml-2">Share Listing</span>
             </Button>
-          </Modal.Open>
-          <Button
-            variant="primary_outline"
-            size="xs"
-            className="font-semibold"
-            onClick={handleAddToCart}
-            disabled={isLoading || (context?.user && product.seller.farcaster_id === context.user.fid.toString())}
-            title={context?.user && product.seller.farcaster_id === context.user.fid.toString() ? "You cannot add your own product to cart" : ""}
-          >
-            <Icon icon={ICON.ADD_OUTLINE} fontSize={16} />
-            Cart it
-          </Button>
+          ) : (
+            <>
+              <Modal.Open opens={`purchase-product-popup-${productId}`}>
+                <Button
+                  variant="primary_gradient"
+                  size="xs"
+                  className="text-gray-medium"
+                  onClick={fetchUpdatedProduct}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <Icon icon={ICON.SPINNER} className="animate-spin" fontSize={16} />
+                  ) : (
+                    <>
+                      <Icon icon={ICON.BUY2} fontSize={16} />
+                      Buy now
+                    </>
+                  )}
+                </Button>
+              </Modal.Open>
+              <Button
+                variant="primary_outline"
+                size="xs"
+                className="font-semibold"
+                onClick={handleAddToCart}
+                disabled={isLoading}
+              >
+                <Icon icon={ICON.ADD_OUTLINE} fontSize={16} />
+                Cart it
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
