@@ -1,12 +1,4 @@
-"use server";
-
 import ProductDetailsContent from '../../../../components/product/ProductDetailsContent';
-
-type Props = {
-  params: {
-    productId: string;
-  };
-};
 
 async function getProduct(productId: string) {
   const response = await fetch(`/api/products/${productId}`, {
@@ -20,7 +12,8 @@ async function getProduct(productId: string) {
   return response.json();
 }
 
-export default async function Page({ params }: Props) {
+// Remove type annotations and let Next.js infer them
+export default async function Page({ params }: any) {
   const product = await getProduct(params.productId);
   
   if (!product) {
