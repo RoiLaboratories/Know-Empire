@@ -159,7 +159,7 @@ export default function ProductDetailsContent({ initialProduct: product }: { ini
               <Button
                 variant="primary_gradient"
                 size="lg"
-                className="flex-1 hover:opacity-80 transition-opacity"
+                className="flex-1 rounded-[10px] hover:opacity-80 transition-opacity"
                 onClick={handleShare}
               >
                 <Icon icon={ICON.SHARE} fontSize={20} />
@@ -171,7 +171,7 @@ export default function ProductDetailsContent({ initialProduct: product }: { ini
                   <Button
                     variant="primary_gradient"
                     size="lg"
-                    className="flex-1"
+                    className="flex-1 rounded-[10px]"
                     onClick={fetchUpdatedProduct}
                     disabled={isLoading}
                   >
@@ -188,7 +188,7 @@ export default function ProductDetailsContent({ initialProduct: product }: { ini
                 <Button
                   variant="primary_outline"
                   size="lg"
-                  className="flex-1"
+                  className="flex-1 rounded-[10px]"
                   onClick={handleAddToCart}
                 >
                   <Icon icon={ICON.ADD_OUTLINE} fontSize={20} />
