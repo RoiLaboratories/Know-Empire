@@ -3,7 +3,7 @@ import { ICON } from "../../utils/icon-export";
 import Image from "next/image";
 import Phone from "../../assets/images/prod1.png";
 import Button from "../../ui/Button";
-import Modal from "../../context/ModalContext";
+import Modal, { useModal } from "../../context/ModalContext";
 import GenericPopup from "./generic-popup";
 import { useState } from "react";
 import ProductSummaryPopup from "./product-summary-popup";
@@ -29,6 +29,8 @@ function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
     return null;
   }
 
+  const { close } = useModal();
+  
   const handleNextStep = () => {
     console.log({ purchaseStep });
     setPurchaseStep((curr) => curr + 1);
@@ -43,12 +45,13 @@ function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
     <div className="rounded-t-2xl px-5 pt-5 pb-10 w-[300px] md:w-[402px] bg-white space-y-10" onClick={(e) => e.stopPropagation()}>
       <div className="flex items-center justify-between">
         <p className="font-semibold text-gray text-sm">Secure Purchase</p>
-        <Icon
-          icon={ICON.CANCEL}
-          fontSize={24}
-          onClick={onCloseModal}
-          className="cursor-pointer"
-        />
+        <div onClick={() => close()}>
+          <Icon
+            icon={ICON.CANCEL}
+            fontSize={24}
+            className="cursor-pointer"
+          />
+        </div>
       </div>
 
       {/*main content  */}
