@@ -69,14 +69,35 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
       
         console.log('Attempting to fetch order:', orderId);
         
-        // First fetch just the order to check its existence
+        // First verify if order exists and log table schema
+        console.log('Verifying order existence and table schema...');
+        const { data: tableInfo } = await supabase
+          .from('orders')
+          .select('*')
+          .limit(1);
+        console.log('Orders table structure:', tableInfo);
+        
+        // Fetch with less strict conditions first to debug
+        const { data: allOrders } = await supabase
+          .from('orders')
+          .select('id')
+          .limit(5);
+        console.log('Sample orders:', allOrders);
+        
+        // Now try to fetch our specific order
         const { data: orderCheck, error: orderCheckError } = await supabase
           .from('orders')
-          .select('id, status, product_id')
+          .select('*')
           .eq('id', orderId)
           .maybeSingle();
 
-        console.log('Initial order check:', { orderCheck, orderCheckError });
+        console.log('Initial order check:', { 
+          orderCheck, 
+          orderCheckError,
+          queriedId: orderId,
+          orderIdType: typeof orderId,
+          orderIdLength: orderId.length
+        });
 
         if (orderCheckError) {
           console.error('Database error while checking order:', {
@@ -125,21 +146,24 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
         }
 
         // Now fetch the full order with product details
+        console.log('Fetching full order details...');
         const { data: order, error } = await supabase
           .from('orders')
           .select(`
-            id,
-            status,
-            product_id,
-            product:products (
-              id,
-              title,
-              price,
-              photos
+            *,
+            products!inner (
+              *
             )
           `)
           .eq('id', orderId)
           .maybeSingle();
+        
+        console.log('Full query debug:', {
+          orderId,
+          orderFound: !!order,
+          error,
+          rawOrder: order
+        });
           
         console.log('Full order response:', { 
           order,
