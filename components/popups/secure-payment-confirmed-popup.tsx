@@ -32,47 +32,39 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
 
   useEffect(() => {
     const logError = (error: any, context: string) => {
-      // Construct error message with all relevant details
-      const errorDetails = {
-        timestamp: new Date().toISOString(),
-        orderId,
+      // Create a structured error object that Vercel can parse
+      const structuredError = {
+        name: error instanceof Error ? error.name : 'UnknownError',
+        message: error instanceof Error ? error.message : String(error),
         context,
-        error: error instanceof Error ? {
-          name: error.name,
-          message: error.message,
-          stack: error.stack
-        } : error,
+        orderId,
         componentState: {
           isConfirmed,
           hasOrderDetails: !!orderDetails
-        }
+        },
+        timestamp: new Date().toISOString(),
+        stack: error instanceof Error ? error.stack : new Error().stack
       };
 
-      // Use Error.captureStackTrace to get proper stack traces
-      const enhancedError = new Error(`[SecurePaymentConfirmed][${context}] ${error instanceof Error ? error.message : JSON.stringify(error)}`);
-      Error.captureStackTrace(enhancedError, logError);
+      // Log directly to stdout/stderr which Vercel captures
+      console.error(JSON.stringify({
+        level: 'error',
+        message: `[SecurePaymentConfirmed][${context}] ${structuredError.message}`,
+        error: structuredError
+      }));
+
+      // Create an error that maintains the context
+      const enhancedError = new Error(`[SecurePaymentConfirmed][${context}] ${structuredError.message}`);
+      (enhancedError as any).details = structuredError;
       
-      // Attach details to error object for logging
-      (enhancedError as any).details = errorDetails;
-      
-      // Log full error details
-      console.error('SecurePaymentConfirmed Error:', {
-        message: enhancedError.message,
-        stack: enhancedError.stack,
-        details: errorDetails
-      });
-      
-      // Throw the enhanced error to be caught by Next.js
-      throw enhancedError;
+      return enhancedError; // Return instead of throwing to allow caller to handle
     };
 
     const fetchOrderDetails = async () => {
-      if (!orderId) {
-        logError(new Error('No orderId provided'), 'parameter_validation');
-        return;
-      }
-
       try {
+        if (!orderId) {
+          throw logError(new Error('No orderId provided'), 'parameter_validation');
+        }
         console.log('SecurePaymentConfirmed: Fetching order details for orderId:', orderId);
       
         console.log('Attempting to fetch order:', orderId);
@@ -92,30 +84,43 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
             orderId,
             timestamp: new Date().toISOString()
           });
-          await logError(orderCheckError, 'fetch_order_check');
-          throw new Error(`Failed to check order: ${orderCheckError.message}`);
+          throw logError(orderCheckError, 'fetch_order_check');
         }
 
-        if (!orderCheck) {
-          // Wait a short time and try one more time before giving up
-          // This helps with race conditions where the order was just created
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          
-          const { data: retryCheck, error: retryError } = await supabase
-            .from('orders')
-            .select('id, status, product_id')
-            .eq('id', orderId)
-            .maybeSingle();
+        let validOrder = orderCheck;
+        if (!validOrder) {
+          // Try up to 3 times with increasing delays
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            console.log(`Retry attempt ${attempt} for order ${orderId}`);
             
-          if (retryError || !retryCheck) {
-            const noOrderError = new Error(
-              `Order with ID ${orderId} not found. Please try again. ` +
-              `If the problem persists, try refreshing the page.`
-            );
-            await logError(noOrderError, 'order_not_found_after_retry');
-            // Show a more user-friendly error message
-            toast.error('Order details are not ready yet. Please wait a moment and try again.');
-            throw noOrderError;
+            // Exponential backoff: 2s, then 4s, then 6s
+            const delay = attempt * 2000;
+            await new Promise(resolve => setTimeout(resolve, delay));
+            
+            console.log(`Checking order after ${delay}ms delay...`);
+            const { data: retryCheck, error: retryError } = await supabase
+              .from('orders')
+              .select('id, status, product_id')
+              .eq('id', orderId)
+              .maybeSingle();
+
+            console.log('Retry check result:', { attempt, retryCheck, retryError });
+              
+            if (retryCheck) {
+              console.log(`Order found on attempt ${attempt}`);
+              validOrder = retryCheck;
+              break;
+            }
+            
+            if (attempt === 3 || retryError) {
+              const noOrderError = new Error(
+                `Order with ID ${orderId} not found after ${attempt} attempts. ` +
+                `Please wait a moment and try again.`
+              );
+              const error = logError(noOrderError, 'order_not_found_after_retries');
+              toast.error('This order is taking longer than usual to process. Please wait a few seconds and refresh.');
+              throw error;
+            }
           }
         }
 
@@ -149,7 +154,7 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
         }
 
         if (!order) {
-          const orderData = { orderCheck, fullQuery: 'failed' };
+          const orderData = { validOrder, fullQuery: 'failed' };
           const nullOrderError = new Error(`Order data is null or undefined after successful check. Order ID: ${orderId}`);
           await logError({ ...nullOrderError, orderData }, 'validate_order_data');
           throw nullOrderError;
@@ -216,21 +221,12 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
         
         setOrderDetails(transformedOrder);
         setIsConfirmed(order.status === 'shipped');
-      } catch (error) {
-        // Log errors in a way that ensures they appear in Vercel logs
-        console.error('SecurePaymentConfirmed Fetch Error:', {
-          orderId,
-          error: error instanceof Error ? error.message : error,
-          state: {
-            isConfirmed,
-            hasOrderDetails: !!orderDetails,
-            isLoading
-          }
-        });
+      } catch (error: any) {
+        // Always show a user-friendly message
+        const displayMessage = error?.details?.message || error?.message || 'Unknown error occurred';
+        toast.error(`Failed to load order details: ${displayMessage}`);
         
-        // Re-throw the error to be caught by React error boundary
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-        toast.error(`Failed to load order details: ${errorMessage}`);
+        // Let the error propagate to be caught by Next.js error boundary
         throw error;
       } finally {
         setIsLoading(false);
