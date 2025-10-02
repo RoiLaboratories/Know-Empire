@@ -32,8 +32,50 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const logError = async (error: any, context: string) => {
+      // Create a detailed error object
+      const errorDetails = {
+        timestamp: new Date().toISOString(),
+        orderId,
+        context,
+        error: error instanceof Error ? {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        } : error,
+        // Add relevant state
+        isConfirmed,
+        hasOrderDetails: !!orderDetails
+      };
+
+      // Log to console for local development
+      console.error('Detailed error:', errorDetails);
+
+      // Send error to your backend to log in Vercel
+      try {
+        await fetch('/api/log-error', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(errorDetails),
+        });
+      } catch (logError) {
+        // If logging fails, at least log to console
+        console.error('Failed to log error:', logError);
+      }
+    };
+
     const fetchOrderDetails = async () => {
-      console.log('Fetching order details for orderId:', orderId); // Log the orderId being used
+      if (!orderId) {
+        await logError(new Error('No orderId provided'), 'parameter_validation');
+        toast.error('Order ID is missing');
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('Attempting to fetch order details for orderId:', orderId);
+      
       try {
         // First verify if order exists
         const { data: orderExists, error: existsError } = await supabase
@@ -43,7 +85,7 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
           .single();
 
         if (existsError) {
-          console.error('Error verifying order existence:', existsError);
+          await logError(existsError, 'order_existence_check');
           throw new Error(`Order not found: ${existsError.message}`);
         }
 
@@ -68,32 +110,63 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
           .eq('id', orderId)
           .single();
 
-        console.log('Raw order data:', order); // Log the raw order data
-
         if (error) {
-          console.error('Supabase error:', error);
-          throw error;
+          await logError(error, 'fetch_order_details');
+          throw new Error(`Failed to fetch order details: ${error.message}`);
         }
 
         if (!order) {
-          throw new Error('Order data is null or undefined');
+          const nullOrderError = new Error('Order data is null or undefined');
+          await logError(nullOrderError, 'validate_order_data');
+          throw nullOrderError;
         }
 
+        // Log raw data for debugging
+        await fetch('/api/log-debug', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            context: 'order_data_received',
+            orderId,
+            orderData: order
+          })
+        });
+
         if (!order.product) {
-          console.error('Product data missing from order:', order);
-          throw new Error('Product data not found in order');
+          const noProductError = new Error('Product data not found in order');
+          await logError({ 
+            error: noProductError,
+            orderData: order 
+          }, 'validate_product_data');
+          throw noProductError;
         }
 
         // Ensure we have a product array and get the first item
         const productData = Array.isArray(order.product) ? order.product[0] : order.product;
 
         if (!productData) {
-          console.error('Product data is null or empty:', order.product);
-          throw new Error('Product data is missing or invalid');
+          const invalidProductError = new Error('Product data is missing or invalid');
+          await logError({
+            error: invalidProductError,
+            productData: order.product
+          }, 'validate_product_structure');
+          throw invalidProductError;
         }
 
-        // Log the product data we're trying to use
-        console.log('Product data being used:', productData);
+        // Log successful data retrieval
+        await fetch('/api/log-debug', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            context: 'product_data_processed',
+            orderId,
+            productData
+          })
+        });
 
         // Transform the data to match our type with validation
         const transformedOrder: OrderDetails = {
@@ -113,16 +186,30 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
         setOrderDetails(transformedOrder);
         setIsConfirmed(order.status === 'shipped');
       } catch (error) {
-        // Detailed error logging
-        console.error('Error in fetchOrderDetails:', {
-          orderId,
-          errorMessage: error instanceof Error ? error.message : 'Unknown error',
-          errorObject: error
-        });
+        // Log the error with our helper function
+        await logError(error, 'order_details_error_catch');
         
-        // Show more specific error message to user
+        // Show user-friendly error message
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
         toast.error(`Failed to load order details: ${errorMessage}`);
+
+        // Log the full error state
+        await fetch('/api/log-debug', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            context: 'order_details_error_state',
+            orderId,
+            errorMessage,
+            componentState: {
+              isConfirmed,
+              hasOrderDetails: !!orderDetails,
+              isLoading
+            }
+          })
+        });
       } finally {
         setIsLoading(false);
       }
