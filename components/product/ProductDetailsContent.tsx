@@ -13,6 +13,9 @@ import Modal from '../../context/ModalContext';
 import PurchasePopup from '../../components/popups/purchase-popup';
 
 export default function ProductDetailsContent({ initialProduct: product }: { initialProduct: ProductWithSeller }) {
+  console.log('Product:', product);
+  console.log('Seller username:', product.seller?.username);
+  console.log('Full seller object:', product.seller);
   const [selectedImage, setSelectedImage] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [updatedProduct, setUpdatedProduct] = useState<ProductWithSeller | null>(null);
@@ -132,8 +135,8 @@ export default function ProductDetailsContent({ initialProduct: product }: { ini
             <h2 className="text-lg font-semibold">Seller</h2>
             <div className="flex items-center gap-2">
               <span className="text-yellow-300 flex items-center gap-1">
-                @{product.seller.username}
-                {product.seller.is_verified && (
+                @{product?.seller?.username || ''}
+                {product?.seller?.is_verified && (
                   <span title="Verified trader (6+ successful trades)">
                     <Icon
                       icon={ICON.VERIFIED}
