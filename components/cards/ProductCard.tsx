@@ -98,7 +98,7 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
           <span className="font-semibold text-primary text-xs">
             ${unitPrice}
           </span>
-          <span className="text-[10px] text-yellow-300 font-semibold flex items-center gap-1">
+          <span className="text-[10px] text-green-300 font-semibold flex items-center gap-1">
             @{product.seller.username}
             {product.seller.is_verified && (
               <span title="Verified trader (6+ successful trades)">
@@ -122,7 +122,10 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
               variant="primary_gradient"
               size="xs"
               className="!p-2 col-span-2 hover:opacity-80 transition-opacity"
-              onClick={handleShare}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShare();
+              }}
             >
               <span>Share Listing</span>
             </Button>
@@ -133,7 +136,10 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
                   variant="primary_gradient"
                   size="xs"
                   className="text-gray-medium"
-                  onClick={fetchUpdatedProduct}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fetchUpdatedProduct();
+                  }}
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -150,7 +156,10 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
                 variant="primary_outline"
                 size="xs"
                 className="font-semibold"
-                onClick={handleAddToCart}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAddToCart();
+                }}
                 disabled={isLoading}
               >
                 <Icon icon={ICON.ADD_OUTLINE} fontSize={16} />
