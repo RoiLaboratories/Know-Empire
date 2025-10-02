@@ -10,7 +10,7 @@ async function getProduct(productId: string) {
     .select(`
       *,
       seller:users!seller_id (
-        farcaster_username,
+        username:farcaster_username,
         display_name,
         avatar_url,
         rating,
