@@ -23,7 +23,7 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
 
   const handleShare = async () => {
     try {
-      const productDetailsUrl = `https://knowempire.xyz/marketplace/${productId}/details`;
+      const productDetailsUrl = `https://knowempire.xyz/marketplace/${productId}`;
       
       await composeCast({
         text: `� Just listed on @knowempire!\n\n✨ ${name}\n💰 $${unitPrice}\n📍 ${location}\n\n🔒 Secure escrow-backed trading\n🌟 Physical assets on Farcaster\n\n#KnowEmpire #Marketplace`,
