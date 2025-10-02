@@ -32,7 +32,7 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const logError = async (error: any, context: string) => {
+    const logError = (error: any, context: string) => {
       // Create a detailed error object
       const errorDetails = {
         timestamp: new Date().toISOString(),
@@ -43,56 +43,27 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
           message: error.message,
           stack: error.stack
         } : error,
-        // Add relevant state
-        isConfirmed,
-        hasOrderDetails: !!orderDetails
+        componentState: {
+          isConfirmed,
+          hasOrderDetails: !!orderDetails
+        }
       };
 
-      // Log to console for local development
-      console.error('Detailed error:', errorDetails);
-
-      // Send error to your backend to log in Vercel
-      try {
-        await fetch('/api/log-error', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(errorDetails),
-        });
-      } catch (logError) {
-        // If logging fails, at least log to console
-        console.error('Failed to log error:', logError);
-      }
+      // Log to console (will show in Vercel logs)
+      console.error('SecurePaymentConfirmed Error:', JSON.stringify(errorDetails, null, 2));
     };
 
     const fetchOrderDetails = async () => {
       if (!orderId) {
-        await logError(new Error('No orderId provided'), 'parameter_validation');
+        logError(new Error('No orderId provided'), 'parameter_validation');
         toast.error('Order ID is missing');
         setIsLoading(false);
         return;
       }
 
-      console.log('Attempting to fetch order details for orderId:', orderId);
+      console.log('SecurePaymentConfirmed: Fetching order details for orderId:', orderId);
       
       try {
-        // First verify if order exists
-        const { data: orderExists, error: existsError } = await supabase
-          .from('orders')
-          .select('id')
-          .eq('id', orderId)
-          .single();
-
-        if (existsError) {
-          await logError(existsError, 'order_existence_check');
-          throw new Error(`Order not found: ${existsError.message}`);
-        }
-
-        if (!orderExists) {
-          throw new Error(`No order found with ID: ${orderId}`);
-        }
-
         // Fetch full order details with product
         const { data: order, error } = await supabase
           .from('orders')
@@ -121,22 +92,11 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
           throw nullOrderError;
         }
 
-        // Log raw data for debugging
-        await fetch('/api/log-debug', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            context: 'order_data_received',
-            orderId,
-            orderData: order
-          })
-        });
+        console.log('SecurePaymentConfirmed: Raw order data:', JSON.stringify(order, null, 2));
 
         if (!order.product) {
           const noProductError = new Error('Product data not found in order');
-          await logError({ 
+          logError({ 
             error: noProductError,
             orderData: order 
           }, 'validate_product_data');
@@ -148,25 +108,14 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
 
         if (!productData) {
           const invalidProductError = new Error('Product data is missing or invalid');
-          await logError({
+          logError({
             error: invalidProductError,
             productData: order.product
           }, 'validate_product_structure');
           throw invalidProductError;
         }
 
-        // Log successful data retrieval
-        await fetch('/api/log-debug', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            context: 'product_data_processed',
-            orderId,
-            productData
-          })
-        });
+        console.log('SecurePaymentConfirmed: Product data:', JSON.stringify(productData, null, 2));
 
         // Transform the data to match our type with validation
         const transformedOrder: OrderDetails = {
