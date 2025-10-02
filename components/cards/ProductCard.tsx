@@ -176,7 +176,9 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
         // allowOutsideClick
         showBg={false}
       >
-        <PurchasePopup product={updatedProduct || product} />
+        <div onClick={(e) => e.stopPropagation()}>
+          <PurchasePopup product={updatedProduct || product} />
+        </div>
       </Modal.Window>
     </li>
   );

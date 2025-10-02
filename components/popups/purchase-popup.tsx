@@ -40,7 +40,7 @@ function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
   };
 
   return (
-    <div className="rounded-t-2xl px-5 pt-5 pb-10 w-[300px] md:w-[402px] bg-white space-y-10">
+    <div className="rounded-t-2xl px-5 pt-5 pb-10 w-[300px] md:w-[402px] bg-white space-y-10" onClick={(e) => e.stopPropagation()}>
       <div className="flex items-center justify-between">
         <p className="font-semibold text-gray text-sm">Secure Purchase</p>
         <Icon
