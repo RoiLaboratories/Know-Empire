@@ -133,16 +133,18 @@ export default function ProductDetailsContent({ initialProduct }: { initialProdu
           <div className="space-y-2">
             <h2 className="text-lg font-semibold">Seller</h2>
             <div className="flex items-center gap-2">
-              <span className="text-yellow-300">@{initialProduct.seller.username}</span>
-              {initialProduct.seller.is_verified && (
-                <span title="Verified trader (6+ successful trades)">
-                  <Icon
-                    icon={ICON.VERIFIED}
-                    className="text-green-500"
-                    fontSize={16}
-                  />
-                </span>
-              )}
+              <span className="text-yellow-300 flex items-center gap-1">
+                @{initialProduct?.seller?.username}
+                {initialProduct?.seller?.is_verified && (
+                  <span title="Verified trader (6+ successful trades)">
+                    <Icon
+                      icon={ICON.VERIFIED}
+                      className="text-green-500"
+                      fontSize={16}
+                    />
+                  </span>
+                )}
+              </span>
             </div>
           </div>
 
