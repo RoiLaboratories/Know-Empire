@@ -13,14 +13,16 @@ import Modal from '../../context/ModalContext';
 import PurchasePopup from '../../components/popups/purchase-popup';
 
 export default function ProductDetailsContent({ initialProduct }: { initialProduct: ProductWithSeller }) {
+  console.log('Initial Product:', initialProduct);
+  console.log('Seller:', initialProduct.seller);
   const [selectedImage, setSelectedImage] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [updatedProduct, setUpdatedProduct] = useState<ProductWithSeller | null>(null);
-  const { photos, title: name, price: unitPrice, country: location, description, seller, id: productId } = initialProduct;
+  const { photos, title: name, price: unitPrice, country: location, description, id: productId } = initialProduct;
   const { addToCart } = useCart();
   const { context } = useMiniKit() as { context: { user?: { fid: number } } };
   const { composeCast } = useComposeCast();
-  const isOwnProduct = context?.user?.fid?.toString() === seller.farcaster_id;
+  const isOwnProduct = context?.user?.fid?.toString() === initialProduct.seller.farcaster_id;
 
   const fetchUpdatedProduct = async () => {
     setIsLoading(true);
