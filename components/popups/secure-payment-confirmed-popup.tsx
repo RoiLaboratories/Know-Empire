@@ -77,7 +77,7 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
             )
           `)
           .eq('id', orderId)
-          .single();
+          .maybeSingle();
 
         if (error) {
           await logError(error, 'fetch_order_details');
@@ -138,24 +138,6 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
         // Show user-friendly error message
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
         toast.error(`Failed to load order details: ${errorMessage}`);
-
-        // Log the full error state
-        await fetch('/api/log-debug', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            context: 'order_details_error_state',
-            orderId,
-            errorMessage,
-            componentState: {
-              isConfirmed,
-              hasOrderDetails: !!orderDetails,
-              isLoading
-            }
-          })
-        });
       } finally {
         setIsLoading(false);
       }
