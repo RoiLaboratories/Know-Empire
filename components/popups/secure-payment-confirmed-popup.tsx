@@ -77,14 +77,34 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
       
         console.log('Attempting to fetch order:', orderId);
         
-        // First check if order exists
+        // First fetch just the order to check its existence
+        const { data: orderCheck, error: orderCheckError } = await supabase
+          .from('orders')
+          .select('id, status, product_id')
+          .eq('id', orderId)
+          .maybeSingle();
+
+        console.log('Initial order check:', { orderCheck, orderCheckError });
+
+        if (orderCheckError) {
+          await logError(orderCheckError, 'fetch_order_check');
+          throw new Error(`Failed to check order: ${orderCheckError.message}`);
+        }
+
+        if (!orderCheck) {
+          const noOrderError = new Error(`Order with ID ${orderId} not found`);
+          await logError(noOrderError, 'order_not_found');
+          throw noOrderError;
+        }
+
+        // Now fetch the full order with product details
         const { data: order, error } = await supabase
           .from('orders')
           .select(`
             id,
             status,
             product_id,
-            product:products!product_id (
+            product:products (
               id,
               title,
               price,
@@ -94,7 +114,12 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
           .eq('id', orderId)
           .maybeSingle();
           
-        console.log('Supabase response:', { data: order, error });
+        console.log('Full order response:', { 
+          order,
+          error,
+          hasProduct: order?.product !== null,
+          productData: order?.product
+        });
 
         if (error) {
           await logError(error, 'fetch_order_details');
@@ -102,24 +127,45 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
         }
 
         if (!order) {
-          const nullOrderError = new Error('Order data is null or undefined');
-          await logError(nullOrderError, 'validate_order_data');
+          const orderData = { orderCheck, fullQuery: 'failed' };
+          const nullOrderError = new Error(`Order data is null or undefined after successful check. Order ID: ${orderId}`);
+          await logError({ ...nullOrderError, orderData }, 'validate_order_data');
           throw nullOrderError;
         }
 
         console.log('SecurePaymentConfirmed: Raw order data:', JSON.stringify(order, null, 2));
 
+        // Log the state of the order and product data
+        console.log('Order data check:', {
+          hasOrder: !!order,
+          orderId: order.id,
+          hasProductField: 'product' in order,
+          productValue: order.product,
+          productId: order.product_id
+        });
+
         if (!order.product) {
-          const noProductError = new Error('Product data not found in order');
+          const noProductError = new Error(`Product data not found in order. Order ID: ${order.id}, Product ID: ${order.product_id}`);
           logError({ 
             error: noProductError,
-            orderData: order 
+            orderData: {
+              id: order.id,
+              status: order.status,
+              product_id: order.product_id,
+              rawProduct: order.product
+            }
           }, 'validate_product_data');
           throw noProductError;
         }
 
         // Ensure we have a product array and get the first item
         const productData = Array.isArray(order.product) ? order.product[0] : order.product;
+        
+        console.log('Product data check:', {
+          hasProductData: !!productData,
+          productFields: productData ? Object.keys(productData) : null,
+          rawProductData: productData
+        });
 
         if (!productData) {
           const invalidProductError = new Error('Product data is missing or invalid');
