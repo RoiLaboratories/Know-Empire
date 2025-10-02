@@ -1,6 +1,17 @@
 "use client";
 import { useState } from 'react';
-import Image from 'next/image';
+import I  const handleShare = async () => {
+    try {
+      const productDetailsUrl = `https://knowempire.xyz/marketplace/${productId}/details`;
+      await composeCast({
+        text: `📢 Just listed on @knowempire!\n\n✨ ${name}\n💰 $${unitPrice}\n📍 ${location}\n\n🔒 Secure escrow-backed trading\n🌟 Physical assets on Farcaster\n\n#KnowEmpire #Marketplace`,
+        embeds: [productDetailsUrl]
+      });
+    } catch (error) {
+      console.error('Failed to open cast composer:', error);
+      toast.error('Failed to share listing');
+    }
+  };ext/image';
 import { Icon } from '@iconify/react';
 import { ICON } from '../../utils/icon-export';
 import { ProductWithSeller } from '../../types/product';
@@ -60,8 +71,8 @@ export default function ProductDetailsContent({ initialProduct: product }: { ini
     try {
       const productDetailsUrl = `https://knowempire.xyz/marketplace/${productId}/details`;
       await composeCast({
-        text: `🛍️ Check out this listing on @knowempire!\n\n${name}\n💰 $${unitPrice}\n📍 ${location}\n\nSecure trading of physical assets on Farcaster! View details ⬇️`,
-        embeds: [productDetailsUrl]
+        text: `� Just listed on @knowempire!\n\n✨ ${name}\n💰 $${unitPrice}\n📍 ${location}\n\n🔒 Secure escrow-backed trading\n🌟 Physical assets on Farcaster\n\n#KnowEmpire #Marketplace`,
+        embeds: [photos[0], productDetailsUrl],
       });
     } catch (error) {
       console.error('Failed to open cast composer:', error);
