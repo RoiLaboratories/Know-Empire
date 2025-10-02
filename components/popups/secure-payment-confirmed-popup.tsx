@@ -32,7 +32,7 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const logError = (error: any, context: string) => {
+    const logError = async (error: any, context: string) => {
       // Create a detailed error object
       const errorDetails = {
         timestamp: new Date().toISOString(),
