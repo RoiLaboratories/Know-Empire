@@ -134,7 +134,7 @@ export default function ProductDetailsContent({ initialProduct: product }: { ini
           <div className="space-y-2">
             <h2 className="text-lg font-semibold">Seller</h2>
             <div className="flex items-center gap-2">
-              <span className="text-yellow-300 flex items-center gap-1">
+              <span className="text-yellow-300 font-semibold text-lg flex items-center gap-1">
                 @{product?.seller?.username || ''}
                 {product?.seller?.is_verified && (
                   <span title="Verified trader (6+ successful trades)">

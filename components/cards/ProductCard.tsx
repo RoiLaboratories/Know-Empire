@@ -98,7 +98,7 @@ function ProductCard({ product }: { product: ProductWithSeller }): ReactElement 
           <span className="font-semibold text-primary text-xs">
             ${unitPrice}
           </span>
-          <span className="text-[10px] text-yellow-300 flex items-center gap-1">
+          <span className="text-[10px] text-yellow-300 font-semibold flex items-center gap-1">
             @{product.seller.username}
             {product.seller.is_verified && (
               <span title="Verified trader (6+ successful trades)">
