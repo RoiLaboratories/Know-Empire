@@ -87,14 +87,36 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
         console.log('Initial order check:', { orderCheck, orderCheckError });
 
         if (orderCheckError) {
+          console.error('Database error while checking order:', {
+            error: orderCheckError,
+            orderId,
+            timestamp: new Date().toISOString()
+          });
           await logError(orderCheckError, 'fetch_order_check');
           throw new Error(`Failed to check order: ${orderCheckError.message}`);
         }
 
         if (!orderCheck) {
-          const noOrderError = new Error(`Order with ID ${orderId} not found`);
-          await logError(noOrderError, 'order_not_found');
-          throw noOrderError;
+          // Wait a short time and try one more time before giving up
+          // This helps with race conditions where the order was just created
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          const { data: retryCheck, error: retryError } = await supabase
+            .from('orders')
+            .select('id, status, product_id')
+            .eq('id', orderId)
+            .maybeSingle();
+            
+          if (retryError || !retryCheck) {
+            const noOrderError = new Error(
+              `Order with ID ${orderId} not found. Please try again. ` +
+              `If the problem persists, try refreshing the page.`
+            );
+            await logError(noOrderError, 'order_not_found_after_retry');
+            // Show a more user-friendly error message
+            toast.error('Order details are not ready yet. Please wait a moment and try again.');
+            throw noOrderError;
+          }
         }
 
         // Now fetch the full order with product details
