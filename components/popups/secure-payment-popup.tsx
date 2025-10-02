@@ -99,6 +99,15 @@ function SecurePaymentPopup({ onNext, onBack, product }: Props) {
       });
 
       if (!response.ok) {
+        throw new Error('Failed to create order');
+      }
+
+      const { id: orderId } = await response.json();
+      
+      // Store the order ID to pass to the next step
+      localStorage.setItem('last_order_id', orderId);
+
+      if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Failed to create order');
       }

@@ -1,23 +1,106 @@
+"use client";
+
 import { Icon } from "@iconify/react";
 import Button from "../../ui/Button";
 import { ICON } from "../../utils/icon-export";
 import Image from "next/image";
-import Phone from "../../assets/images/prod1.png";
 import { useEffect, useState } from "react";
+import { supabase } from "../../utils/supabase";
+import toast from "react-hot-toast";
 
 interface Props {
+  orderId: string;
   onNext: () => void;
   onCloseModal: () => void;
 }
 
-function SecurePaymentConfirmed({ onNext, onCloseModal }: Props) {
+interface OrderDetails {
+  id: string;
+  status: string;
+  transaction_hash: string;
+  product: {
+    id: string;
+    title: string;
+    price: string;
+    photos: string[];
+  };
+}
+
+function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setTimeout(() => {
-      setIsConfirmed(true);
-    }, 2000);
-  }, []);
+    const fetchOrderDetails = async () => {
+      try {
+        const { data: order, error } = await supabase
+          .from('orders')
+          .select(`
+            id,
+            status,
+            transaction_hash,
+            product:products!inner (
+              id,
+              title,
+              price,
+              photos
+            )
+          `)
+          .eq('id', orderId)
+          .single();
+
+        if (error) throw error;
+        
+        // Extract the first product from the array
+        const productData = order.product[0];
+        if (!productData) throw new Error('No product data found');
+
+        // Transform the data to match our type
+        const transformedOrder: OrderDetails = {
+          id: order.id,
+          status: order.status,
+          transaction_hash: order.transaction_hash,
+          product: {
+            id: productData.id,
+            title: productData.title,
+            price: productData.price,
+            photos: productData.photos
+          }
+        };
+        
+        setOrderDetails(transformedOrder);
+        setIsConfirmed(order.status === 'shipped');
+      } catch (error) {
+        console.error('Error fetching order details:', error);
+        toast.error('Failed to load order details');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (orderId) {
+      fetchOrderDetails();
+    }
+  }, [orderId]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8">
+        <Icon icon={ICON.SPINNER} className="animate-spin text-primary" fontSize={32} />
+        <p className="text-gray mt-2">Loading order details...</p>
+      </div>
+    );
+  }
+
+  if (!orderDetails) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8">
+        <Icon icon={ICON.WARNING} className="text-red-500" fontSize={32} />
+        <p className="text-gray mt-2">Failed to load order details</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-2">
@@ -41,31 +124,39 @@ function SecurePaymentConfirmed({ onNext, onCloseModal }: Props) {
             : "Track your order and confirm when received"}
         </p>
         <span className="bg-[#f4f2f8] px-4 py-1 rounded-full">
-          <p className="text-[#925f21] text-[10px] font-medium">Order #3</p>
+          <p className="text-[#925f21] text-[10px] font-medium">
+            Order #{orderDetails.id}
+          </p>
         </span>
       </div>
       <div className="rounded-[10px] border border-[#989898] p-5 space-y-3 mt-2">
         <p className="font-medium text-gray text-sm">Order summary</p>
 
         <div className="border-b border-[#989898] pb-3 flex justify-between items-end gap-x-2">
-          <div className="flex gap-x-2 ">
+          <div className="flex gap-x-2">
             <div className="w-9 h-10">
               <Image
-                alt="phone"
-                src={Phone}
-                placeholder="blur"
+                alt={orderDetails.product.title}
+                src={orderDetails.product.photos[0]}
+                width={36}
+                height={40}
                 className="w-full h-full object-cover"
               />
             </div>
             <p className="font-semibold text-gray-light text-sm line-clamp-2">
-              Iphone 15 Pro max Black | 1TB
+              {orderDetails.product.title}
             </p>
           </div>
-          <p className="text-[#414141] font-semibold text-[15px]">$999</p>
+          <p className="text-[#414141] font-semibold text-[15px]">
+            ${orderDetails.product.price}
+          </p>
         </div>
 
         <p className="text-[#989898] text-[13px]">
-          Transaction: <span className="italic">0x80b8c4ab46a9a...</span>
+          Transaction:{" "}
+          <span className="italic">
+            {orderDetails.transaction_hash.slice(0, 18)}...
+          </span>
         </p>
       </div>
 

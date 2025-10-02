@@ -5,7 +5,7 @@ import Phone from "../../assets/images/prod1.png";
 import Button from "../../ui/Button";
 import Modal, { useModal } from "../../context/ModalContext";
 import GenericPopup from "./generic-popup";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ProductSummaryPopup from "./product-summary-popup";
 import DeliveryInformationPopup from "./delivery-information-popup";
 import EscrowProtectionPopup from "./escrow-protection-popup";
@@ -21,6 +21,7 @@ interface PurchasePopupProps {
 
 function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
   const [purchaseStep, setPurchaseStep] = useState(1);
+  const [orderId, setOrderId] = useState<string | null>(null);
   const { context } = useMiniKit() as { context: { user?: { fid: number } } };
   
   // Safety check: prevent purchasing own products
@@ -30,6 +31,18 @@ function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
   }
 
   const { close } = useModal();
+
+  // Check for order ID when moving to confirmation step
+  useEffect(() => {
+    if (purchaseStep === 5) {
+      const lastOrderId = localStorage.getItem('last_order_id');
+      if (lastOrderId) {
+        setOrderId(lastOrderId);
+        // Clear the stored ID
+        localStorage.removeItem('last_order_id');
+      }
+    }
+  }, [purchaseStep]);
   
   const handleNextStep = () => {
     console.log({ purchaseStep });
@@ -80,8 +93,9 @@ function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
           <SecurePaymentPopup onNext={handleNextStep} onBack={handleBack} product={product} />
         )}
 
-        {purchaseStep === 5 && (
+        {purchaseStep === 5 && orderId && (
           <SecurePaymentConfirmed
+            orderId={orderId}
             onNext={handleNextStep}
             onCloseModal={onCloseModal ?? (() => {})}
           />
