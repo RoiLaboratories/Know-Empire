@@ -1,17 +1,6 @@
 "use client";
 import { useState } from 'react';
-import I  const handleShare = async () => {
-    try {
-      const productDetailsUrl = `https://knowempire.xyz/marketplace/${productId}/details`;
-      await composeCast({
-        text: `📢 Just listed on @knowempire!\n\n✨ ${name}\n💰 $${unitPrice}\n📍 ${location}\n\n🔒 Secure escrow-backed trading\n🌟 Physical assets on Farcaster\n\n#KnowEmpire #Marketplace`,
-        embeds: [productDetailsUrl]
-      });
-    } catch (error) {
-      console.error('Failed to open cast composer:', error);
-      toast.error('Failed to share listing');
-    }
-  };ext/image';
+import Image from 'next/image';
 import { Icon } from '@iconify/react';
 import { ICON } from '../../utils/icon-export';
 import { ProductWithSeller } from '../../types/product';
