@@ -12,17 +12,15 @@ import toast from 'react-hot-toast';
 import Modal from '../../context/ModalContext';
 import PurchasePopup from '../../components/popups/purchase-popup';
 
-export default function ProductDetailsContent({ initialProduct }: { initialProduct: ProductWithSeller }) {
-  console.log('Initial Product:', initialProduct);
-  console.log('Seller:', initialProduct.seller);
+export default function ProductDetailsContent({ initialProduct: product }: { initialProduct: ProductWithSeller }) {
   const [selectedImage, setSelectedImage] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [updatedProduct, setUpdatedProduct] = useState<ProductWithSeller | null>(null);
-  const { photos, title: name, price: unitPrice, country: location, description, id: productId } = initialProduct;
+  const { photos, title: name, price: unitPrice, country: location, description, id: productId } = product;
   const { addToCart } = useCart();
   const { context } = useMiniKit() as { context: { user?: { fid: number } } };
   const { composeCast } = useComposeCast();
-  const isOwnProduct = context?.user?.fid?.toString() === initialProduct.seller.farcaster_id;
+  const isOwnProduct = context?.user?.fid?.toString() === product.seller.farcaster_id;
 
   const fetchUpdatedProduct = async () => {
     setIsLoading(true);
@@ -134,8 +132,8 @@ export default function ProductDetailsContent({ initialProduct }: { initialProdu
             <h2 className="text-lg font-semibold">Seller</h2>
             <div className="flex items-center gap-2">
               <span className="text-yellow-300 flex items-center gap-1">
-                @{initialProduct?.seller?.username}
-                {initialProduct?.seller?.is_verified && (
+                @{product.seller.username}
+                {product.seller.is_verified && (
                   <span title="Verified trader (6+ successful trades)">
                     <Icon
                       icon={ICON.VERIFIED}
@@ -204,7 +202,7 @@ export default function ProductDetailsContent({ initialProduct }: { initialProdu
         name={`purchase-product-popup-${productId}`}
         showBg={false}
       >
-        <PurchasePopup product={updatedProduct || initialProduct} />
+        <PurchasePopup product={updatedProduct || product} />
       </Modal.Window>
       </div>
   );
