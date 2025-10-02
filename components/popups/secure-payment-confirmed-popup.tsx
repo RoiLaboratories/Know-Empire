@@ -31,8 +31,8 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const logError = async (error: any, context: string) => {
-      // Create a detailed error object
+    const logError = (error: any, context: string) => {
+      // Construct error message with all relevant details
       const errorDetails = {
         timestamp: new Date().toISOString(),
         orderId,
@@ -48,28 +48,43 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
         }
       };
 
-      // Log to console (will show in Vercel logs)
-      console.error('SecurePaymentConfirmed Error:', JSON.stringify(errorDetails, null, 2));
+      // Use Error.captureStackTrace to get proper stack traces
+      const enhancedError = new Error(`[SecurePaymentConfirmed][${context}] ${error instanceof Error ? error.message : JSON.stringify(error)}`);
+      Error.captureStackTrace(enhancedError, logError);
+      
+      // Attach details to error object for logging
+      (enhancedError as any).details = errorDetails;
+      
+      // Log full error details
+      console.error('SecurePaymentConfirmed Error:', {
+        message: enhancedError.message,
+        stack: enhancedError.stack,
+        details: errorDetails
+      });
+      
+      // Throw the enhanced error to be caught by Next.js
+      throw enhancedError;
     };
 
     const fetchOrderDetails = async () => {
       if (!orderId) {
         logError(new Error('No orderId provided'), 'parameter_validation');
-        toast.error('Order ID is missing');
-        setIsLoading(false);
         return;
       }
 
-      console.log('SecurePaymentConfirmed: Fetching order details for orderId:', orderId);
-      
       try {
-        // Fetch full order details with product
+        console.log('SecurePaymentConfirmed: Fetching order details for orderId:', orderId);
+      
+        console.log('Attempting to fetch order:', orderId);
+        
+        // First check if order exists
         const { data: order, error } = await supabase
           .from('orders')
           .select(`
             id,
             status,
-            product:products (
+            product_id,
+            product:products!product_id (
               id,
               title,
               price,
@@ -78,6 +93,8 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
           `)
           .eq('id', orderId)
           .maybeSingle();
+          
+        console.log('Supabase response:', { data: order, error });
 
         if (error) {
           await logError(error, 'fetch_order_details');
@@ -132,12 +149,21 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
         setOrderDetails(transformedOrder);
         setIsConfirmed(order.status === 'shipped');
       } catch (error) {
-        // Log the error with our helper function
-        await logError(error, 'order_details_error_catch');
+        // Log errors in a way that ensures they appear in Vercel logs
+        console.error('SecurePaymentConfirmed Fetch Error:', {
+          orderId,
+          error: error instanceof Error ? error.message : error,
+          state: {
+            isConfirmed,
+            hasOrderDetails: !!orderDetails,
+            isLoading
+          }
+        });
         
-        // Show user-friendly error message
+        // Re-throw the error to be caught by React error boundary
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
         toast.error(`Failed to load order details: ${errorMessage}`);
+        throw error;
       } finally {
         setIsLoading(false);
       }
