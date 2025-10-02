@@ -33,14 +33,32 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
+      console.log('Fetching order details for orderId:', orderId); // Log the orderId being used
       try {
+        // First verify if order exists
+        const { data: orderExists, error: existsError } = await supabase
+          .from('orders')
+          .select('id')
+          .eq('id', orderId)
+          .single();
+
+        if (existsError) {
+          console.error('Error verifying order existence:', existsError);
+          throw new Error(`Order not found: ${existsError.message}`);
+        }
+
+        if (!orderExists) {
+          throw new Error(`No order found with ID: ${orderId}`);
+        }
+
+        // Fetch full order details with product
         const { data: order, error } = await supabase
           .from('orders')
           .select(`
             id,
             status,
             transaction_hash,
-            product:products!inner (
+            product:products (
               id,
               title,
               price,
@@ -50,30 +68,61 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
           .eq('id', orderId)
           .single();
 
-        if (error) throw error;
-        
-        // Extract the first product from the array
-        const productData = order.product[0];
-        if (!productData) throw new Error('No product data found');
+        console.log('Raw order data:', order); // Log the raw order data
 
-        // Transform the data to match our type
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+
+        if (!order) {
+          throw new Error('Order data is null or undefined');
+        }
+
+        if (!order.product) {
+          console.error('Product data missing from order:', order);
+          throw new Error('Product data not found in order');
+        }
+
+        // Ensure we have a product array and get the first item
+        const productData = Array.isArray(order.product) ? order.product[0] : order.product;
+
+        if (!productData) {
+          console.error('Product data is null or empty:', order.product);
+          throw new Error('Product data is missing or invalid');
+        }
+
+        // Log the product data we're trying to use
+        console.log('Product data being used:', productData);
+
+        // Transform the data to match our type with validation
         const transformedOrder: OrderDetails = {
-          id: order.id,
-          status: order.status,
-          transaction_hash: order.transaction_hash,
+          id: order.id || '',
+          status: order.status || 'pending',
+          transaction_hash: order.transaction_hash || '',
           product: {
-            id: productData.id,
-            title: productData.title,
-            price: productData.price,
-            photos: productData.photos
+            id: productData.id || '',
+            title: productData.title || '',
+            price: productData.price || '0',
+            photos: Array.isArray(productData.photos) ? productData.photos : []
           }
         };
+
+        console.log('Transformed order:', transformedOrder); // Log the final transformed data
         
         setOrderDetails(transformedOrder);
         setIsConfirmed(order.status === 'shipped');
       } catch (error) {
-        console.error('Error fetching order details:', error);
-        toast.error('Failed to load order details');
+        // Detailed error logging
+        console.error('Error in fetchOrderDetails:', {
+          orderId,
+          errorMessage: error instanceof Error ? error.message : 'Unknown error',
+          errorObject: error
+        });
+        
+        // Show more specific error message to user
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        toast.error(`Failed to load order details: ${errorMessage}`);
       } finally {
         setIsLoading(false);
       }
@@ -168,12 +217,11 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
               size="xs"
               className="rounded-[10px] font-medium"
               onClick={onCloseModal}
-              //   onClick={onNext}
             >
               Request Cancellation
             </Button>
             <p className="text-[8px] text-[#989898]">
-              You can cancel this order if the seller doesn’t ship within the
+              You can cancel this order if the seller doesn't ship within the
               expected timeframe
             </p>
           </>
