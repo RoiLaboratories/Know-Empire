@@ -17,7 +17,6 @@ interface Props {
 interface OrderDetails {
   id: string;
   status: string;
-  transaction_hash: string;
   product: {
     id: string;
     title: string;
@@ -70,7 +69,6 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
           .select(`
             id,
             status,
-            transaction_hash,
             product:products (
               id,
               title,
@@ -121,7 +119,6 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
         const transformedOrder: OrderDetails = {
           id: order.id || '',
           status: order.status || 'pending',
-          transaction_hash: order.transaction_hash || '',
           product: {
             id: productData.id || '',
             title: productData.title || '',
@@ -238,9 +235,9 @@ function SecurePaymentConfirmed({ orderId, onNext, onCloseModal }: Props) {
         </div>
 
         <p className="text-[#989898] text-[13px]">
-          Transaction:{" "}
+          Order ID:{" "}
           <span className="italic">
-            {orderDetails.transaction_hash.slice(0, 18)}...
+            {orderDetails.id}
           </span>
         </p>
       </div>
