@@ -12,8 +12,12 @@ function SecurePaymentConfirmed({ onCloseModal }: Props) {
   const router = useRouter();
   
   const handleViewOrder = () => {
-    router.push('/buyer/order_management');
+    // First close the modal
     onCloseModal?.();
+    // Then navigate after a small delay to ensure modal closes properly
+    setTimeout(() => {
+      router.push('/buyer/order_management');
+    }, 100);
   };
 
   return (
