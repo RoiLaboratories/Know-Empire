@@ -7,6 +7,7 @@ interface GenericPopupProps {
   icon: string;
   iconStyle?: string;
   onClickFn?: () => void;
+  showBg?: boolean;
 }
 
 function GenericPopup({

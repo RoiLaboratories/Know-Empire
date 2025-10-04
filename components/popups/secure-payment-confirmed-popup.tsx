@@ -29,6 +29,7 @@ function SecurePaymentConfirmed({ onCloseModal }: Props) {
       iconStyle="text-green-500"
       onClickFn={handleViewOrder}
       onCloseModal={onCloseModal}
+      showBg={false}
     />
   );
 }
