@@ -30,7 +30,7 @@ function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
     return null;
   }
 
-  const { close } = useModal();
+  const { close, open } = useModal();
 
   // Check for order ID when moving to confirmation step
   useEffect(() => {
@@ -45,9 +45,15 @@ function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
   }, [purchaseStep]);
   
   const handleNextStep = () => {
-    console.log({ purchaseStep });
-    setPurchaseStep((curr) => curr + 1);
-    console.log({ purchaseStep });
+    const nextStep = purchaseStep + 1;
+    if (nextStep === 5) {
+      // Close the purchase popup when moving to confirmation
+      close();
+      // Show the confirmation popup using Modal.Window component
+      open('secure-payment-confirmed');
+    } else {
+      setPurchaseStep(nextStep);
+    }
   };
 
   const handleBack = () => {
@@ -92,15 +98,19 @@ function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
         {purchaseStep === 4 && (
           <SecurePaymentPopup onNext={handleNextStep} onBack={handleBack} product={product} />
         )}
-
-        {purchaseStep === 5 && (
-          <SecurePaymentConfirmed
-            onCloseModal={onCloseModal}
-          />
-        )}
       </div>
     </div>
   );
 }
+
+// Add confirmation modal window
+const ConfirmationModalWindow = () => {
+  const { close } = useModal();
+  return (
+    <Modal.Window name="secure-payment-confirmed">
+      <SecurePaymentConfirmed onCloseModal={close} />
+    </Modal.Window>
+  );
+};
 
 export default PurchasePopup;
