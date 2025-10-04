@@ -93,11 +93,9 @@ function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
           <SecurePaymentPopup onNext={handleNextStep} onBack={handleBack} product={product} />
         )}
 
-        {purchaseStep === 5 && orderId && (
+        {purchaseStep === 5 && (
           <SecurePaymentConfirmed
-            orderId={orderId}
-            onNext={handleNextStep}
-            onCloseModal={onCloseModal ?? (() => {})}
+            onCloseModal={onCloseModal}
           />
         )}
       </div>
