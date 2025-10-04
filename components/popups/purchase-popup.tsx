@@ -39,6 +39,11 @@ function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
     onCloseModal?.();
   };
 
+  // For step 5, only show the confirmation popup without the container
+  if (purchaseStep === 5) {
+    return <SecurePaymentConfirmed onCloseModal={handleClose} />;
+  }
+
   return (
     <div className="rounded-t-2xl px-5 pt-5 pb-10 w-[300px] md:w-[402px] bg-white space-y-10" onClick={(e) => e.stopPropagation()}>
       <div className="flex items-center justify-between">
@@ -80,12 +85,6 @@ function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
             onNext={handleNextStep} 
             onBack={handleBack} 
             product={product} 
-          />
-        )}
-
-        {purchaseStep === 5 && (
-          <SecurePaymentConfirmed 
-            onCloseModal={handleClose}
           />
         )}
       </div>
