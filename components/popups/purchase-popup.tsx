@@ -46,11 +46,7 @@ function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
   
   const handleNextStep = () => {
     const nextStep = purchaseStep + 1;
-    if (nextStep === 5) {
-      // First show the confirmation popup
-      open('secure-payment-confirmed');
-      // Then close the purchase popup
-      close();
+    setPurchaseStep(nextStep);
     } else {
       setPurchaseStep(nextStep);
     }
