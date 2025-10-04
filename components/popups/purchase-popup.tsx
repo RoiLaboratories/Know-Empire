@@ -1,11 +1,7 @@
 import { Icon } from "@iconify/react";
 import { ICON } from "../../utils/icon-export";
-import Image from "next/image";
-import Phone from "../../assets/images/prod1.png";
-import Button from "../../ui/Button";
 import Modal, { useModal } from "../../context/ModalContext";
-import GenericPopup from "./generic-popup";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import ProductSummaryPopup from "./product-summary-popup";
 import DeliveryInformationPopup from "./delivery-information-popup";
 import EscrowProtectionPopup from "./escrow-protection-popup";
@@ -21,8 +17,8 @@ interface PurchasePopupProps {
 
 function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
   const [purchaseStep, setPurchaseStep] = useState(1);
-  const [orderId, setOrderId] = useState<string | null>(null);
   const { context } = useMiniKit() as { context: { user?: { fid: number } } };
+  const { close } = useModal();
   
   // Safety check: prevent purchasing own products
   if (context?.user && product.seller.farcaster_id === context.user.fid.toString()) {
@@ -30,37 +26,24 @@ function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
     return null;
   }
 
-  const { close, open } = useModal();
-
-  // Check for order ID when moving to confirmation step
-  useEffect(() => {
-    if (purchaseStep === 5) {
-      const lastOrderId = localStorage.getItem('last_order_id');
-      if (lastOrderId) {
-        setOrderId(lastOrderId);
-        // Clear the stored ID
-        localStorage.removeItem('last_order_id');
-      }
-    }
-  }, [purchaseStep]);
-  
   const handleNextStep = () => {
-    const nextStep = purchaseStep + 1;
-    setPurchaseStep(nextStep);
-    } else {
-      setPurchaseStep(nextStep);
-    }
+    setPurchaseStep(prev => prev + 1);
   };
 
   const handleBack = () => {
-    setPurchaseStep((curr) => curr - 1);
+    setPurchaseStep(prev => prev - 1);
+  };
+
+  const handleClose = () => {
+    close();
+    onCloseModal?.();
   };
 
   return (
     <div className="rounded-t-2xl px-5 pt-5 pb-10 w-[300px] md:w-[402px] bg-white space-y-10" onClick={(e) => e.stopPropagation()}>
       <div className="flex items-center justify-between">
         <p className="font-semibold text-gray text-sm">Secure Purchase</p>
-        <div onClick={() => close()}>
+        <div onClick={handleClose}>
           <Icon
             icon={ICON.CANCEL}
             fontSize={24}
@@ -68,8 +51,6 @@ function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
           />
         </div>
       </div>
-
-      {/*main content  */}
 
       <div className="max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar no-scrollbar">
         {purchaseStep === 1 && (
@@ -88,25 +69,28 @@ function PurchasePopup({ onCloseModal, product }: PurchasePopupProps) {
         )}
 
         {purchaseStep === 3 && (
-          <EscrowProtectionPopup onNext={handleNextStep} onBack={handleBack} />
+          <EscrowProtectionPopup 
+            onNext={handleNextStep} 
+            onBack={handleBack} 
+          />
         )}
 
         {purchaseStep === 4 && (
-          <SecurePaymentPopup onNext={handleNextStep} onBack={handleBack} product={product} />
+          <SecurePaymentPopup 
+            onNext={handleNextStep} 
+            onBack={handleBack} 
+            product={product} 
+          />
+        )}
+
+        {purchaseStep === 5 && (
+          <SecurePaymentConfirmed 
+            onCloseModal={handleClose}
+          />
         )}
       </div>
     </div>
   );
 }
-
-// Add confirmation modal window
-const ConfirmationModalWindow = () => {
-  const { close } = useModal();
-  return (
-    <Modal.Window name="secure-payment-confirmed">
-      <SecurePaymentConfirmed onCloseModal={close} />
-    </Modal.Window>
-  );
-};
 
 export default PurchasePopup;
