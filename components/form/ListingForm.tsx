@@ -122,13 +122,13 @@ export default function ListingForm() {
     return new Promise((resolve) => {
       // Check file size
       if (file.size > MAX_FILE_SIZE) {
-        resolve(`Image "${file.name}" is too large. Maximum size is 5MB.`);
+        resolve(`Image "${file.name}" is too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)}MB.`);
         return;
       }
 
       // Check file type
       if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-        resolve(`"${file.name}" has unsupported format. Please use JPEG, PNG or WebP.`);
+        resolve(`"${file.name}" has unsupported format. Allowed types: JPEG, PNG, WebP.`);
         return;
       }
 
@@ -140,12 +140,12 @@ export default function ListingForm() {
         URL.revokeObjectURL(objectUrl);
         
         if (img.width < MIN_DIMENSIONS.width || img.height < MIN_DIMENSIONS.height) {
-          resolve(`Image "${file.name}" is too small. Minimum dimensions are 400x400px.`);
+          resolve(`Image "${file.name}" is too small. Minimum dimensions are ${MIN_DIMENSIONS.width}x${MIN_DIMENSIONS.height}px.`);
           return;
         }
 
         if (img.width > MAX_DIMENSIONS.width || img.height > MAX_DIMENSIONS.height) {
-          resolve(`Image "${file.name}" is too large. Maximum dimensions are 2048x2048px.`);
+          resolve(`Image "${file.name}" is too large. Maximum dimensions are ${MAX_DIMENSIONS.width}x${MAX_DIMENSIONS.height}px.`);
           return;
         }
 
@@ -168,7 +168,8 @@ export default function ListingForm() {
 
       // Limit to 3 images
       if (formik.values.photos.length + newFiles.length > 3) {
-        modalContext?.open('listing-error-custom');
+        const specs = `Allowed types: JPEG, PNG, WebP. Max size: ${MAX_FILE_SIZE / (1024 * 1024)}MB. Dimensions: ${MIN_DIMENSIONS.width}x${MIN_DIMENSIONS.height}px to ${MAX_DIMENSIONS.width}x${MAX_DIMENSIONS.height}px. Max images: 3.`;
+        modalContext?.open('listing-error-custom', { message: `You can only upload a maximum of 3 images. ${specs}` });
         return;
       }
 
@@ -179,7 +180,8 @@ export default function ListingForm() {
       for (const file of newFiles) {
         const error = await validateImage(file);
         if (error) {
-          modalContext?.open('listing-error-custom', { message: error });
+          const specs = `Allowed types: JPEG, PNG, WebP. Max size: ${MAX_FILE_SIZE / (1024 * 1024)}MB. Dimensions: ${MIN_DIMENSIONS.width}x${MIN_DIMENSIONS.height}px to ${MAX_DIMENSIONS.width}x${MAX_DIMENSIONS.height}px. Max images: 3.`;
+          modalContext?.open('listing-error-custom', { message: `${error} ${specs}` });
           continue;
         }
 
@@ -242,7 +244,7 @@ export default function ListingForm() {
 
             {modalContext?.openNames.includes('listing-error-custom') && (
               <ErrorPopup
-                message="You can only upload a maximum of 3 images."
+                message={modalContext?.customData?.['listing-error-custom']?.message || "You can only upload a maximum of 3 images."}
                 onCloseModal={() => closeModals()}
               />
             )}

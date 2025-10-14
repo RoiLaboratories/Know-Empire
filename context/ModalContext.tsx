@@ -16,7 +16,7 @@ interface ModalContextType {
   close: (name?: string) => void;
   // openName: string;
   openNames: string[];
-  customData?: any;
+  customData: Record<string, any>;
 }
 
 export const ModalContext = createContext<ModalContextType | undefined>(
@@ -36,17 +36,25 @@ export function useModal() {
  */
 const Modal = ({ children }: { children: React.ReactNode }) => {
   const [openNames, setOpenNames] = useState<string[]>([]);
+  const [customData, setCustomData] = useState<Record<string, any>>({});
 
   const close = (name?: string) => {
     if (!name) {
       setOpenNames([]);
+      setCustomData({});
     } else {
       setOpenNames((prev) => prev.filter((n) => n !== name));
+      setCustomData((prev) => {
+        const copy = { ...prev };
+        delete copy[name];
+        return copy;
+      });
     }
   };
 
-  const open = (name: string) => {
+  const open = (name: string, data?: any) => {
     setOpenNames((prev) => [...prev, name]);
+    setCustomData((prev) => ({ ...prev, [name]: data }));
   };
 
   useEffect(() => {
@@ -62,7 +70,7 @@ const Modal = ({ children }: { children: React.ReactNode }) => {
   }, [openNames]);
 
   return (
-    <ModalContext.Provider value={{ open, close, openNames }}>
+    <ModalContext.Provider value={{ open, close, openNames, customData }}>
       {children}
     </ModalContext.Provider>
   );
