@@ -7,6 +7,14 @@ export async function GET(request: Request) {
   const category = searchParams.get('category');
 
   try {
+    // Pagination: use ?limit=<n>&page=<n> (defaults: limit=24, page=1). Cap limit to 100 to avoid heavy queries
+    const limitParam = searchParams.get('limit');
+    const pageParam = searchParams.get('page');
+    const limit = Math.min(100, Number(limitParam) || 24);
+    const page = Math.max(1, Number(pageParam) || 1);
+    const start = (page - 1) * limit;
+    const end = start + limit - 1;
+
     let query = supabaseAdmin
       .from('products')
       .select(`
@@ -30,7 +38,8 @@ export async function GET(request: Request) {
         )
       `)
       .eq('status', 'active')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(start, end);
 
     if (category) {
       query = query.eq('category', category);
